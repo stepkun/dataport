@@ -1,0 +1,10 @@
+debug
+target
+Cargo.lock
+build/
+.vscode/
+
+**/*.rs.bk
+*.pdb
+**/mutants.out*/
+.idea/

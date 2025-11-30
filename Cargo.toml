@@ -1,0 +1,19 @@
+# Copyright © 2025 Stephan Kunz
+[package]
+resolver = "3"
+name = "dataport"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.89.0"
+license-file = "LICENSE"
+authors = ["stepkun <stephan.kunz@kabelbw.de>"]
+description = "Port abstractions for data types"
+repository = "https://github.com/stepkun/dataport.git"
+homepage = "http://github.com/stepkun/dataport.git"
+documentation = "https://docs.rs/dataport"
+readme = "README.md"
+
+[dependencies]
+
+[dev-dependencies]
+doc-comment = "0.3.4"
