@@ -6,7 +6,7 @@
 use core::any::Any;
 
 /// The `AnySendSync` trait allows to send data between threads.
-pub trait AnySendSync: Any + Send + Sync {
+pub(crate) trait AnySendSync: Any + Send + Sync {
 	/// Convert to Any
 	#[must_use]
 	fn as_any(&self) -> &dyn Any;
@@ -37,19 +37,5 @@ pub trait AnySendSyncClone: AnySendSync + Clone {
 impl<T: 'static + Send + Sync + Clone> AnySendSyncClone for T {
 	fn clone(&self) -> Self {
 		Clone::clone(self)
-	}
-}
-
-#[cfg(test)]
-mod tests {
-	use super::*;
-
-	// check, that the auto traits are available
-	const fn is_normal<T: Sized + Send + Sync>() {}
-
-	#[test]
-	const fn normal_types() {
-		// is_normal::<&PortDescription>();
-		// is_normal::<PortDescription>();
 	}
 }
