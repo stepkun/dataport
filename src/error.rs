@@ -11,6 +11,16 @@ pub enum Error {
 		/// Name of the port.
 		port: &'static str,
 	},
+	/// No default value defined for a Port.
+	NoDefaultDefined {
+		/// Name of the port.
+		port: &'static str,
+	},
+	/// No source for the value of a Port set.
+	NoSrcSet {
+		/// Name of the port.
+		port: &'static str,
+	},
 }
 
 // Only default implementation needed.
@@ -19,7 +29,9 @@ impl core::error::Error for Error {}
 impl core::fmt::Debug for Error {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		match self {
-			Self::CouldNotConvert { value, port } => write!(f, "CouldNotConvert(value: {value}, value: {port})"),
+			Self::CouldNotConvert { value, port } => write!(f, "CouldNotConvert(value: {value}, port: {port})"),
+			Self::NoDefaultDefined { port } => write!(f, "NoDefaultDefined(port: {port})"),
+			Self::NoSrcSet { port } => write!(f, "NoSrcSet(port: {port})"),
 		}
 	}
 }
@@ -27,7 +39,9 @@ impl core::fmt::Debug for Error {
 impl core::fmt::Display for Error {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		match self {
-			Self::CouldNotConvert { value, port } => write!(f, "could not convert '{value}' into wanted type for {port}"),
+			Self::CouldNotConvert { value, port } => write!(f, "could not convert '{value}' into wanted type for '{port}'"),
+			Self::NoDefaultDefined { port } => write!(f, "no default defined for port '{port}'"),
+			Self::NoSrcSet { port } => write!(f, "no source set for value of port '{port}'"),
 		}
 	}
 }

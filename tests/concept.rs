@@ -5,10 +5,65 @@
 #![allow(missing_docs)]
 #![allow(clippy::unwrap_used)]
 
-use dataport::{DynamicPortList, Port, PortHub, PortList, StaticPortList};
+use std::{f64::consts::PI, sync::Arc};
+
+use dataport::{
+	DynamicPortList, InOutPort, InPort, OutPort, Port, PortBase, PortDefault, PortHub, PortList, StaticPortList,
+};
 
 const CONST_NAME: &str = "p2";
 static STATIC_NAME: &str = "p3";
+
+#[test]
+fn port_connections() {
+	let mut i1 = InPort::<i32>::new("p1");
+	let mut i2 = InPort::<f64>::new(CONST_NAME);
+	let mut i3 = InPort::<String>::new(STATIC_NAME);
+
+	let mut io1 = InOutPort::<i32>::new("p1");
+	let mut io2 = InOutPort::<f64>::new(CONST_NAME);
+	let mut io3 = InOutPort::<String>::new(STATIC_NAME);
+
+	let mut o1 = OutPort::<i32>::new("p1");
+	let mut o2 = OutPort::<f64>::new(CONST_NAME);
+	let mut o3 = OutPort::<String>::new(STATIC_NAME);
+
+	o1.set_value(42);
+	o2.set_value(PI);
+	o3.set_value(String::from("the answer"));
+	assert_eq!(o1.value().unwrap(), 42);
+	assert_eq!(o2.value().unwrap(), PI);
+	assert_eq!(o3.value().unwrap(), String::from("the answer"));
+
+	// set the values again before fetching them
+	o1.set_value(42);
+	o2.set_value(PI);
+	o3.set_value(String::from("the answer"));
+
+	io1.set_src(o1);
+	io2.set_src(o2);
+	io3.set_src(o3);
+
+	assert!(io1.src().is_some());
+	assert_eq!(io1.value().unwrap(), 42);
+	assert!(io2.src().is_some());
+	assert_eq!(io2.value().unwrap(), PI);
+	assert!(io3.src().is_some());
+	assert_eq!(io3.value().unwrap(), String::from("the answer"));
+
+	// set the values again before fetching them
+	io1.set_value(42);
+	io2.set_value(PI);
+	io3.set_value(String::from("the answer"));
+
+	i1.set_src(io1);
+	i2.set_src(io2);
+	i3.set_src(io3);
+
+	assert_eq!(i1.value().unwrap().unwrap(), 42);
+	assert_eq!(i2.value().unwrap().unwrap(), PI);
+	assert_eq!(i3.value().unwrap().unwrap(), String::from("the answer"));
+}
 
 struct BasicStruct {
 	other_field: i32,
@@ -17,7 +72,7 @@ struct BasicStruct {
 
 #[test]
 /// Things that have ports 'declare' their ports statically.
-fn declaration() {
+fn static_declaration() {
 	let s1 = BasicStruct {
 		other_field: 1,
 		ports: StaticPortList::new([
@@ -51,7 +106,7 @@ struct DynamicStruct {
 
 #[test]
 /// Databases, Blackboards and other communication hubs need to 'provide' ports dynamically.
-fn dynamic_provision() {
+fn dynamic_provisioning() {
 	let mut s1 = DynamicStruct {
 		other_field: 1,
 		ports: DynamicPortList::default(),

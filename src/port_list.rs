@@ -4,12 +4,11 @@
 #![allow(unused)]
 
 use core::ops::Deref;
-#[cfg(feature = "alloc")]
 use core::ops::DerefMut;
 
 use alloc::vec::Vec;
 
-use crate::port::Port;
+use crate::port::{Port, PortBase};
 
 /// PortList.
 pub trait PortList {
@@ -27,7 +26,6 @@ pub trait PortList {
 }
 
 /// PortHub.
-#[cfg(feature = "alloc")]
 pub trait PortHub: PortList {
 	/// Returns a mutable reference to the port list.
 	fn portlist_mut(&mut self) -> &mut Vec<Port>;
@@ -69,11 +67,9 @@ impl<const S: usize> StaticPortList<S> {
 }
 
 /// DynamicPortList.
-#[cfg(feature = "alloc")]
 #[derive(Default)]
 pub struct DynamicPortList(Vec<Port>);
 
-#[cfg(feature = "alloc")]
 impl Deref for DynamicPortList {
 	type Target = [Port];
 
@@ -82,28 +78,24 @@ impl Deref for DynamicPortList {
 	}
 }
 
-#[cfg(feature = "alloc")]
 impl DerefMut for DynamicPortList {
 	fn deref_mut(&mut self) -> &mut Self::Target {
 		&mut self.0
 	}
 }
 
-#[cfg(feature = "alloc")]
 impl PortList for DynamicPortList {
 	fn portlist(&self) -> &[Port] {
 		&self.0
 	}
 }
 
-#[cfg(feature = "alloc")]
 impl PortHub for DynamicPortList {
 	fn portlist_mut(&mut self) -> &mut Vec<Port> {
 		&mut self.0
 	}
 }
 
-#[cfg(feature = "alloc")]
 impl DynamicPortList {
 	pub fn new(ports: Vec<Port>) -> Self {
 		Self(ports)
@@ -162,24 +154,21 @@ mod tests {
 			assert!(s.find("p_non_existent").is_none());
 		}
 		// dynamic list
-		#[cfg(feature = "alloc")]
-		{
-			use alloc::vec;
+		use alloc::vec;
 
-			let s = DynamicPortList::new(vec![
-				Port::new("p1"),
-				Port::new(CONST_NAME),
-				Port::new(STATIC_NAME),
-			]);
+		let s = DynamicPortList::new(vec![
+			Port::new("p1"),
+			Port::new(CONST_NAME),
+			Port::new(STATIC_NAME),
+		]);
 
-			assert!(s.find("p1").is_some());
-			assert!(s.find(CONST_NAME).is_some());
-			assert!(s.find("p2").is_some());
-			assert_eq!(s.find("p2"), s.find(CONST_NAME));
-			assert!(s.find(STATIC_NAME).is_some());
-			assert!(s.find("p3").is_some());
-			assert_eq!(s.find("p3"), s.find(STATIC_NAME));
-			assert!(s.find("p_non_existent").is_none());
-		}
+		assert!(s.find("p1").is_some());
+		assert!(s.find(CONST_NAME).is_some());
+		assert!(s.find("p2").is_some());
+		assert_eq!(s.find("p2"), s.find(CONST_NAME));
+		assert!(s.find(STATIC_NAME).is_some());
+		assert!(s.find("p3").is_some());
+		assert_eq!(s.find("p3"), s.find(STATIC_NAME));
+		assert!(s.find("p_non_existent").is_none());
 	}
 }

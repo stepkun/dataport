@@ -9,16 +9,22 @@ license-file = "LICENSE"
 authors = ["stepkun <stephan.kunz@kabelbw.de>"]
 description = "Port abstractions for data types"
 repository = "https://github.com/stepkun/dataport.git"
-homepage = "https://github.com/stepkun/dataport.git"
+homepage = "https://github.com/stepkun/dataport"
 documentation = "https://docs.rs/dataport"
 readme = "README.md"
 
 [dependencies]
+dataport-macros = { path = "macros", version = "0.0.1" }
+spin = { version = "0.10.0", default-features = false, features = [
+    #"fair_mutex",
+    "portable-atomic",
+    "rwlock",
+    "use_ticket_mutex",
+] }
 
 [dev-dependencies]
 doc-comment = "0.3.4"
 
 [features]
 default = ["std"]
-std = ["alloc"]
-alloc = []
+std = []

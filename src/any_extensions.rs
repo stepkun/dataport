@@ -26,16 +26,3 @@ impl<T: 'static + Send + Sync> AnySendSync for T {
 		self
 	}
 }
-
-/// The `AnySendSyncClone` trait extends [`AnySendSync`] with [`Clone`].
-pub trait AnySendSyncClone: AnySendSync + Clone {
-	#[must_use]
-	fn clone(&self) -> Self;
-}
-
-/// Implementation for any type that has a `static` lifetime and implements [`Send`], [`Sync`] ans [`Clone`].
-impl<T: 'static + Send + Sync + Clone> AnySendSyncClone for T {
-	fn clone(&self) -> Self {
-		Clone::clone(self)
-	}
-}
