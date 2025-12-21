@@ -10,6 +10,7 @@ extern crate alloc;
 
 mod any_extensions;
 mod error;
+mod guards;
 mod in_out_port;
 mod in_port;
 mod out_port;
@@ -17,7 +18,8 @@ mod port;
 mod port_list;
 
 // flatten
-pub use error::Error;
+pub use error::{Error, Result};
+pub use guards::{PortReadGuard, PortWriteGuard};
 pub use in_out_port::InOutPort;
 pub use in_port::InPort;
 pub use out_port::OutPort;
@@ -27,7 +29,7 @@ pub use port_list::{DynamicPortList, PortHub, PortList, StaticPortList};
 // re-exports:
 //pub use dataport_macros::???;
 // re-export `RwLock` for easy changeability
-pub(crate) use spin::{RwLock, RwLockReadGuard};
+pub(crate) use spin::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 // A complex type for testing.
 #[doc(hidden)]

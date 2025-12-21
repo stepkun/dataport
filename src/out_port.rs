@@ -7,14 +7,14 @@ use core::{any::Any, ops::Deref};
 
 use alloc::{boxed::Box, sync::Arc};
 
-use crate::{Error, PortBase, RwLock, RwLockReadGuard, any_extensions::AnySendSync};
+use crate::{Error, PortBase, PortReadGuard, PortSetter, PortWriteGuard, Result, RwLock, any_extensions::AnySendSync};
 
 /// OutPort
 pub struct OutPort<T> {
 	/// An identifying name of the port, which must be unique for a given item.
 	name: &'static str,
 	/// The current value of the port.
-	value: RwLock<Option<T>>,
+	value: Arc<RwLock<Option<T>>>,
 }
 
 impl<T> core::fmt::Debug for OutPort<T> {
@@ -53,38 +53,201 @@ impl<T> PortBase for OutPort<T> {
 	}
 }
 
+impl<T> PortSetter<T> for OutPort<T> {
+	fn as_mut(&self) -> Result<PortWriteGuard<T>> {
+		self.by_mut()
+	}
+
+	fn set(&self, value: impl Into<T>) -> Option<T> {
+		self.value.write().replace(value.into())
+	}
+}
+
 impl<T> OutPort<T> {
 	#[must_use]
 	pub fn new(name: &'static str) -> Self {
 		Self {
 			name,
-			value: RwLock::new(None),
+			value: Arc::new(RwLock::new(None)),
 		}
 	}
 
 	#[must_use]
-	pub fn set_value(&self, value: impl Into<T>) -> Option<T> {
-		self.value.write().replace(value.into())
+	pub fn with(name: &'static str, value: impl Into<T>) -> Self {
+		Self {
+			name,
+			value: Arc::new(RwLock::new(Some(value.into()))),
+		}
+	}
+
+	pub(crate) fn by_ref(&self) -> Result<PortReadGuard<T>> {
+		// Test for value is separate to not pass a locked value into the guard.
+		let has_value = self.value.read().is_some();
+		if has_value {
+			PortReadGuard::new(self.name, self.value.clone())
+		} else {
+			Err(Error::NoValueSet { port: self.name })
+		}
+	}
+
+	pub(crate) fn try_by_ref(&self) -> Result<PortReadGuard<T>> {
+		// Test for value is separate to not pass a locked value into the guard.
+		let has_value = if let Some(guard) = self.value.try_read() {
+			guard.is_some()
+		} else {
+			return Err(Error::IsLocked { port: self.name });
+		};
+		if has_value {
+			PortReadGuard::try_new(self.name, self.value.clone())
+		} else {
+			Err(Error::NoValueSet { port: self.name })
+		}
+	}
+
+	pub(crate) fn by_mut(&self) -> Result<PortWriteGuard<T>> {
+		// Test for value is separate to not pass a locked value into the guard.
+		let has_value = self.value.read().is_some();
+		if has_value {
+			PortWriteGuard::new(self.name, self.value.clone())
+		} else {
+			Err(Error::NoValueSet { port: self.name })
+		}
+	}
+
+	pub(crate) fn try_by_mut(&self) -> Result<PortWriteGuard<T>> {
+		// Test for value is separate to not pass a locked value into the guard.
+		let has_value = if let Some(guard) = self.value.try_read() {
+			guard.is_some()
+		} else {
+			return Err(Error::IsLocked { port: self.name });
+		};
+		if has_value {
+			PortWriteGuard::try_new(self.name, self.value.clone())
+		} else {
+			Err(Error::NoValueSet { port: self.name })
+		}
 	}
 
 	#[must_use]
-	pub fn value(&self) -> Option<T> {
+	pub(crate) fn by_copy(&self) -> Option<T>
+	where
+		T: Clone,
+	{
+		self.value.read().clone()
+	}
+
+	#[must_use]
+	pub(crate) fn by_value(&self) -> Option<T> {
 		self.value.write().take()
 	}
 }
 
 #[cfg(test)]
 mod tests {
+	use core::f64::consts::PI;
+
 	use alloc::{string::String, vec::Vec};
 
 	use super::*;
 
 	const fn is_normal<T: Sized + Send + Sync>() {}
 
+	const CONST_NAME: &str = "p2";
+	static STATIC_NAME: &str = "p3";
+
 	// check, that the auto traits are available.
 	#[test]
 	const fn normal_types() {
 		is_normal::<&OutPort<Vec<String>>>();
 		is_normal::<OutPort<Vec<i32>>>();
+	}
+
+	#[test]
+	fn getter_setter() {
+		let mut o1 = OutPort::<i32>::new("p1");
+		let mut o2 = OutPort::<f64>::new(CONST_NAME);
+		let mut o3 = OutPort::<String>::new(STATIC_NAME);
+		let o4 = OutPort::<&str>::with("p4", "hello world");
+
+		o1.set(42);
+		o2.set(PI);
+		o3.set(String::from("the answer"));
+
+		// separate block to release locks
+		{
+			let o1_guard = o1.by_ref().unwrap();
+			let o2_guard = o2.by_ref().unwrap();
+			let o3_guard = o3.by_ref().unwrap();
+			let o4_guard = o4.by_ref().unwrap();
+
+			assert_eq!(o1_guard.deref(), &42);
+			assert_eq!(o2_guard.deref(), &PI);
+			assert_eq!(o3_guard.deref(), &String::from("the answer"));
+			assert_eq!(*o4_guard, "hello world");
+
+			assert_eq!(o1.try_by_ref().unwrap().deref(), &42);
+			assert_eq!(*o1.try_by_ref().unwrap(), 42);
+			assert_eq!(o2.try_by_ref().unwrap().deref(), &PI);
+			assert_eq!(*o2.try_by_ref().unwrap(), PI);
+			assert_eq!(o3.try_by_ref().unwrap().deref(), &String::from("the answer"));
+			assert_eq!(*o3.try_by_ref().unwrap(), String::from("the answer"));
+			assert_eq!(*o4.try_by_ref().unwrap(), "hello world");
+
+			assert!(o1.try_by_mut().is_err());
+			assert!(o2.try_by_mut().is_err());
+			assert!(o3.try_by_mut().is_err());
+			assert!(o4.try_by_mut().is_err());
+		}
+
+		assert_eq!(o1.by_copy().unwrap(), 42);
+		assert_eq!(o2.by_copy().unwrap(), PI);
+		assert_eq!(o3.by_copy().unwrap(), String::from("the answer"));
+		assert_eq!(o4.by_copy().unwrap(), "hello world");
+
+		// separate block to release locks
+		{
+			let o1_guard = o1.by_mut().unwrap();
+			let o2_guard = o2.by_mut().unwrap();
+			let o3_guard = o3.by_mut().unwrap();
+			let o4_guard = o4.by_mut().unwrap();
+
+			assert_eq!(o1_guard.deref(), &42);
+			assert_eq!(o2_guard.deref(), &PI);
+			assert_eq!(o3_guard.deref(), &String::from("the answer"));
+			assert_eq!(*o4_guard, "hello world");
+
+			assert!(o1.try_by_ref().is_err());
+			assert!(o2.try_by_ref().is_err());
+			assert!(o3.try_by_ref().is_err());
+			assert!(o4.try_by_ref().is_err());
+
+			assert!(o1.try_by_mut().is_err());
+			assert!(o2.try_by_mut().is_err());
+			assert!(o3.try_by_mut().is_err());
+			assert!(o4.try_by_mut().is_err());
+		}
+
+		assert_eq!(o1.by_value().unwrap(), 42);
+		assert_eq!(o2.by_value().unwrap(), PI);
+		assert_eq!(o3.by_value().unwrap(), String::from("the answer"));
+		assert_eq!(o4.by_value().unwrap(), "hello world");
+
+		assert!(o1.by_ref().is_err());
+		assert!(o1.try_by_ref().is_err());
+		assert!(o2.by_ref().is_err());
+		assert!(o2.try_by_ref().is_err());
+		assert!(o3.by_ref().is_err());
+		assert!(o3.try_by_ref().is_err());
+		assert!(o4.by_ref().is_err());
+		assert!(o4.try_by_ref().is_err());
+
+		assert!(o1.by_mut().is_err());
+		assert!(o1.try_by_mut().is_err());
+		assert!(o2.by_mut().is_err());
+		assert!(o2.try_by_mut().is_err());
+		assert!(o3.by_mut().is_err());
+		assert!(o3.try_by_mut().is_err());
+		assert!(o4.by_mut().is_err());
+		assert!(o4.try_by_mut().is_err());
 	}
 }

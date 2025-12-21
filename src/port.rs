@@ -7,42 +7,49 @@ use core::{any::Any, ops::Deref};
 
 use alloc::{boxed::Box, sync::Arc};
 
-use crate::{Error, RwLock, any_extensions::AnySendSync};
+use crate::{Error, PortReadGuard, PortWriteGuard, Result, RwLock, any_extensions::AnySendSync};
 
-/// BasePort.
+/// PortBase.
 pub trait PortBase {
+	#[must_use]
 	fn name(&self) -> &'static str;
 }
 
 /// PortDefault.
-pub trait PortDefault: PortBase {
+pub trait PortDefault<T>: PortBase {
 	/// Returns a default value for T.
 	/// The default implementation returns [`Error::NoDefaultDefined`]
 	/// # Errors
 	/// - [`Error::NoDefaultDefined`], if no default value is defined
-	fn default_value<T>(&self) -> Result<T, Error> {
-		Err(Error::NoDefaultDefined { port: self.name() })
+	fn default_value(&self) -> Result<T> {
+		Err(Error::NoValueSet { port: self.name() })
 	}
 }
 
-/// PortGetter's.
-pub trait PortGetter: PortDefault {
+/// Port getter's.
+pub trait PortGetter<T>: PortBase {
 	/// Returns a reference to the T.
-	fn as_ref<T>(&self) -> &T;
+	fn as_ref(&self) -> Result<PortReadGuard<T>>;
 
 	/// Returns a clone/copy of the T.
-	fn get<T>(&self) -> T
+	#[must_use]
+	fn get(&self) -> Option<T>
 	where
 		T: Clone;
+
+	/// Returns the T, deleting the value.
+	#[must_use]
+	fn take(&self) -> Option<T>;
 }
 
-/// PortSetter's.
-pub trait PortSetter: PortDefault {
+/// Port setter's.
+pub trait PortSetter<T>: PortBase {
 	/// Returns a mutable reference to the T.
-	fn as_mut<T>(&mut self) -> &mut T;
+	fn as_mut(&self) -> Result<PortWriteGuard<T>>;
 
 	/// Sets a new value to the T and returns the old T.
-	fn set<T>(&mut self, value: T) -> T;
+	#[must_use]
+	fn set(&self, value: impl Into<T>) -> Option<T>;
 }
 
 /// Port.

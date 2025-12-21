@@ -8,7 +8,7 @@
 use std::{f64::consts::PI, sync::Arc};
 
 use dataport::{
-	DynamicPortList, InOutPort, InPort, OutPort, Port, PortBase, PortDefault, PortHub, PortList, StaticPortList,
+	DynamicPortList, InOutPort, InPort, OutPort, Port, PortBase, PortGetter, PortHub, PortList, PortSetter, StaticPortList,
 };
 
 const CONST_NAME: &str = "p2";
@@ -28,41 +28,30 @@ fn port_connections() {
 	let mut o2 = OutPort::<f64>::new(CONST_NAME);
 	let mut o3 = OutPort::<String>::new(STATIC_NAME);
 
-	o1.set_value(42);
-	o2.set_value(PI);
-	o3.set_value(String::from("the answer"));
-	assert_eq!(o1.value().unwrap(), 42);
-	assert_eq!(o2.value().unwrap(), PI);
-	assert_eq!(o3.value().unwrap(), String::from("the answer"));
-
-	// set the values again before fetching them
-	o1.set_value(42);
-	o2.set_value(PI);
-	o3.set_value(String::from("the answer"));
+	o1.set(42);
+	o2.set(PI);
+	o3.set(String::from("the answer"));
 
 	io1.set_src(o1);
 	io2.set_src(o2);
 	io3.set_src(o3);
 
-	assert!(io1.src().is_some());
-	assert_eq!(io1.value().unwrap(), 42);
-	assert!(io2.src().is_some());
-	assert_eq!(io2.value().unwrap(), PI);
-	assert!(io3.src().is_some());
-	assert_eq!(io3.value().unwrap(), String::from("the answer"));
+	// for testing purpose we propagate the value directly to output
+	io1.propagate();
+	io2.propagate();
+	io3.propagate();
 
-	// set the values again before fetching them
-	io1.set_value(42);
-	io2.set_value(PI);
-	io3.set_value(String::from("the answer"));
+	assert_eq!(io1.get().unwrap(), 42);
+	assert_eq!(io2.get().unwrap(), PI);
+	assert_eq!(io3.get().unwrap(), String::from("the answer"));
 
 	i1.set_src(io1);
 	i2.set_src(io2);
 	i3.set_src(io3);
 
-	assert_eq!(i1.value().unwrap().unwrap(), 42);
-	assert_eq!(i2.value().unwrap().unwrap(), PI);
-	assert_eq!(i3.value().unwrap().unwrap(), String::from("the answer"));
+	assert_eq!(i1.get().unwrap(), 42);
+	assert_eq!(i2.get().unwrap(), PI);
+	assert_eq!(i3.get().unwrap(), String::from("the answer"));
 }
 
 struct BasicStruct {

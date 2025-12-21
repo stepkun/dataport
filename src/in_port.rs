@@ -7,7 +7,7 @@ use core::{any::Any, ops::Deref};
 
 use alloc::{boxed::Box, sync::Arc};
 
-use crate::{Error, OutPort, PortBase, RwLock, RwLockReadGuard, any_extensions::AnySendSync};
+use crate::{Error, OutPort, PortBase, PortDefault, PortGetter, PortReadGuard, Result, RwLock, any_extensions::AnySendSync};
 
 /// InPort
 pub struct InPort<T> {
@@ -53,12 +53,45 @@ impl<T> PortBase for InPort<T> {
 	}
 }
 
+impl<T> PortGetter<T> for InPort<T> {
+	fn as_ref(&self) -> Result<PortReadGuard<T>> {
+		todo!()
+	}
+
+	fn get(&self) -> Option<T>
+	where
+		T: Clone,
+	{
+		if let Some(src) = &*self.src.read() {
+			src.by_copy()
+		} else {
+			None
+		}
+	}
+
+	fn take(&self) -> Option<T> {
+		if let Some(src) = &*self.src.read() {
+			src.by_value()
+		} else {
+			None
+		}
+	}
+}
+
 impl<T> InPort<T> {
 	#[must_use]
 	pub fn new(name: &'static str) -> Self {
 		Self {
 			name,
 			src: RwLock::new(None),
+		}
+	}
+
+	#[must_use]
+	pub fn with(name: &'static str, src: impl Into<Arc<OutPort<T>>>) -> Self {
+		Self {
+			name,
+			src: RwLock::new(Some(src.into())),
 		}
 	}
 
@@ -70,14 +103,6 @@ impl<T> InPort<T> {
 	#[must_use]
 	pub fn set_src(&self, src: impl Into<Arc<OutPort<T>>>) -> Option<Arc<OutPort<T>>> {
 		self.src.write().replace(src.into())
-	}
-
-	pub fn value(&self) -> Result<Option<T>, Error> {
-		if let Some(src) = &*self.src.read() {
-			Ok(src.value())
-		} else {
-			Err(Error::NoSrcSet { port: self.name })
-		}
 	}
 }
 

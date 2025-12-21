@@ -7,26 +7,29 @@ use core::{any::Any, ops::Deref};
 
 use alloc::{boxed::Box, sync::Arc};
 
-use crate::{Error, InPort, OutPort, PortBase, RwLock, RwLockReadGuard, any_extensions::AnySendSync};
+use crate::{
+	Error, InPort, OutPort, PortBase, PortGetter, PortReadGuard, PortSetter, PortWriteGuard, Result, RwLock,
+	any_extensions::AnySendSync,
+};
 
 /// InOutPort
-/// Be aware, that the input and output side are connected.
-/// If there is no OutPort value, the InPort value is used and consumed directly
+/// Be aware, that the input and output side are not automatically connected.
+/// The input value has to be propagated manually.
 pub struct InOutPort<T> {
-	/// Internal [`OutPort`] which also provides an identifying name of the port,
+	/// Internal [`InPort`] which also provides an identifying name of the port,
 	/// which must be unique for a given item.
-	output: Arc<OutPort<T>>,
-	/// Internal [`InPort`] which provides the same unique identifying name of
-	/// the port as the internal [`OutPort`].
 	input: Arc<InPort<T>>,
+	/// Internal [`OutPort`] which provides the same unique identifying name of
+	/// the port as the internal [`InPort`].
+	output: Arc<OutPort<T>>,
 }
 
 impl<T> core::fmt::Debug for InOutPort<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		f.debug_struct("InOutPort")
-			.field("name", &self.output.name())
-			//.field("src", &self.src)
-			//.field("value", &self.out.value)
+			.field("name", &self.input.name())
+			//.field("input", &self.input)
+			//.field("output", &self.output)
 			.finish_non_exhaustive()
 	}
 }
@@ -44,12 +47,47 @@ impl<T> PortBase for InOutPort<T> {
 	}
 }
 
+impl<T> PortGetter<T> for InOutPort<T> {
+	fn as_ref(&self) -> Result<PortReadGuard<T>> {
+		self.output.by_ref()
+	}
+
+	fn get(&self) -> Option<T>
+	where
+		T: Clone,
+	{
+		self.output.by_copy()
+	}
+
+	fn take(&self) -> Option<T> {
+		self.output.by_value()
+	}
+}
+
+impl<T> PortSetter<T> for InOutPort<T> {
+	fn as_mut(&self) -> Result<PortWriteGuard<T>> {
+		self.output.as_mut()
+	}
+
+	fn set(&self, value: impl Into<T>) -> Option<T> {
+		self.output.set(value)
+	}
+}
+
 impl<T> InOutPort<T> {
 	#[must_use]
 	pub fn new(name: &'static str) -> Self {
 		Self {
-			output: Arc::new(OutPort::<T>::new(name)),
 			input: Arc::new(InPort::<T>::new(name)),
+			output: Arc::new(OutPort::<T>::new(name)),
+		}
+	}
+
+	#[must_use]
+	pub fn with(name: &'static str, src: impl Into<Arc<OutPort<T>>>) -> Self {
+		Self {
+			input: Arc::new(InPort::<T>::with(name, src)),
+			output: Arc::new(OutPort::<T>::new(name)),
 		}
 	}
 
@@ -63,20 +101,11 @@ impl<T> InOutPort<T> {
 		self.input.set_src(src)
 	}
 
-	#[must_use]
-	pub fn set_value(&self, value: impl Into<T>) -> Option<T> {
-		self.output.set_value(value)
-	}
-
-	#[must_use]
-	pub fn value(&self) -> Option<T> {
-		// if the output has no value, use value from input
-		let tmp = self.output.value();
-		if tmp.is_none() {
-			self.input.value().unwrap_or_default()
-		} else {
-			tmp
-		}
+	/// Propagate an evantually existing value from input to output.
+	pub fn propagate(&self) {
+		if let Some(value) = self.src().unwrap().by_value() {
+			let _x = self.output.set(value);
+		};
 	}
 }
 

@@ -1,6 +1,9 @@
 // Copyright © 2025 Stephan Kunz
 //! dataport errors.
 
+/// Shortcut for [`dataport`](crate)'s Result<T, E> type
+pub type Result<T> = core::result::Result<T, Error>;
+
 /// Dataport error.
 #[non_exhaustive]
 pub enum Error {
@@ -11,12 +14,17 @@ pub enum Error {
 		/// Name of the port.
 		port: &'static str,
 	},
-	/// No default value defined for a Port.
-	NoDefaultDefined {
+	/// Port is currently locked.
+	IsLocked {
 		/// Name of the port.
 		port: &'static str,
 	},
-	/// No source for the value of a Port set.
+	/// No default value defined for a port.
+	NoValueSet {
+		/// Name of the port.
+		port: &'static str,
+	},
+	/// No source for the value of a port set.
 	NoSrcSet {
 		/// Name of the port.
 		port: &'static str,
@@ -30,7 +38,8 @@ impl core::fmt::Debug for Error {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		match self {
 			Self::CouldNotConvert { value, port } => write!(f, "CouldNotConvert(value: {value}, port: {port})"),
-			Self::NoDefaultDefined { port } => write!(f, "NoDefaultDefined(port: {port})"),
+			Self::IsLocked { port } => write!(f, "IsLocked(port: {port})"),
+			Self::NoValueSet { port } => write!(f, "NoDefaultDefined(port: {port})"),
 			Self::NoSrcSet { port } => write!(f, "NoSrcSet(port: {port})"),
 		}
 	}
@@ -40,7 +49,8 @@ impl core::fmt::Display for Error {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		match self {
 			Self::CouldNotConvert { value, port } => write!(f, "could not convert '{value}' into wanted type for '{port}'"),
-			Self::NoDefaultDefined { port } => write!(f, "no default defined for port '{port}'"),
+			Self::IsLocked { port } => write!(f, "port '{port}' is currently locked"),
+			Self::NoValueSet { port } => write!(f, "no default defined for port '{port}'"),
 			Self::NoSrcSet { port } => write!(f, "no source set for value of port '{port}'"),
 		}
 	}
