@@ -1,47 +1,14 @@
 // Copyright © 2025 Stephan Kunz
 //! List of ports.
 
-#![allow(unused)]
-
 use core::ops::Deref;
 use core::ops::DerefMut;
 
 use alloc::vec::Vec;
 
-use crate::port::{Port, PortBase};
-
-/// PortList.
-pub trait PortList {
-	/// Returns a reference to the port list.
-	fn portlist(&self) -> &[Port];
-
-	/// Lookup a [`Port`].
-	#[must_use]
-	fn find(&self, name: &str) -> Option<&Port> {
-		self.portlist()
-			.iter()
-			.find(|&port| port.name() == name)
-			.map(|v| v as _)
-	}
-}
-
-/// PortHub.
-pub trait PortHub: PortList {
-	/// Returns a mutable reference to the port list.
-	fn portlist_mut(&mut self) -> &mut Vec<Port>;
-
-	/// Adds a port to the portlist.
-	fn add(&mut self, port: Port) {
-		self.portlist_mut().push(port)
-	}
-
-	/// Removes a port from the port list.
-	fn remove(&mut self, name: &str) -> Option<Port> {
-		let list = self.portlist_mut();
-		let index = list.iter().position(|port| port.name() == name);
-		index.map(|index| list.remove(index))
-	}
-}
+use crate::Port;
+use crate::PortHub;
+use crate::PortList;
 
 /// StaticPortList.
 pub struct StaticPortList<const S: usize>([Port; S]);
@@ -104,6 +71,8 @@ impl DynamicPortList {
 
 #[cfg(test)]
 mod tests {
+	use alloc::string::String;
+
 	use super::*;
 
 	const fn is_normal<T: Sized + Send + Sync>() {}
@@ -123,13 +92,16 @@ mod tests {
 	// test constructors.
 	#[test]
 	fn constructors() {
-		let s0 = StaticPortList::new([]);
-		let s1 = StaticPortList::new([Port::new("p1")]);
-		let s2 = StaticPortList::new([Port::new("p1"), Port::new(CONST_NAME)]);
-		let s3 = StaticPortList::new([
-			Port::new("p1"),
-			Port::new(CONST_NAME),
-			Port::new(STATIC_NAME),
+		let _s0 = StaticPortList::new([]);
+		let _s1 = StaticPortList::new([Port::create_inport::<i32>("p1")]);
+		let _s2 = StaticPortList::new([
+			Port::create_inport::<i32>("p1"),
+			Port::create_inport::<f64>(CONST_NAME),
+		]);
+		let _s3 = StaticPortList::new([
+			Port::create_inport::<i32>("p1"),
+			Port::create_inport::<f64>(CONST_NAME),
+			Port::create_inport::<String>(STATIC_NAME),
 		]);
 	}
 
@@ -139,9 +111,9 @@ mod tests {
 		// static list
 		{
 			let s = StaticPortList::new([
-				Port::new("p1"),
-				Port::new(CONST_NAME),
-				Port::new(STATIC_NAME),
+				Port::create_inport::<i32>("p1"),
+				Port::create_inport::<f64>(CONST_NAME),
+				Port::create_inport::<String>(STATIC_NAME),
 			]);
 
 			assert!(s.find("p1").is_some());
@@ -157,9 +129,9 @@ mod tests {
 		use alloc::vec;
 
 		let s = DynamicPortList::new(vec![
-			Port::new("p1"),
-			Port::new(CONST_NAME),
-			Port::new(STATIC_NAME),
+			Port::create_inport::<i32>("p1"),
+			Port::create_inport::<f64>(CONST_NAME),
+			Port::create_inport::<String>(STATIC_NAME),
 		]);
 
 		assert!(s.find("p1").is_some());

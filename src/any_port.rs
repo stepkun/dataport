@@ -5,8 +5,10 @@
 
 use core::any::Any;
 
+use crate::PortBase;
+
 /// The `AnySendSync` trait allows to send data between threads.
-pub(crate) trait AnySendSync: Any + Send + Sync {
+pub(crate) trait AnyPort: Any + core::fmt::Debug + PortBase + Send + Sync {
 	/// Convert to Any
 	#[must_use]
 	fn as_any(&self) -> &dyn Any;
@@ -17,7 +19,7 @@ pub(crate) trait AnySendSync: Any + Send + Sync {
 }
 
 /// Implementation for any type that has a `static` lifetime and implements [`Send`] and [`Sync`].
-impl<T: 'static + Send + Sync> AnySendSync for T {
+impl<T: 'static + core::fmt::Debug + PortBase + Send + Sync> AnyPort for T {
 	fn as_any(&self) -> &dyn Any {
 		self
 	}

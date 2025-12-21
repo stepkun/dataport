@@ -1,16 +1,9 @@
 // Copyright © 2025 Stephan Kunz
 //! Port.
 
-#![allow(unused)]
+use alloc::sync::Arc;
 
-use core::{any::Any, ops::Deref};
-
-use alloc::{boxed::Box, sync::Arc};
-
-use crate::{
-	Error, InPort, OutPort, PortBase, PortGetter, PortReadGuard, PortSetter, PortWriteGuard, Result, RwLock,
-	any_extensions::AnySendSync,
-};
+use crate::{InPort, OutPort, PortBase, PortGetter, PortReadGuard, PortSetter, PortWriteGuard, Result};
 
 /// InOutPort
 /// Be aware, that the input and output side are not automatically connected.
@@ -69,7 +62,11 @@ impl<T> PortSetter<T> for InOutPort<T> {
 		self.output.as_mut()
 	}
 
-	fn set(&self, value: impl Into<T>) -> Option<T> {
+	fn replace(&self, value: impl Into<T>) -> Option<T> {
+		self.output.replace(value)
+	}
+
+	fn set(&self, value: impl Into<T>) {
 		self.output.set(value)
 	}
 }
@@ -104,7 +101,7 @@ impl<T> InOutPort<T> {
 	/// Propagate an evantually existing value from input to output.
 	pub fn propagate(&self) {
 		if let Some(value) = self.src().unwrap().by_value() {
-			let _x = self.output.set(value);
+			self.output.set(value);
 		};
 	}
 }
@@ -125,7 +122,7 @@ impl<T> From<InOutPort<T>> for Arc<OutPort<T>> {
 
 #[cfg(test)]
 mod tests {
-	use alloc::{string::String, vec::Vec};
+	use alloc::string::String;
 
 	use super::*;
 

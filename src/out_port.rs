@@ -3,11 +3,11 @@
 
 #![allow(unused)]
 
-use core::{any::Any, ops::Deref};
+use core::any::Any;
 
-use alloc::{boxed::Box, sync::Arc};
+use alloc::sync::Arc;
 
-use crate::{Error, PortBase, PortReadGuard, PortSetter, PortWriteGuard, Result, RwLock, any_extensions::AnySendSync};
+use crate::{Error, PortBase, PortReadGuard, PortSetter, PortWriteGuard, Result, RwLock};
 
 /// OutPort
 pub struct OutPort<T> {
@@ -58,8 +58,12 @@ impl<T> PortSetter<T> for OutPort<T> {
 		self.by_mut()
 	}
 
-	fn set(&self, value: impl Into<T>) -> Option<T> {
+	fn replace(&self, value: impl Into<T>) -> Option<T> {
 		self.value.write().replace(value.into())
+	}
+
+	fn set(&self, value: impl Into<T>) {
+		*self.value.write() = Some(value.into());
 	}
 }
 
@@ -144,7 +148,7 @@ impl<T> OutPort<T> {
 
 #[cfg(test)]
 mod tests {
-	use core::f64::consts::PI;
+	use core::{f64::consts::PI, ops::Deref};
 
 	use alloc::{string::String, vec::Vec};
 
@@ -163,10 +167,10 @@ mod tests {
 	}
 
 	#[test]
-	fn getter_setter() {
-		let mut o1 = OutPort::<i32>::new("p1");
-		let mut o2 = OutPort::<f64>::new(CONST_NAME);
-		let mut o3 = OutPort::<String>::new(STATIC_NAME);
+	fn non_public_accessors() {
+		let o1 = OutPort::<i32>::new("p1");
+		let o2 = OutPort::<f64>::new(CONST_NAME);
+		let o3 = OutPort::<String>::new(STATIC_NAME);
 		let o4 = OutPort::<&str>::with("p4", "hello world");
 
 		o1.set(42);

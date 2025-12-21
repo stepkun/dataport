@@ -1,23 +1,17 @@
 // Copyright © 2025 Stephan Kunz
 //! Port.
 
-#![allow(unused)]
-
-use core::{
-	any::Any,
-	ops::{Deref, DerefMut},
-};
-
-type EntryPtr = i32;
+use core::ops::{Deref, DerefMut};
 
 use alloc::sync::Arc;
 
-use crate::{Error, InPort, Result, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use crate::{Error, Result, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 /// Read-Locked port guard.
-/// Until this value is dropped, a read lock is held on the entry.
+/// Until this value is dropped, a read lock is held on the ports value.
 ///
 /// Implements [`Deref`], providing read access to the locked `T`.
+#[must_use = "a `PortReadGuard` should be used"]
 pub struct PortReadGuard<T> {
 	/// `Arc` to a `value`
 	value: Arc<RwLock<Option<T>>>,
@@ -92,9 +86,10 @@ impl<T> PortReadGuard<T> {
 }
 
 /// Write-Locked entry guard.
-/// Until this value is dropped, a write lock is held on the entry.
+/// Until this value is dropped, a write lock is held on the ports value.
 ///
 /// Implements [`Deref`] & [`DerefMut`], providing access to the locked `T`.
+#[must_use = "a `PortWriteGuard` should be used"]
 pub struct PortWriteGuard<T> {
 	/// `Arc` to a `value`
 	value: Arc<RwLock<Option<T>>>,
@@ -175,16 +170,17 @@ impl<T> PortWriteGuard<T> {
 		Ok(Self { value, ptr_t })
 	}
 }
-#[cfg(test)]
-mod tests {
-	use super::*;
 
-	const fn is_normal<T: Sized + Send + Sync>() {}
-
-	// check, that the auto traits are available.
-	#[test]
-	const fn normal_types() {
-		//is_normal::<PortReadGuard<i32>>();
-		//is_normal::<PortWriteGuard<i32>>();
-	}
-}
+//#[cfg(test)]
+//mod tests {
+//	use super::*;
+//
+//	const fn is_normal<T: Sized + Send + Sync>() {}
+//
+//	// check, that the auto traits are available.
+//	#[test]
+//	const fn normal_types() {
+//		is_normal::<PortReadGuard<i32>>();
+//		is_normal::<PortWriteGuard<i32>>();
+//	}
+//}

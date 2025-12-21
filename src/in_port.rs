@@ -1,13 +1,11 @@
 // Copyright © 2025 Stephan Kunz
 //! Port.
 
-#![allow(unused)]
-
 use core::{any::Any, ops::Deref};
 
-use alloc::{boxed::Box, sync::Arc};
+use alloc::sync::Arc;
 
-use crate::{Error, OutPort, PortBase, PortDefault, PortGetter, PortReadGuard, Result, RwLock, any_extensions::AnySendSync};
+use crate::{Error, OutPort, PortBase, PortGetter, PortReadGuard, Result, RwLock};
 
 /// InPort
 pub struct InPort<T> {
@@ -55,7 +53,11 @@ impl<T> PortBase for InPort<T> {
 
 impl<T> PortGetter<T> for InPort<T> {
 	fn as_ref(&self) -> Result<PortReadGuard<T>> {
-		todo!()
+		if let Some(src) = &*self.src.read() {
+			src.by_ref()
+		} else {
+			Err(Error::NoSrcSet { port: self.name })
+		}
 	}
 
 	fn get(&self) -> Option<T>
@@ -108,7 +110,7 @@ impl<T> InPort<T> {
 
 #[cfg(test)]
 mod tests {
-	use alloc::{string::String, vec::Vec};
+	use alloc::string::String;
 
 	use super::*;
 
@@ -127,9 +129,9 @@ mod tests {
 	// basic checks
 	#[test]
 	fn basics() {
-		let mut i1 = InPort::<i32>::new("p1");
-		let mut i2 = InPort::<f64>::new(CONST_NAME);
-		let mut i3 = InPort::<String>::new(STATIC_NAME);
+		let i1 = InPort::<i32>::new("p1");
+		let i2 = InPort::<f64>::new(CONST_NAME);
+		let i3 = InPort::<String>::new(STATIC_NAME);
 
 		assert_eq!(i1.name(), "p1");
 		assert_eq!(i2.name(), "p2");

@@ -65,18 +65,18 @@ fn static_declaration() {
 	let s1 = BasicStruct {
 		other_field: 1,
 		ports: StaticPortList::new([
-			Port::new("p1"),
-			Port::new(CONST_NAME),
-			Port::new(STATIC_NAME),
+			Port::create_inport::<i32>("p1"),
+			Port::create_inport::<f64>(CONST_NAME),
+			Port::create_inport::<String>(STATIC_NAME),
 		]),
 	};
 
 	let s2 = BasicStruct {
 		other_field: 2,
 		ports: StaticPortList::new([
-			Port::new(STATIC_NAME),
-			Port::new(CONST_NAME),
-			Port::new("p1"),
+			Port::create_inport::<i32>(STATIC_NAME),
+			Port::create_inport::<f64>(CONST_NAME),
+			Port::create_inport::<String>("p1"),
 		]),
 	};
 
@@ -104,16 +104,18 @@ fn dynamic_provisioning() {
 	assert!(s1.ports.find(CONST_NAME).is_none());
 	assert!(s1.ports.find(STATIC_NAME).is_none());
 
-	s1.ports.add(Port::new("p1"));
-	s1.ports.add(Port::new(CONST_NAME));
-	s1.ports.add(Port::new(STATIC_NAME));
+	s1.ports.add(Port::create_inport::<i32>("p1"));
+	s1.ports
+		.add(Port::create_inport::<f64>(CONST_NAME));
+	s1.ports
+		.add(Port::create_inport::<String>(STATIC_NAME));
 
 	let s2 = DynamicStruct {
 		other_field: 1,
 		ports: DynamicPortList::new(vec![
-			Port::new(STATIC_NAME),
-			Port::new(CONST_NAME),
-			Port::new("p1"),
+			Port::create_inport::<i32>(STATIC_NAME),
+			Port::create_inport::<f64>(CONST_NAME),
+			Port::create_inport::<String>("p1"),
 		]),
 	};
 
