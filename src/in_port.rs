@@ -5,7 +5,7 @@ use core::{any::Any, ops::Deref};
 
 use alloc::sync::Arc;
 
-use crate::{Error, OutPort, PortBase, PortGetter, PortReadGuard, Result, RwLock};
+use crate::{Error, OutPort, PortBase, PortGetter, PortReadGuard, Result, RwLock, any_port::AnyPort};
 
 /// InPort
 pub struct InPort<T> {
@@ -13,6 +13,16 @@ pub struct InPort<T> {
 	name: &'static str,
 	/// The source [`OutPort`] to fetch new values from.
 	src: RwLock<Option<Arc<OutPort<T>>>>,
+}
+
+impl<T: 'static + Send + Sync> AnyPort for InPort<T> {
+	fn as_any(&self) -> &dyn Any {
+		self
+	}
+
+	fn as_mut_any(&mut self) -> &mut dyn Any {
+		self
+	}
 }
 
 impl<T> core::fmt::Debug for InPort<T> {

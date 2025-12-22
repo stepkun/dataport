@@ -3,7 +3,7 @@
 
 use alloc::vec::Vec;
 
-use crate::{Error, Port, PortReadGuard, PortWriteGuard, Result};
+use crate::{Error, InOutPort, Port, PortReadGuard, PortWriteGuard, Result, any_port::AnyPort};
 
 /// PortBase.
 pub trait PortBase {
@@ -53,8 +53,87 @@ pub trait PortSetter<T>: PortBase {
 
 /// PortList.
 pub trait PortList {
+	/// Connects the ouput of src_port to dest_list's dest_port.
+	fn connect_ports<T: 'static + Send + Sync>(
+		&self,
+		src_port: &'static str,
+		dest_list: &impl PortList,
+		dest_port: &'static str,
+	) -> Result<()> {
+		if let Some(port) = self.find(src_port) {
+			// src_port must be output
+			if let Some(out_port) = port.as_out_port::<T>() {
+				// dest_port must be input
+				if let Some(port) = dest_list.find(dest_port) {
+					if let Some(in_port) = port.as_in_port::<T>() {
+						if in_port.src().is_none() {
+							let _ = in_port.set_src(out_port.clone());
+							Ok(())
+						} else {
+							Err(Error::SrcAlreadySet { port: dest_port })
+						}
+					} else {
+						Err(Error::WrongType { port: dest_port })
+					}
+				} else {
+					Err(Error::NotFound { port: dest_port })
+				}
+			} else {
+				Err(Error::WrongType { port: src_port })
+			}
+		} else {
+			Err(Error::NotFound { port: src_port })
+		}
+	}
+
+	/// Returns a copy of the value of that port.
+	fn get<T: 'static + Clone + Send + Sync>(&self, port: &'static str) -> Result<Option<T>> {
+		if let Some(port_) = self.find(port) {
+			// port must be input
+			if let Some(in_port) = port_.as_in_port::<T>() {
+				Ok(in_port.get())
+			} else {
+				Err(Error::WrongType { port })
+			}
+		} else {
+			Err(Error::NotFound { port })
+		}
+	}
+
 	/// Returns a reference to the port list.
 	fn portlist(&self) -> &[Port];
+
+	/// Propagate an inout port's value from in to out.
+	fn propagate<T: 'static>(&self, port: &'static str) -> Result<()> {
+		if let Some(port_) = self.find(port) {
+			let p = &*port_.port();
+			let any_port = AnyPort::as_any(p);
+			if let Some(inout_port) = any_port.downcast_ref::<InOutPort<T>>() {
+				// Now we now this is an InOutPort<T>, return the output part.
+				inout_port.propagate();
+				Ok(())
+			} else {
+				Err(Error::WrongType { port })
+			}
+		} else {
+			Err(Error::NotFound { port })
+		}
+	}
+
+	/// Sets the port to the value.
+	fn set<T: 'static + Send + Sync>(&self, port: &'static str, value: T) -> Result<()> {
+		if let Some(port_) = self.find(port) {
+			// src_port must be output
+			if let Some(out_port) = port_.as_out_port::<T>() {
+				out_port.set(value);
+				Ok(())
+			} else {
+				Err(Error::WrongType { port })
+			}
+		} else {
+			Err(Error::NotFound { port })
+		}
+	}
 
 	/// Lookup a [`Port`].
 	#[must_use]

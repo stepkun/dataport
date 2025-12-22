@@ -93,15 +93,15 @@ mod tests {
 	#[test]
 	fn constructors() {
 		let _s0 = StaticPortList::new([]);
-		let _s1 = StaticPortList::new([Port::create_inport::<i32>("p1")]);
+		let _s1 = StaticPortList::new([Port::create_in_port::<i32>("p1")]);
 		let _s2 = StaticPortList::new([
-			Port::create_inport::<i32>("p1"),
-			Port::create_inport::<f64>(CONST_NAME),
+			Port::create_in_port::<i32>("p1"),
+			Port::create_in_port::<f64>(CONST_NAME),
 		]);
 		let _s3 = StaticPortList::new([
-			Port::create_inport::<i32>("p1"),
-			Port::create_inport::<f64>(CONST_NAME),
-			Port::create_inport::<String>(STATIC_NAME),
+			Port::create_in_port::<i32>("p1"),
+			Port::create_in_port::<f64>(CONST_NAME),
+			Port::create_in_port::<String>(STATIC_NAME),
 		]);
 	}
 
@@ -111,9 +111,9 @@ mod tests {
 		// static list
 		{
 			let s = StaticPortList::new([
-				Port::create_inport::<i32>("p1"),
-				Port::create_inport::<f64>(CONST_NAME),
-				Port::create_inport::<String>(STATIC_NAME),
+				Port::create_in_port::<i32>("p1"),
+				Port::create_in_port::<f64>(CONST_NAME),
+				Port::create_in_port::<String>(STATIC_NAME),
 			]);
 
 			assert!(s.find("p1").is_some());
@@ -129,9 +129,9 @@ mod tests {
 		use alloc::vec;
 
 		let s = DynamicPortList::new(vec![
-			Port::create_inport::<i32>("p1"),
-			Port::create_inport::<f64>(CONST_NAME),
-			Port::create_inport::<String>(STATIC_NAME),
+			Port::create_in_port::<i32>("p1"),
+			Port::create_in_port::<f64>(CONST_NAME),
+			Port::create_in_port::<String>(STATIC_NAME),
 		]);
 
 		assert!(s.find("p1").is_some());

@@ -3,11 +3,14 @@
 
 #![allow(unused)]
 
-use core::{any::Any, ops::Deref};
+use core::any::Any;
 
-use alloc::{boxed::Box, sync::Arc};
+use alloc::sync::Arc;
 
-use crate::{InOutPort, InPort, OutPort, PortBase, any_port::AnyPort};
+use crate::{
+	InOutPort, InPort, OutPort, PortBase,
+	any_port::{self, AnyPort, AnySendSync},
+};
 
 /// Port.
 pub struct Port {
@@ -26,7 +29,10 @@ impl core::fmt::Debug for Port {
 impl PartialEq for Port {
 	/// Ports are partial equal, if both have the same name & type
 	fn eq(&self, other: &Self) -> bool {
-		if self.name() == other.name() && self.port.type_id() == other.port.type_id() {
+		if self.name() == other.name()
+		  // check the 'dyn AnyPort', not the Arc 
+		  && (*self.port).type_id() == (*other.port).type_id()
+		{
 			return true;
 		}
 		false
@@ -40,22 +46,68 @@ impl PortBase for Port {
 }
 
 impl Port {
-	pub fn create_inport<T: 'static + Send + Sync>(name: &'static str) -> Self {
+	pub fn create_in_port<T: 'static + Send + Sync>(name: &'static str) -> Self {
 		Self {
 			port: Arc::new(InPort::<T>::new(name)),
 		}
 	}
 
-	pub fn create_inoutport<T: 'static + Send + Sync>(name: &'static str) -> Self {
+	pub fn create_inout_port<T: 'static + Send + Sync>(name: &'static str) -> Self {
 		Self {
 			port: Arc::new(InOutPort::<T>::new(name)),
 		}
 	}
 
-	pub fn create_outport<T: 'static + Send + Sync>(name: &'static str) -> Self {
+	pub fn create_out_port<T: 'static + Send + Sync>(name: &'static str) -> Self {
 		Self {
 			port: Arc::new(OutPort::<T>::new(name)),
 		}
+	}
+
+	pub(crate) fn as_in_port<T: 'static + Send + Sync>(&self) -> Option<Arc<InPort<T>>> {
+		// helper function to downcast the `Arc<dyn Any>` to `Arc<InPort<T>>`
+		fn cast_arc_any_to_in_port<T: 'static + Send + Sync>(
+			any_value: Arc<dyn Any + Send + Sync>,
+		) -> Option<Arc<InPort<T>>> {
+			any_value.downcast::<InPort<T>>().ok()
+		}
+
+		let in_port = cast_arc_any_to_in_port::<T>(self.port.clone());
+		if in_port.is_some() {
+			return in_port;
+		}
+
+		let any_port = AnyPort::as_any(&*self.port);
+		if let Some(inout_port) = any_port.downcast_ref::<InOutPort<T>>() {
+			// Now we now this is an InOutPort<T>, return the input part.
+			return Some(inout_port.input());
+		}
+		None
+	}
+
+	pub(crate) fn as_out_port<T: 'static + Send + Sync>(&self) -> Option<Arc<OutPort<T>>> {
+		// helper function to downcast the `Arc<dyn Any>` to `Arc<OutPort<T>>`
+		fn cast_arc_any_to_out_port<T: 'static + Send + Sync>(
+			any_value: Arc<dyn Any + Send + Sync>,
+		) -> Option<Arc<OutPort<T>>> {
+			any_value.downcast::<OutPort<T>>().ok()
+		}
+
+		let x = cast_arc_any_to_out_port::<T>(self.port.clone());
+		if x.is_some() {
+			return x;
+		}
+
+		let any_port = AnyPort::as_any(&*self.port);
+		if let Some(inout_port) = any_port.downcast_ref::<InOutPort<T>>() {
+			// Now we now this is an InOutPort<T>, return the output part.
+			return Some(inout_port.output());
+		}
+		None
+	}
+
+	pub(crate) fn port(&self) -> Arc<dyn AnyPort> {
+		self.port.clone()
 	}
 }
 
@@ -70,5 +122,31 @@ mod tests {
 	const fn normal_types() {
 		is_normal::<&Port>();
 		is_normal::<Port>();
+	}
+
+	// check casting.
+	#[test]
+	fn casting() {
+		let p1 = Port::create_in_port::<i32>("in");
+		assert!(p1.as_out_port::<f64>().is_none());
+		assert!(p1.as_out_port::<i32>().is_none());
+		assert!(p1.as_in_port::<f64>().is_none());
+		assert!(p1.as_in_port::<i32>().is_some());
+		let in_port: Arc<InPort<i32>> = p1.as_in_port().unwrap();
+		assert_eq!(in_port.name(), "in");
+
+		let p2 = Port::create_out_port::<i32>("out");
+		assert!(p2.as_out_port::<f64>().is_none());
+		assert!(p2.as_out_port::<i32>().is_some());
+		let out_port: Arc<OutPort<i32>> = p2.as_out_port().unwrap();
+		assert_eq!(out_port.name(), "out");
+
+		let p3 = Port::create_inout_port::<i32>("inout");
+		assert!(p3.as_in_port::<f64>().is_none());
+		assert!(p3.as_out_port::<f64>().is_none());
+		let in_port: Arc<InPort<i32>> = p3.as_in_port().unwrap();
+		assert_eq!(in_port.name(), "inout");
+		let out_port: Arc<OutPort<i32>> = p3.as_out_port().unwrap();
+		assert_eq!(out_port.name(), "inout");
 	}
 }

@@ -1,9 +1,11 @@
 // Copyright © 2025 Stephan Kunz
 //! Port.
 
+use core::any::Any;
+
 use alloc::sync::Arc;
 
-use crate::{InPort, OutPort, PortBase, PortGetter, PortReadGuard, PortSetter, PortWriteGuard, Result};
+use crate::{InPort, OutPort, PortBase, PortGetter, PortReadGuard, PortSetter, PortWriteGuard, Result, any_port::AnyPort};
 
 /// InOutPort
 /// Be aware, that the input and output side are not automatically connected.
@@ -15,6 +17,16 @@ pub struct InOutPort<T> {
 	/// Internal [`OutPort`] which provides the same unique identifying name of
 	/// the port as the internal [`InPort`].
 	output: Arc<OutPort<T>>,
+}
+
+impl<T: 'static + Send + Sync> AnyPort for InOutPort<T> {
+	fn as_any(&self) -> &dyn Any {
+		self
+	}
+
+	fn as_mut_any(&mut self) -> &mut dyn Any {
+		self
+	}
 }
 
 impl<T> core::fmt::Debug for InOutPort<T> {
@@ -103,6 +115,14 @@ impl<T> InOutPort<T> {
 		if let Some(value) = self.src().unwrap().by_value() {
 			self.output.set(value);
 		};
+	}
+
+	pub(crate) fn input(&self) -> Arc<InPort<T>> {
+		self.input.clone()
+	}
+
+	pub(crate) fn output(&self) -> Arc<OutPort<T>> {
+		self.output.clone()
 	}
 }
 

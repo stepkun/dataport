@@ -7,7 +7,7 @@ use core::any::Any;
 
 use alloc::sync::Arc;
 
-use crate::{Error, PortBase, PortReadGuard, PortSetter, PortWriteGuard, Result, RwLock};
+use crate::{Error, PortBase, PortReadGuard, PortSetter, PortWriteGuard, Result, RwLock, any_port::AnyPort};
 
 /// OutPort
 pub struct OutPort<T> {
@@ -15,6 +15,16 @@ pub struct OutPort<T> {
 	name: &'static str,
 	/// The current value of the port.
 	value: Arc<RwLock<Option<T>>>,
+}
+
+impl<T: 'static + Send + Sync> AnyPort for OutPort<T> {
+	fn as_any(&self) -> &dyn Any {
+		self
+	}
+
+	fn as_mut_any(&mut self) -> &mut dyn Any {
+		self
+	}
 }
 
 impl<T> core::fmt::Debug for OutPort<T> {

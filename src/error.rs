@@ -19,13 +19,28 @@ pub enum Error {
 		/// Name of the port.
 		port: &'static str,
 	},
+	/// No source for the value of a port set.
+	NoSrcSet {
+		/// Name of the port.
+		port: &'static str,
+	},
+	/// Port not found.
+	NotFound {
+		/// Name of the port.
+		port: &'static str,
+	},
 	/// No default value defined for a port.
 	NoValueSet {
 		/// Name of the port.
 		port: &'static str,
 	},
-	/// No source for the value of a port set.
-	NoSrcSet {
+	/// Source of input port already set.
+	SrcAlreadySet {
+		/// Name of the port.
+		port: &'static str,
+	},
+	/// Port has another type than wanted.
+	WrongType {
 		/// Name of the port.
 		port: &'static str,
 	},
@@ -39,8 +54,11 @@ impl core::fmt::Debug for Error {
 		match self {
 			Self::CouldNotConvert { value, port } => write!(f, "CouldNotConvert(value: {value}, port: {port})"),
 			Self::IsLocked { port } => write!(f, "IsLocked(port: {port})"),
-			Self::NoValueSet { port } => write!(f, "NoDefaultDefined(port: {port})"),
 			Self::NoSrcSet { port } => write!(f, "NoSrcSet(port: {port})"),
+			Self::NotFound { port } => write!(f, "NotFound(port: {port})"),
+			Self::NoValueSet { port } => write!(f, "NoValueSet(port: {port})"),
+			Self::SrcAlreadySet { port } => write!(f, "SrcAlreadySet(port: {port})"),
+			Self::WrongType { port } => write!(f, "WrongType(port: {port})"),
 		}
 	}
 }
@@ -50,8 +68,11 @@ impl core::fmt::Display for Error {
 		match self {
 			Self::CouldNotConvert { value, port } => write!(f, "could not convert '{value}' into wanted type for '{port}'"),
 			Self::IsLocked { port } => write!(f, "port '{port}' is currently locked"),
-			Self::NoValueSet { port } => write!(f, "no default defined for port '{port}'"),
 			Self::NoSrcSet { port } => write!(f, "no source set for value of port '{port}'"),
+			Self::NotFound { port } => write!(f, "port '{port}' was not found"),
+			Self::NoValueSet { port } => write!(f, "no value set in port '{port}'"),
+			Self::SrcAlreadySet { port } => write!(f, "source of input port '{port}' is already set"),
+			Self::WrongType { port } => write!(f, "port: '{port}' has not the wanted type"),
 		}
 	}
 }
