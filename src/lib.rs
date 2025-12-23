@@ -16,7 +16,7 @@ mod in_port;
 mod out_port;
 mod port;
 mod port_list;
-mod port_traits;
+mod traits;
 
 // flatten
 pub use error::{Error, Result};
@@ -26,7 +26,7 @@ pub use in_port::InPort;
 pub use out_port::OutPort;
 pub use port::Port;
 pub use port_list::{DynamicPortList, StaticPortList};
-pub use port_traits::{PortBase, PortDefault, PortGetter, PortHub, PortList, PortSetter};
+pub use traits::{PortBase, PortDefault, PortGetter, PortHub, PortList, PortSetter};
 
 // re-exports:
 //pub use dataport_macros::???;

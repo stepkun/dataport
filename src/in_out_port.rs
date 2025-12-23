@@ -54,18 +54,18 @@ impl<T> PortBase for InOutPort<T> {
 
 impl<T> PortGetter<T> for InOutPort<T> {
 	fn as_ref(&self) -> Result<PortReadGuard<T>> {
-		self.output.by_ref()
+		PortGetter::as_ref(&*self.input)
 	}
 
 	fn get(&self) -> Option<T>
 	where
 		T: Clone,
 	{
-		self.output.by_copy()
+		self.input.get()
 	}
 
 	fn take(&self) -> Option<T> {
-		self.output.by_value()
+		self.input.take()
 	}
 }
 
@@ -93,11 +93,24 @@ impl<T> InOutPort<T> {
 	}
 
 	#[must_use]
-	pub fn with(name: &'static str, src: impl Into<Arc<OutPort<T>>>) -> Self {
+	pub fn with_src(name: &'static str, src: impl Into<Arc<OutPort<T>>>) -> Self {
 		Self {
 			input: Arc::new(InPort::<T>::with(name, src)),
 			output: Arc::new(OutPort::<T>::new(name)),
 		}
+	}
+
+	#[must_use]
+	pub fn with_value(name: &'static str, value: impl Into<T>) -> Self {
+		Self {
+			input: Arc::new(InPort::<T>::new(name)),
+			output: Arc::new(OutPort::<T>::with(name, value)),
+		}
+	}
+
+	#[must_use]
+	pub fn dest(&self) -> Arc<OutPort<T>> {
+		self.output.clone()
 	}
 
 	#[must_use]
@@ -112,7 +125,9 @@ impl<T> InOutPort<T> {
 
 	/// Propagate an evantually existing value from input to output.
 	pub fn propagate(&self) {
-		if let Some(value) = self.src().unwrap().by_value() {
+		if let Some(src) = self.src()
+			&& let Some(value) = src.by_value()
+		{
 			self.output.set(value);
 		};
 	}

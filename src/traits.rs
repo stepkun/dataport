@@ -1,5 +1,5 @@
 // Copyright © 2025 Stephan Kunz
-//! Traits for working with ports.
+//! Traits for working with ports and port lists.
 
 use alloc::vec::Vec;
 
@@ -24,7 +24,7 @@ pub trait PortDefault<T>: PortBase {
 
 /// Port getter's.
 pub trait PortGetter<T>: PortBase {
-	/// Returns a reference to the T.
+	/// Returns an immutable reference to the T.
 	fn as_ref(&self) -> Result<PortReadGuard<T>>;
 
 	/// Returns a clone/copy of the T.
@@ -86,6 +86,43 @@ pub trait PortList {
 		}
 	}
 
+	/// Returns an immutable reference to the T.
+	fn as_ref<T: 'static + Send + Sync>(&self, port: &'static str) -> Result<PortReadGuard<T>> {
+		if let Some(port_) = self.find(port) {
+			// port must be input
+			if let Some(in_port) = port_.as_in_port::<T>() {
+				(*in_port).as_ref()
+			} else {
+				Err(Error::WrongType { port })
+			}
+		} else {
+			Err(Error::NotFound { port })
+		}
+	}
+
+	/// Returns a mutable reference to the T.
+	fn as_mut<T: 'static + Send + Sync>(&self, port: &'static str) -> Result<PortWriteGuard<T>> {
+		if let Some(port_) = self.find(port) {
+			// port must be input
+			if let Some(out_port) = port_.as_out_port::<T>() {
+				(*out_port).as_mut()
+			} else {
+				Err(Error::WrongType { port })
+			}
+		} else {
+			Err(Error::NotFound { port })
+		}
+	}
+
+	/// Lookup a [`Port`].
+	#[must_use]
+	fn find(&self, name: &str) -> Option<&Port> {
+		self.portlist()
+			.iter()
+			.find(|&port| port.name() == name)
+			.map(|v| v as _)
+	}
+
 	/// Returns a copy of the value of that port.
 	fn get<T: 'static + Clone + Send + Sync>(&self, port: &'static str) -> Result<Option<T>> {
 		if let Some(port_) = self.find(port) {
@@ -100,7 +137,22 @@ pub trait PortList {
 		}
 	}
 
+	/// Returns the value of that port.
+	fn take<T: 'static + Clone + Send + Sync>(&self, port: &'static str) -> Result<Option<T>> {
+		if let Some(port_) = self.find(port) {
+			// port must be input
+			if let Some(in_port) = port_.as_in_port::<T>() {
+				Ok(in_port.get())
+			} else {
+				Err(Error::WrongType { port })
+			}
+		} else {
+			Err(Error::NotFound { port })
+		}
+	}
+
 	/// Returns a reference to the port list.
+	#[must_use]
 	fn portlist(&self) -> &[Port];
 
 	/// Propagate an inout port's value from in to out.
@@ -135,13 +187,18 @@ pub trait PortList {
 		}
 	}
 
-	/// Lookup a [`Port`].
-	#[must_use]
-	fn find(&self, name: &str) -> Option<&Port> {
-		self.portlist()
-			.iter()
-			.find(|&port| port.name() == name)
-			.map(|v| v as _)
+	/// Replaces the port's value with the `value` and returns the old value.
+	fn replace<T: 'static + Send + Sync>(&self, port: &'static str, value: T) -> Result<Option<T>> {
+		if let Some(port_) = self.find(port) {
+			// src_port must be output
+			if let Some(out_port) = port_.as_out_port::<T>() {
+				Ok(out_port.replace(value))
+			} else {
+				Err(Error::WrongType { port })
+			}
+		} else {
+			Err(Error::NotFound { port })
+		}
 	}
 }
 

@@ -1,16 +1,11 @@
 // Copyright © 2025 Stephan Kunz
-//! Port.
-
-#![allow(unused)]
+//! An type erased (abstract) port implementation.
 
 use core::any::Any;
 
 use alloc::sync::Arc;
 
-use crate::{
-	InOutPort, InPort, OutPort, PortBase,
-	any_port::{self, AnyPort, AnySendSync},
-};
+use crate::{InOutPort, InPort, OutPort, PortBase, any_port::AnyPort};
 
 /// Port.
 pub struct Port {
@@ -27,7 +22,7 @@ impl core::fmt::Debug for Port {
 }
 
 impl PartialEq for Port {
-	/// Ports are partial equal, if both have the same name & type
+	/// Ports are partial equal, if their name, port type & data type are equal.
 	fn eq(&self, other: &Self) -> bool {
 		if self.name() == other.name()
 		  // check the 'dyn AnyPort', not the Arc 
