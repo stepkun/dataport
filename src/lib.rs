@@ -26,18 +26,9 @@ pub use in_port::InPort;
 pub use out_port::OutPort;
 pub use port::Port;
 pub use port_list::{DynamicPortList, StaticPortList};
-pub use traits::{PortBase, PortDefault, PortGetter, PortHub, PortList, PortSetter};
+pub use traits::{PortBase, PortGetter, PortHub, PortList, PortSetter};
 
 // re-exports:
 //pub use dataport_macros::???;
 // re-export for easy changeability
 pub(crate) use spin::{RwLock, RwLockReadGuard, RwLockWriteGuard};
-
-// A complex type for testing.
-#[doc(hidden)]
-#[allow(unused)]
-#[derive(Clone)]
-struct TestStruct {
-	a: i32,
-	b: f64,
-}

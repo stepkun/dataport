@@ -7,13 +7,6 @@ pub type Result<T> = core::result::Result<T, Error>;
 /// Dataport error.
 #[non_exhaustive]
 pub enum Error {
-	/// Could not convert the str into required type of dataport.
-	CouldNotConvert {
-		/// The value, that cannot be converted.
-		value: &'static str,
-		/// Name of the port.
-		port: &'static str,
-	},
 	/// Port is currently locked.
 	IsLocked {
 		/// Name of the port.
@@ -52,7 +45,6 @@ impl core::error::Error for Error {}
 impl core::fmt::Debug for Error {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		match self {
-			Self::CouldNotConvert { value, port } => write!(f, "CouldNotConvert(value: {value}, port: {port})"),
 			Self::IsLocked { port } => write!(f, "IsLocked(port: {port})"),
 			Self::NoSrcSet { port } => write!(f, "NoSrcSet(port: {port})"),
 			Self::NotFound { port } => write!(f, "NotFound(port: {port})"),
@@ -66,7 +58,6 @@ impl core::fmt::Debug for Error {
 impl core::fmt::Display for Error {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		match self {
-			Self::CouldNotConvert { value, port } => write!(f, "could not convert '{value}' into wanted type for '{port}'"),
 			Self::IsLocked { port } => write!(f, "port '{port}' is currently locked"),
 			Self::NoSrcSet { port } => write!(f, "no source set for value of port '{port}'"),
 			Self::NotFound { port } => write!(f, "port '{port}' was not found"),

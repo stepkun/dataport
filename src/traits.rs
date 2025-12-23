@@ -11,17 +11,6 @@ pub trait PortBase {
 	fn name(&self) -> &'static str;
 }
 
-/// PortDefault.
-pub trait PortDefault<T>: PortBase {
-	/// Returns a default value for T.
-	/// The default implementation returns [`Error::NoDefaultDefined`]
-	/// # Errors
-	/// - [`Error::NoDefaultDefined`], if no default value is defined
-	fn default_value(&self) -> Result<T> {
-		Err(Error::NoValueSet { port: self.name() })
-	}
-}
-
 /// Port getter's.
 pub trait PortGetter<T>: PortBase {
 	/// Returns an immutable reference to the T.

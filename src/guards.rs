@@ -1,5 +1,5 @@
 // Copyright © 2025 Stephan Kunz
-//! Port.
+//! Read & write guards.
 
 use core::ops::{Deref, DerefMut};
 
