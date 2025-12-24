@@ -5,7 +5,9 @@ use core::any::Any;
 
 use alloc::sync::Arc;
 
-use crate::{InPort, OutPort, PortBase, PortGetter, PortReadGuard, PortSetter, PortWriteGuard, Result, any_port::AnyPort};
+use crate::{
+	ConstString, InPort, OutPort, PortBase, PortGetter, PortReadGuard, PortSetter, PortWriteGuard, Result, any_port::AnyPort,
+};
 
 /// InOutPort
 /// Be aware, that the input and output side are not automatically connected.
@@ -47,21 +49,25 @@ impl<T: 'static> PartialEq for InOutPort<T> {
 }
 
 impl<T> PortBase for InOutPort<T> {
-	fn name(&self) -> &'static str {
+	fn name(&self) -> ConstString {
 		self.output.name()
 	}
 }
 
 impl<T> PortGetter<T> for InOutPort<T> {
-	fn as_ref(&self) -> Result<PortReadGuard<T>> {
-		PortGetter::as_ref(&*self.input)
-	}
-
 	fn get(&self) -> Option<T>
 	where
 		T: Clone,
 	{
 		self.input.get()
+	}
+
+	fn read(&self) -> Result<PortReadGuard<T>> {
+		PortGetter::read(&*self.input)
+	}
+
+	fn try_read(&self) -> Result<PortReadGuard<T>> {
+		PortGetter::try_read(&*self.input)
 	}
 
 	fn take(&self) -> Option<T> {
@@ -70,10 +76,6 @@ impl<T> PortGetter<T> for InOutPort<T> {
 }
 
 impl<T> PortSetter<T> for InOutPort<T> {
-	fn as_mut(&self) -> Result<PortWriteGuard<T>> {
-		self.output.as_mut()
-	}
-
 	fn replace(&self, value: impl Into<T>) -> Option<T> {
 		self.output.replace(value)
 	}
@@ -81,29 +83,40 @@ impl<T> PortSetter<T> for InOutPort<T> {
 	fn set(&self, value: impl Into<T>) {
 		self.output.set(value)
 	}
+
+	fn write(&self) -> Result<PortWriteGuard<T>> {
+		self.output.write()
+	}
+
+	fn try_write(&self) -> Result<PortWriteGuard<T>> {
+		self.output.try_write()
+	}
 }
 
 impl<T> InOutPort<T> {
 	#[must_use]
-	pub fn new(name: &'static str) -> Self {
+	pub fn new(name: impl Into<ConstString>) -> Self {
+		let name = name.into();
 		Self {
-			input: Arc::new(InPort::<T>::new(name)),
+			input: Arc::new(InPort::<T>::new(name.clone())),
 			output: Arc::new(OutPort::<T>::new(name)),
 		}
 	}
 
 	#[must_use]
-	pub fn with_src(name: &'static str, src: impl Into<Arc<OutPort<T>>>) -> Self {
+	pub fn with_src(name: impl Into<ConstString>, src: impl Into<Arc<OutPort<T>>>) -> Self {
+		let name = name.into();
 		Self {
-			input: Arc::new(InPort::<T>::with(name, src)),
+			input: Arc::new(InPort::<T>::with(name.clone(), src)),
 			output: Arc::new(OutPort::<T>::new(name)),
 		}
 	}
 
 	#[must_use]
-	pub fn with_value(name: &'static str, value: impl Into<T>) -> Self {
+	pub fn with_value(name: impl Into<ConstString>, value: impl Into<T>) -> Self {
+		let name = name.into();
 		Self {
-			input: Arc::new(InPort::<T>::new(name)),
+			input: Arc::new(InPort::<T>::new(name.clone())),
 			output: Arc::new(OutPort::<T>::with(name, value)),
 		}
 	}

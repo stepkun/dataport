@@ -5,12 +5,12 @@ use core::{any::Any, ops::Deref};
 
 use alloc::sync::Arc;
 
-use crate::{Error, OutPort, PortBase, PortGetter, PortReadGuard, Result, RwLock, any_port::AnyPort};
+use crate::{ConstString, Error, OutPort, PortBase, PortGetter, PortReadGuard, Result, RwLock, any_port::AnyPort};
 
 /// InPort
 pub struct InPort<T> {
 	/// An identifying name of the port, which must be unique for a given item.
-	name: &'static str,
+	name: ConstString,
 	/// The source [`OutPort`] to fetch new values from.
 	src: RwLock<Option<Arc<OutPort<T>>>>,
 }
@@ -56,20 +56,12 @@ impl<T: 'static> PartialEq for InPort<T> {
 }
 
 impl<T> PortBase for InPort<T> {
-	fn name(&self) -> &'static str {
-		self.name
+	fn name(&self) -> ConstString {
+		self.name.clone()
 	}
 }
 
 impl<T> PortGetter<T> for InPort<T> {
-	fn as_ref(&self) -> Result<PortReadGuard<T>> {
-		if let Some(src) = &*self.src.read() {
-			src.by_ref()
-		} else {
-			Err(Error::NoSrcSet { port: self.name })
-		}
-	}
-
 	fn get(&self) -> Option<T>
 	where
 		T: Clone,
@@ -78,6 +70,22 @@ impl<T> PortGetter<T> for InPort<T> {
 			src.by_copy()
 		} else {
 			None
+		}
+	}
+
+	fn read(&self) -> Result<PortReadGuard<T>> {
+		if let Some(src) = &*self.src.read() {
+			src.by_ref()
+		} else {
+			Err(Error::NoSrcSet { port: self.name.clone() })
+		}
+	}
+
+	fn try_read(&self) -> Result<PortReadGuard<T>> {
+		if let Some(src) = &*self.src.read() {
+			src.try_by_ref()
+		} else {
+			Err(Error::NoSrcSet { port: self.name.clone() })
 		}
 	}
 
@@ -92,17 +100,17 @@ impl<T> PortGetter<T> for InPort<T> {
 
 impl<T> InPort<T> {
 	#[must_use]
-	pub fn new(name: &'static str) -> Self {
+	pub fn new(name: impl Into<ConstString>) -> Self {
 		Self {
-			name,
+			name: name.into(),
 			src: RwLock::new(None),
 		}
 	}
 
 	#[must_use]
-	pub fn with(name: &'static str, src: impl Into<Arc<OutPort<T>>>) -> Self {
+	pub fn with(name: impl Into<ConstString>, src: impl Into<Arc<OutPort<T>>>) -> Self {
 		Self {
-			name,
+			name: name.into(),
 			src: RwLock::new(Some(src.into())),
 		}
 	}
@@ -143,11 +151,11 @@ mod tests {
 		let i2 = InPort::<f64>::new(CONST_NAME);
 		let i3 = InPort::<String>::new(STATIC_NAME);
 
-		assert_eq!(i1.name(), "p1");
-		assert_eq!(i2.name(), "p2");
-		assert_eq!(i3.name(), "p3");
-		assert_eq!(i2.name(), CONST_NAME);
-		assert_eq!(i3.name(), STATIC_NAME);
+		assert_eq!(i1.name(), "p1".into());
+		assert_eq!(i2.name(), "p2".into());
+		assert_eq!(i3.name(), "p3".into());
+		assert_eq!(i2.name(), CONST_NAME.into());
+		assert_eq!(i3.name(), STATIC_NAME.into());
 
 		assert!(i1.src().is_none());
 		assert!(i2.src().is_none());

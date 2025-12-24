@@ -3,41 +3,61 @@
 
 use alloc::vec::Vec;
 
-use crate::{Error, InOutPort, Port, PortReadGuard, PortWriteGuard, Result, any_port::AnyPort};
+use crate::{ConstString, Error, InOutPort, Port, PortReadGuard, PortWriteGuard, Result, any_port::AnyPort};
 
 /// PortBase.
 pub trait PortBase {
 	#[must_use]
-	fn name(&self) -> &'static str;
+	fn name(&self) -> ConstString;
 }
 
 /// Port getter's.
 pub trait PortGetter<T>: PortBase {
-	/// Returns an immutable reference to the T.
-	fn as_ref(&self) -> Result<PortReadGuard<T>>;
-
 	/// Returns a clone/copy of the T.
 	#[must_use]
 	fn get(&self) -> Option<T>
 	where
 		T: Clone;
 
+	/// Returns an immutable guard to the T.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
+	fn read(&self) -> Result<PortReadGuard<T>>;
+
 	/// Returns the T, deleting the value.
 	#[must_use]
 	fn take(&self) -> Option<T>;
+
+	/// Returns an immutable guard to the T.
+	/// # Errors
+	/// - [`Error::IsLocked`], if port is locked.
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
+	fn try_read(&self) -> Result<PortReadGuard<T>>;
 }
 
 /// Port setter's.
 pub trait PortSetter<T>: PortBase {
-	/// Returns a mutable reference to the T.
-	fn as_mut(&self) -> Result<PortWriteGuard<T>>;
-
 	/// Sets a new value to the T and returns the old T.
 	#[must_use]
 	fn replace(&self, value: impl Into<T>) -> Option<T>;
 
 	/// Sets a new value to the T.
 	fn set(&self, value: impl Into<T>);
+
+	/// Returns a mutable guard to the T.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
+	fn write(&self) -> Result<PortWriteGuard<T>>;
+
+	/// Returns a mutable guard to the T.
+	/// # Errors
+	/// - [`Error::IsLocked`], if port is locked.
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
+	fn try_write(&self) -> Result<PortWriteGuard<T>>;
 }
 
 /// PortList.
@@ -45,15 +65,17 @@ pub trait PortList {
 	/// Connects the ouput of src_port to dest_list's dest_port.
 	fn connect_ports<T: 'static + Send + Sync>(
 		&self,
-		src_port: &'static str,
+		src_port: impl Into<ConstString>,
 		dest_list: &impl PortList,
-		dest_port: &'static str,
+		dest_port: impl Into<ConstString>,
 	) -> Result<()> {
-		if let Some(port) = self.find(src_port) {
+		let src_port = src_port.into();
+		if let Some(port) = self.find(src_port.clone()) {
 			// src_port must be output
 			if let Some(out_port) = port.as_out_port::<T>() {
 				// dest_port must be input
-				if let Some(port) = dest_list.find(dest_port) {
+				let dest_port = dest_port.into();
+				if let Some(port) = dest_list.find(dest_port.clone()) {
 					if let Some(in_port) = port.as_in_port::<T>() {
 						if in_port.src().is_none() {
 							let _ = in_port.set_src(out_port.clone());
@@ -75,12 +97,16 @@ pub trait PortList {
 		}
 	}
 
-	/// Returns an immutable reference to the T.
-	fn as_ref<T: 'static + Send + Sync>(&self, port: &'static str) -> Result<PortReadGuard<T>> {
-		if let Some(port_) = self.find(port) {
+	/// Returns an immutable guard to the T.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
+	fn read<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortReadGuard<T>> {
+		let port = port.into();
+		if let Some(port_) = self.find(port.clone()) {
 			// port must be input
 			if let Some(in_port) = port_.as_in_port::<T>() {
-				(*in_port).as_ref()
+				(*in_port).read()
 			} else {
 				Err(Error::WrongType { port })
 			}
@@ -89,12 +115,54 @@ pub trait PortList {
 		}
 	}
 
-	/// Returns a mutable reference to the T.
-	fn as_mut<T: 'static + Send + Sync>(&self, port: &'static str) -> Result<PortWriteGuard<T>> {
-		if let Some(port_) = self.find(port) {
+	/// Returns an immutable guard to the T.
+	/// # Errors
+	/// - [`Error::IsLocked`], if port is locked.
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
+	fn try_read<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortReadGuard<T>> {
+		let port = port.into();
+		if let Some(port_) = self.find(port.clone()) {
+			// port must be input
+			if let Some(in_port) = port_.as_in_port::<T>() {
+				(*in_port).try_read()
+			} else {
+				Err(Error::WrongType { port })
+			}
+		} else {
+			Err(Error::NotFound { port })
+		}
+	}
+
+	/// Returns a mutable guard to the T.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
+	fn write<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortWriteGuard<T>> {
+		let port = port.into();
+		if let Some(port_) = self.find(port.clone()) {
 			// port must be input
 			if let Some(out_port) = port_.as_out_port::<T>() {
-				(*out_port).as_mut()
+				(*out_port).write()
+			} else {
+				Err(Error::WrongType { port })
+			}
+		} else {
+			Err(Error::NotFound { port })
+		}
+	}
+
+	/// Returns a mutable guard to the T.
+	/// # Errors
+	/// - [`Error::IsLocked`], if port is locked.
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
+	fn try_write<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortWriteGuard<T>> {
+		let port = port.into();
+		if let Some(port_) = self.find(port.clone()) {
+			// port must be input
+			if let Some(out_port) = port_.as_out_port::<T>() {
+				(*out_port).try_write()
 			} else {
 				Err(Error::WrongType { port })
 			}
@@ -105,16 +173,18 @@ pub trait PortList {
 
 	/// Lookup a [`Port`].
 	#[must_use]
-	fn find(&self, name: &str) -> Option<&Port> {
+	fn find(&self, name: impl Into<ConstString>) -> Option<&Port> {
+		let name = name.into();
 		self.portlist()
 			.iter()
-			.find(|&port| port.name() == name)
+			.find(|&port| port.name() == name.clone())
 			.map(|v| v as _)
 	}
 
 	/// Returns a copy of the value of that port.
-	fn get<T: 'static + Clone + Send + Sync>(&self, port: &'static str) -> Result<Option<T>> {
-		if let Some(port_) = self.find(port) {
+	fn get<T: 'static + Clone + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<Option<T>> {
+		let port = port.into();
+		if let Some(port_) = self.find(port.clone()) {
 			// port must be input
 			if let Some(in_port) = port_.as_in_port::<T>() {
 				Ok(in_port.get())
@@ -127,8 +197,9 @@ pub trait PortList {
 	}
 
 	/// Returns the value of that port.
-	fn take<T: 'static + Clone + Send + Sync>(&self, port: &'static str) -> Result<Option<T>> {
-		if let Some(port_) = self.find(port) {
+	fn take<T: 'static + Clone + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<Option<T>> {
+		let port = port.into();
+		if let Some(port_) = self.find(port.clone()) {
 			// port must be input
 			if let Some(in_port) = port_.as_in_port::<T>() {
 				Ok(in_port.get())
@@ -145,8 +216,9 @@ pub trait PortList {
 	fn portlist(&self) -> &[Port];
 
 	/// Propagate an inout port's value from in to out.
-	fn propagate<T: 'static>(&self, port: &'static str) -> Result<()> {
-		if let Some(port_) = self.find(port) {
+	fn propagate<T: 'static>(&self, port: impl Into<ConstString>) -> Result<()> {
+		let port = port.into();
+		if let Some(port_) = self.find(port.clone()) {
 			let p = &*port_.port();
 			let any_port = AnyPort::as_any(p);
 			if let Some(inout_port) = any_port.downcast_ref::<InOutPort<T>>() {
@@ -162,8 +234,9 @@ pub trait PortList {
 	}
 
 	/// Sets the port to the value.
-	fn set<T: 'static + Send + Sync>(&self, port: &'static str, value: T) -> Result<()> {
-		if let Some(port_) = self.find(port) {
+	fn set<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>, value: T) -> Result<()> {
+		let port = port.into();
+		if let Some(port_) = self.find(port.clone()) {
 			// src_port must be output
 			if let Some(out_port) = port_.as_out_port::<T>() {
 				out_port.set(value);
@@ -183,10 +256,10 @@ pub trait PortList {
 			if let Some(out_port) = port_.as_out_port::<T>() {
 				Ok(out_port.replace(value))
 			} else {
-				Err(Error::WrongType { port })
+				Err(Error::WrongType { port: port.into() })
 			}
 		} else {
-			Err(Error::NotFound { port })
+			Err(Error::NotFound { port: port.into() })
 		}
 	}
 }
@@ -204,7 +277,9 @@ pub trait PortHub: PortList {
 	/// Removes a port from the port list.
 	fn remove(&mut self, name: &str) -> Option<Port> {
 		let list = self.portlist_mut();
-		let index = list.iter().position(|port| port.name() == name);
+		let index = list
+			.iter()
+			.position(|port| port.name() == name.into());
 		index.map(|index| list.remove(index))
 	}
 }

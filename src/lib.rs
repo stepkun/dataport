@@ -18,6 +18,7 @@ mod port;
 mod port_list;
 mod traits;
 
+use alloc::sync::Arc;
 // flatten
 pub use error::{Error, Result};
 pub use guards::{PortReadGuard, PortWriteGuard};
@@ -31,4 +32,8 @@ pub use traits::{PortBase, PortGetter, PortHub, PortList, PortSetter};
 // re-exports:
 //pub use dataport_macros::???;
 // re-export for easy changeability
-pub(crate) use spin::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+use spin::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+
+/// An immutable thread safe `String` type
+/// see: [Logan Smith](https://www.youtube.com/watch?v=A4cKi7PTJSs).
+type ConstString = Arc<str>;

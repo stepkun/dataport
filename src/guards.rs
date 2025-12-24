@@ -5,7 +5,7 @@ use core::ops::{Deref, DerefMut};
 
 use alloc::sync::Arc;
 
-use crate::{Error, Result, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use crate::{ConstString, Error, Result, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 /// Read-Locked port guard.
 /// Until this value is dropped, a read lock is held on the ports value.
@@ -43,7 +43,7 @@ impl<T> PortReadGuard<T> {
 	/// Returns a read guard to a &T.
 	/// # Errors
 	/// - [`Error::NoValueSet`] if the port does not yet contain a value.
-	pub fn new(port: &'static str, value: Arc<RwLock<Option<T>>>) -> Result<Self> {
+	pub fn new(port: impl Into<ConstString>, value: Arc<RwLock<Option<T>>>) -> Result<Self> {
 		// we know this pointer is valid since the guard owns the value
 		let ptr_t = {
 			let guard = value.read();
@@ -53,7 +53,7 @@ impl<T> PortReadGuard<T> {
 				let ptr_t: *const T = value;
 				ptr_t
 			} else {
-				return Err(Error::NoValueSet { port });
+				return Err(Error::NoValueSet { port: port.into() });
 			}
 		};
 
@@ -64,7 +64,7 @@ impl<T> PortReadGuard<T> {
 	/// # Errors
 	/// - [`Error::IsLocked`]  if the entry is locked by someone else.
 	/// - [`Error::NoValueSet`] if the port does not yet contain a value.
-	pub fn try_new(port: &'static str, value: Arc<RwLock<Option<T>>>) -> Result<Self> {
+	pub fn try_new(port: impl Into<ConstString>, value: Arc<RwLock<Option<T>>>) -> Result<Self> {
 		// we know this pointer is valid since the guard owns the value
 		let ptr_t = {
 			if let Some(guard) = value.try_read() {
@@ -74,10 +74,10 @@ impl<T> PortReadGuard<T> {
 					let ptr_t: *const T = value;
 					ptr_t
 				} else {
-					return Err(Error::NoValueSet { port });
+					return Err(Error::NoValueSet { port: port.into() });
 				}
 			} else {
-				return Err(Error::IsLocked { port });
+				return Err(Error::IsLocked { port: port.into() });
 			}
 		};
 
@@ -129,7 +129,7 @@ impl<T> PortWriteGuard<T> {
 	/// Returns a write guard to a &mut T.
 	/// # Errors
 	/// - [`Error::NoValueSet`] if the port does not yet contain a value.
-	pub fn new(port: &'static str, value: Arc<RwLock<Option<T>>>) -> Result<Self> {
+	pub fn new(port: impl Into<ConstString>, value: Arc<RwLock<Option<T>>>) -> Result<Self> {
 		// we know this pointer is valid since the guard owns the value
 		let ptr_t = {
 			let guard = value.write();
@@ -139,7 +139,7 @@ impl<T> PortWriteGuard<T> {
 				let ptr_t: *mut T = value;
 				ptr_t
 			} else {
-				return Err(Error::NoValueSet { port });
+				return Err(Error::NoValueSet { port: port.into() });
 			}
 		};
 
@@ -150,7 +150,7 @@ impl<T> PortWriteGuard<T> {
 	/// # Errors
 	/// - [`Error::IsLocked`]  if the entry is locked by someone else.
 	/// - [`Error::NoValueSet`] if the port does not yet contain a value.
-	pub fn try_new(port: &'static str, value: Arc<RwLock<Option<T>>>) -> Result<Self> {
+	pub fn try_new(port: impl Into<ConstString>, value: Arc<RwLock<Option<T>>>) -> Result<Self> {
 		// we know this pointer is valid since the guard owns the value
 		let ptr_t = {
 			if let Some(guard) = value.try_write() {
@@ -160,10 +160,10 @@ impl<T> PortWriteGuard<T> {
 					let ptr_t: *mut T = value;
 					ptr_t
 				} else {
-					return Err(Error::NoValueSet { port });
+					return Err(Error::NoValueSet { port: port.into() });
 				}
 			} else {
-				return Err(Error::IsLocked { port });
+				return Err(Error::IsLocked { port: port.into() });
 			}
 		};
 

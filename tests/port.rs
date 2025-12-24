@@ -148,7 +148,6 @@ fn port_equality() {
 		_f4: Vec<f64>,
 	}
 
-	// @TODO: make use of &String possible.
 	let p4_name: &str = "p4"; //String::from("p4");
 	test_equality!(i32, "p1", f64, "p2");
 	test_equality!(String, "p1", &str, CONST_NAME);
@@ -176,10 +175,9 @@ macro_rules! test_connections {
 
 #[test]
 fn port_connections() {
-	// @TODO: make use of &String possible.
-	let p4_name = "p4"; //String::from("p4");
+	let p4_name = String::from("p4");
 	test_connections!(i32, "p1", 42);
 	test_connections!(f64, CONST_NAME, PI);
 	test_connections!(String, STATIC_NAME, "hello world");
-	test_connections!(Vec<i32>, &p4_name, vec![1, 2, 3]);
+	test_connections!(Vec<i32>, p4_name.as_str(), vec![1, 2, 3]);
 }

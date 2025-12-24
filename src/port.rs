@@ -5,7 +5,7 @@ use core::any::Any;
 
 use alloc::sync::Arc;
 
-use crate::{InOutPort, InPort, OutPort, PortBase, any_port::AnyPort};
+use crate::{ConstString, InOutPort, InPort, OutPort, PortBase, any_port::AnyPort};
 
 /// Port.
 pub struct Port {
@@ -35,7 +35,7 @@ impl PartialEq for Port {
 }
 
 impl PortBase for Port {
-	fn name(&self) -> &'static str {
+	fn name(&self) -> ConstString {
 		self.port.name()
 	}
 }
@@ -128,20 +128,20 @@ mod tests {
 		assert!(p1.as_in_port::<f64>().is_none());
 		assert!(p1.as_in_port::<i32>().is_some());
 		let in_port: Arc<InPort<i32>> = p1.as_in_port().unwrap();
-		assert_eq!(in_port.name(), "in");
+		assert_eq!(in_port.name(), "in".into());
 
 		let p2 = Port::create_out_port::<i32>("out");
 		assert!(p2.as_out_port::<f64>().is_none());
 		assert!(p2.as_out_port::<i32>().is_some());
 		let out_port: Arc<OutPort<i32>> = p2.as_out_port().unwrap();
-		assert_eq!(out_port.name(), "out");
+		assert_eq!(out_port.name(), "out".into());
 
 		let p3 = Port::create_inout_port::<i32>("inout");
 		assert!(p3.as_in_port::<f64>().is_none());
 		assert!(p3.as_out_port::<f64>().is_none());
 		let in_port: Arc<InPort<i32>> = p3.as_in_port().unwrap();
-		assert_eq!(in_port.name(), "inout");
+		assert_eq!(in_port.name(), "inout".into());
 		let out_port: Arc<OutPort<i32>> = p3.as_out_port().unwrap();
-		assert_eq!(out_port.name(), "inout");
+		assert_eq!(out_port.name(), "inout".into());
 	}
 }

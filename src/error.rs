@@ -1,6 +1,8 @@
 // Copyright © 2025 Stephan Kunz
 //! dataport errors.
 
+use crate::ConstString;
+
 /// Shortcut for [`dataport`](crate)'s Result<T, E> type
 pub type Result<T> = core::result::Result<T, Error>;
 
@@ -10,32 +12,32 @@ pub enum Error {
 	/// Port is currently locked.
 	IsLocked {
 		/// Name of the port.
-		port: &'static str,
+		port: ConstString,
 	},
 	/// No source for the value of a port set.
 	NoSrcSet {
 		/// Name of the port.
-		port: &'static str,
+		port: ConstString,
 	},
 	/// Port not found.
 	NotFound {
 		/// Name of the port.
-		port: &'static str,
+		port: ConstString,
 	},
 	/// No default value defined for a port.
 	NoValueSet {
 		/// Name of the port.
-		port: &'static str,
+		port: ConstString,
 	},
 	/// Source of input port already set.
 	SrcAlreadySet {
 		/// Name of the port.
-		port: &'static str,
+		port: ConstString,
 	},
 	/// Port has another type than wanted.
 	WrongType {
 		/// Name of the port.
-		port: &'static str,
+		port: ConstString,
 	},
 }
 
