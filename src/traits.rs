@@ -3,7 +3,14 @@
 
 use alloc::vec::Vec;
 
-use crate::{ConstString, Error, InOutPort, Port, PortReadGuard, PortWriteGuard, Result, any_port::AnyPort};
+use crate::{
+	ConstString,
+	any_port::AnyPort,
+	error::{Error, Result},
+	guards::{PortReadGuard, PortWriteGuard},
+	in_out_port::InOutPort,
+	port::Port,
+};
 
 /// PortBase.
 pub trait PortBase {
@@ -63,6 +70,10 @@ pub trait PortSetter<T>: PortBase {
 /// PortList.
 pub trait PortList {
 	/// Connects the ouput of src_port to dest_list's dest_port.
+	/// # Errors
+	/// - [`Error::NotFound`], if one of the ports is not in port list.
+	/// - [`Error::SrcAlreadySet`], if dest ports source is already set.
+	/// - [`Error::WrongType`], if one of the ports is not the needed port type & type of T.
 	fn connect_ports<T: 'static + Send + Sync>(
 		&self,
 		src_port: impl Into<ConstString>,
@@ -182,6 +193,9 @@ pub trait PortList {
 	}
 
 	/// Returns a copy of the value of that port.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
 	fn get<T: 'static + Clone + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<Option<T>> {
 		let port = port.into();
 		if let Some(port_) = self.find(port.clone()) {
@@ -197,6 +211,9 @@ pub trait PortList {
 	}
 
 	/// Returns the value of that port.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
 	fn take<T: 'static + Clone + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<Option<T>> {
 		let port = port.into();
 		if let Some(port_) = self.find(port.clone()) {
@@ -216,6 +233,9 @@ pub trait PortList {
 	fn portlist(&self) -> &[Port];
 
 	/// Propagate an inout port's value from in to out.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not an [`InOutPort`] or not the expected type of T.
 	fn propagate<T: 'static>(&self, port: impl Into<ConstString>) -> Result<()> {
 		let port = port.into();
 		if let Some(port_) = self.find(port.clone()) {
@@ -234,6 +254,9 @@ pub trait PortList {
 	}
 
 	/// Sets the port to the value.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
 	fn set<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>, value: T) -> Result<()> {
 		let port = port.into();
 		if let Some(port_) = self.find(port.clone()) {
@@ -250,6 +273,9 @@ pub trait PortList {
 	}
 
 	/// Replaces the port's value with the `value` and returns the old value.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
 	fn replace<T: 'static + Send + Sync>(&self, port: &'static str, value: T) -> Result<Option<T>> {
 		if let Some(port_) = self.find(port) {
 			// src_port must be output
@@ -281,5 +307,90 @@ pub trait PortHub: PortList {
 			.iter()
 			.position(|port| port.name() == name.into());
 		index.map(|index| list.remove(index))
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::{
+		in_port::InPort,
+		out_port::OutPort,
+		port_list::{DynamicPortList, StaticPortList},
+	};
+
+	use super::*;
+
+	fn return_impl_getter() -> impl PortGetter<i32> {
+		InPort::new("port")
+	}
+
+	fn use_impl_getter(src: impl PortGetter<i32>) {
+		assert!(src.read().is_err());
+		assert!(src.get().is_none());
+		assert!(src.take().is_none());
+	}
+
+	fn return_impl_setter() -> impl PortSetter<i32> {
+		OutPort::new("port")
+	}
+
+	fn use_impl_setter(src: impl PortSetter<i32>) {
+		src.set(22);
+		*src.write().unwrap() = 24;
+		assert_eq!(src.replace(42).unwrap(), 24);
+	}
+
+	fn return_impl_list() -> impl PortList {
+		StaticPortList::new([
+			Port::create_in_port::<i32>("in"),
+			Port::create_out_port::<i32>("out"),
+			Port::create_inout_port::<i32>("inout"),
+		])
+	}
+
+	fn use_impl_list(list: impl PortList) {
+		assert!(list.find("port").is_none());
+		assert!(list.find("in").is_some());
+		assert!(list.find("inout").is_some());
+		assert!(list.find("out").is_some());
+	}
+
+	fn return_impl_hub() -> impl PortHub {
+		let mut list = DynamicPortList::new(Vec::new());
+		list.add(Port::create_in_port::<i32>("in"));
+		list.add(Port::create_out_port::<i32>("out"));
+		list.add(Port::create_inout_port::<i32>("inout"));
+		list
+	}
+
+	fn use_impl_hub(mut hub: impl PortHub) {
+		assert!(hub.find("port").is_none());
+		assert!(hub.find("in").is_some());
+		assert!(hub.find("inout").is_some());
+		assert!(hub.find("out").is_some());
+		hub.remove("in");
+		hub.remove("out");
+		hub.remove("inout");
+		assert!(hub.find("in").is_none());
+		assert!(hub.find("inout").is_none());
+		assert!(hub.find("out").is_none());
+	}
+
+	#[test]
+	fn dyn_compatibility() {
+		let in_port = return_impl_getter();
+		use_impl_getter(in_port);
+
+		let out_port = return_impl_setter();
+		use_impl_setter(out_port);
+
+		let list = return_impl_list();
+		use_impl_list(list);
+
+		let list = return_impl_hub();
+		use_impl_list(list);
+
+		let hub = return_impl_hub();
+		use_impl_hub(hub);
 	}
 }

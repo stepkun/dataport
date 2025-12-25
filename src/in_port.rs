@@ -5,7 +5,14 @@ use core::{any::Any, ops::Deref};
 
 use alloc::sync::Arc;
 
-use crate::{ConstString, Error, OutPort, PortBase, PortGetter, PortReadGuard, Result, RwLock, any_port::AnyPort};
+use crate::{
+	ConstString, RwLock,
+	any_port::AnyPort,
+	error::{Error, Result},
+	guards::PortReadGuard,
+	out_port::OutPort,
+	traits::{PortBase, PortGetter},
+};
 
 /// InPort
 pub struct InPort<T> {
@@ -108,7 +115,7 @@ impl<T> InPort<T> {
 	}
 
 	#[must_use]
-	pub fn with(name: impl Into<ConstString>, src: impl Into<Arc<OutPort<T>>>) -> Self {
+	pub fn with_src(name: impl Into<ConstString>, src: impl Into<Arc<OutPort<T>>>) -> Self {
 		Self {
 			name: name.into(),
 			src: RwLock::new(Some(src.into())),
@@ -139,26 +146,5 @@ mod tests {
 	const fn normal_types() {
 		is_normal::<&InPort<i32>>();
 		is_normal::<InPort<String>>();
-	}
-
-	const CONST_NAME: &str = "p2";
-	static STATIC_NAME: &str = "p3";
-
-	// basic checks
-	#[test]
-	fn basics() {
-		let i1 = InPort::<i32>::new("p1");
-		let i2 = InPort::<f64>::new(CONST_NAME);
-		let i3 = InPort::<String>::new(STATIC_NAME);
-
-		assert_eq!(i1.name(), "p1".into());
-		assert_eq!(i2.name(), "p2".into());
-		assert_eq!(i3.name(), "p3".into());
-		assert_eq!(i2.name(), CONST_NAME.into());
-		assert_eq!(i3.name(), STATIC_NAME.into());
-
-		assert!(i1.src().is_none());
-		assert!(i2.src().is_none());
-		assert!(i3.src().is_none());
 	}
 }

@@ -5,7 +5,7 @@
 
 use core::any::Any;
 
-use crate::PortBase;
+use crate::traits::PortBase;
 
 /// The `AnySendSync` trait allows to send data between threads.
 pub(crate) trait AnySendSync: Any + Send + Sync {

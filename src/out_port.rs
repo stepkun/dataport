@@ -7,7 +7,13 @@ use core::any::Any;
 
 use alloc::sync::Arc;
 
-use crate::{ConstString, Error, PortBase, PortReadGuard, PortSetter, PortWriteGuard, Result, RwLock, any_port::AnyPort};
+use crate::{
+	ConstString, RwLock,
+	any_port::AnyPort,
+	error::{Error, Result},
+	guards::{PortReadGuard, PortWriteGuard},
+	traits::{PortBase, PortSetter},
+};
 
 /// OutPort
 pub struct OutPort<T> {
@@ -107,7 +113,7 @@ impl<T> OutPort<T> {
 	}
 
 	#[must_use]
-	pub fn with(name: impl Into<ConstString>, value: impl Into<T>) -> Self {
+	pub fn with_value(name: impl Into<ConstString>, value: impl Into<T>) -> Self {
 		Self {
 			name: name.into(),
 			value: Arc::new(RwLock::new(Some(value.into()))),
@@ -179,7 +185,7 @@ mod tests {
 		let o1 = OutPort::<i32>::new("p1");
 		let o2 = OutPort::<f64>::new(CONST_NAME);
 		let o3 = OutPort::<String>::new(STATIC_NAME);
-		let o4 = OutPort::<&str>::with("p4", "hello world");
+		let o4 = OutPort::<&str>::with_value("p4", "hello world");
 
 		o1.set(42);
 		o2.set(PI);

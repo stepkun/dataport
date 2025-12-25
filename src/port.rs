@@ -5,7 +5,7 @@ use core::any::Any;
 
 use alloc::sync::Arc;
 
-use crate::{ConstString, InOutPort, InPort, OutPort, PortBase, any_port::AnyPort};
+use crate::{ConstString, any_port::AnyPort, in_out_port::InOutPort, in_port::InPort, out_port::OutPort, traits::PortBase};
 
 /// Port.
 pub struct Port {

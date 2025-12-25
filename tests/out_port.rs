@@ -3,7 +3,7 @@
 
 use std::f64::consts::PI;
 
-use dataport::{OutPort, PortSetter};
+use dataport::*;
 
 const CONST_NAME: &str = "p2";
 static STATIC_NAME: &str = "p3";
@@ -25,7 +25,7 @@ macro_rules! test_setter {
 		*op.write().unwrap() = $value;
 		assert_eq!(op.replace($value2).unwrap(), $value);
 		// creation with value
-		let op = OutPort::<$tp>::with($name, $value);
+		let op = OutPort::<$tp>::with_value($name, $value);
 		let mut guard = op.write().unwrap();
 		assert_eq!(*guard, $value);
 		*guard = $value2;

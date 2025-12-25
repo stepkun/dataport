@@ -5,7 +5,10 @@ use core::ops::{Deref, DerefMut};
 
 use alloc::sync::Arc;
 
-use crate::{ConstString, Error, Result, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use crate::{
+	ConstString, RwLock, RwLockReadGuard, RwLockWriteGuard,
+	error::{Error, Result},
+};
 
 /// Read-Locked port guard.
 /// Until this value is dropped, a read lock is held on the ports value.

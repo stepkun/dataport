@@ -1,7 +1,9 @@
 // Copyright © 2025 Stephan Kunz
 //! Test [`InPort`] features.
 
-use dataport::{InPort, PortGetter};
+use std::f64::consts::PI;
+
+use dataport::*;
 
 const CONST_NAME: &str = "p2";
 static STATIC_NAME: &str = "p3";
@@ -12,12 +14,18 @@ macro_rules! test_getter {
 		assert!(ip.read().is_err());
 		assert!(ip.get().is_none());
 		assert!(ip.take().is_none());
+
+		let op = OutPort::<$tp>::with_value("test", $value);
+		let ip = InPort::<$tp>::with_src($name, op);
+		assert_eq!(*ip.read().unwrap(), $value);
+		assert_eq!(ip.get().unwrap(), $value);
+		assert_eq!(ip.take().unwrap(), $value);
 	};
 }
 
 #[test]
 fn getter() {
-	#[derive(Clone, Default)]
+	#[derive(Clone, Debug, Default, PartialEq)]
 	struct MyStruct {
 		_f1: i32,
 		_f2: f64,

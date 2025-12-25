@@ -3,7 +3,7 @@
 
 use std::f64::consts::PI;
 
-use dataport::{DynamicPortList, Port, PortHub, PortList, StaticPortList};
+use dataport::*;
 
 const CONST_NAME: &str = "p2";
 static STATIC_NAME: &str = "p3";

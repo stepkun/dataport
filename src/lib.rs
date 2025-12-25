@@ -19,21 +19,21 @@ mod port_list;
 mod traits;
 
 use alloc::sync::Arc;
-// flatten
-pub use error::{Error, Result};
-pub use guards::{PortReadGuard, PortWriteGuard};
-pub use in_out_port::InOutPort;
-pub use in_port::InPort;
-pub use out_port::OutPort;
-pub use port::Port;
-pub use port_list::{DynamicPortList, StaticPortList};
-pub use traits::{PortBase, PortGetter, PortHub, PortList, PortSetter};
 
-// re-exports:
-//pub use dataport_macros::???;
-// re-export for easy changeability
+// internal re-export for easy changeability
 use spin::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 /// An immutable thread safe `String` type
 /// see: [Logan Smith](https://www.youtube.com/watch?v=A4cKi7PTJSs).
 type ConstString = Arc<str>;
+
+// flatten
+pub use error::Error;
+pub use in_out_port::InOutPort;
+pub use in_port::InPort;
+pub use out_port::OutPort;
+pub use port::Port;
+pub use port_list::{DynamicPortList, StaticPortList};
+pub use traits::{PortGetter, PortHub, PortList, PortSetter};
+// re-exports:
+//pub use dataport_macros::???;

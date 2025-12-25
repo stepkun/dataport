@@ -6,7 +6,13 @@ use core::any::Any;
 use alloc::sync::Arc;
 
 use crate::{
-	ConstString, InPort, OutPort, PortBase, PortGetter, PortReadGuard, PortSetter, PortWriteGuard, Result, any_port::AnyPort,
+	ConstString,
+	any_port::AnyPort,
+	error::Result,
+	guards::{PortReadGuard, PortWriteGuard},
+	in_port::InPort,
+	out_port::OutPort,
+	traits::{PortBase, PortGetter, PortSetter},
 };
 
 /// InOutPort
@@ -107,7 +113,7 @@ impl<T> InOutPort<T> {
 	pub fn with_src(name: impl Into<ConstString>, src: impl Into<Arc<OutPort<T>>>) -> Self {
 		let name = name.into();
 		Self {
-			input: Arc::new(InPort::<T>::with(name.clone(), src)),
+			input: Arc::new(InPort::<T>::with_src(name.clone(), src)),
 			output: Arc::new(OutPort::<T>::new(name)),
 		}
 	}
@@ -117,7 +123,7 @@ impl<T> InOutPort<T> {
 		let name = name.into();
 		Self {
 			input: Arc::new(InPort::<T>::new(name.clone())),
-			output: Arc::new(OutPort::<T>::with(name, value)),
+			output: Arc::new(OutPort::<T>::with_value(name, value)),
 		}
 	}
 

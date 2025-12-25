@@ -1,14 +1,11 @@
 // Copyright © 2025 Stephan Kunz
 //! List of ports.
 
-use core::ops::Deref;
-use core::ops::DerefMut;
+use core::ops::{Deref, DerefMut};
 
 use alloc::vec::Vec;
 
-use crate::Port;
-use crate::PortHub;
-use crate::PortList;
+use crate::{port::Port, traits::PortHub, traits::PortList};
 
 /// StaticPortList.
 pub struct StaticPortList<const S: usize>([Port; S]);
