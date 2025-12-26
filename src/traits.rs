@@ -1,51 +1,61 @@
 // Copyright © 2025 Stephan Kunz
-//! Traits for working with ports and port lists.
+//! Traits for working with ports and lists of ports.
 
-use alloc::vec::Vec;
+use alloc::{sync::Arc, vec::Vec};
 
 use crate::{
-	ConstString,
+	ConstString, OutputPort,
 	any_port::AnyPort,
 	error::{Error, Result},
 	guards::{PortReadGuard, PortWriteGuard},
-	in_out_port::InOutPort,
+	in_out_port::InputOutputPort,
 	port::Port,
 };
 
-/// PortBase.
+/// Common features for all types of ports.
 pub trait PortBase {
+	/// Returns an identifying name of the port.
+	/// Must be unique within an item providing multiple ports.
 	#[must_use]
 	fn name(&self) -> ConstString;
 }
 
-/// Port getter's.
-pub trait PortGetter<T>: PortBase {
+/// Trait for input port types.
+pub trait InPort<T>: PortBase {
 	/// Returns a clone/copy of the T.
 	#[must_use]
 	fn get(&self) -> Option<T>
 	where
 		T: Clone;
 
-	/// Returns an immutable guard to the T.
+	/// Returns an immutable guard to the ports value T.
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
 	fn read(&self) -> Result<PortReadGuard<T>>;
 
-	/// Returns the T, deleting the value.
+	/// Returns the T, removing it from the port.
 	#[must_use]
 	fn take(&self) -> Option<T>;
 
-	/// Returns an immutable guard to the T.
+	/// Returns an immutable guard to the ports value T.
 	/// # Errors
 	/// - [`Error::IsLocked`], if port is locked.
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
 	fn try_read(&self) -> Result<PortReadGuard<T>>;
+
+	/// Returns a reference to the source of the input port.
+	#[must_use]
+	fn src(&self) -> Option<Arc<OutputPort<T>>>;
+
+	/// Sets the source of the input port and returns the old source.
+	#[must_use]
+	fn replace_src(&self, src: impl Into<Arc<OutputPort<T>>>) -> Option<Arc<OutputPort<T>>>;
 }
 
-/// Port setter's.
-pub trait PortSetter<T>: PortBase {
+/// Trait for output port types.
+pub trait OutPort<T>: PortBase {
 	/// Sets a new value to the T and returns the old T.
 	#[must_use]
 	fn replace(&self, value: impl Into<T>) -> Option<T>;
@@ -53,13 +63,13 @@ pub trait PortSetter<T>: PortBase {
 	/// Sets a new value to the T.
 	fn set(&self, value: impl Into<T>);
 
-	/// Returns a mutable guard to the T.
+	/// Returns a mutable guard to the ports value T.
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
 	fn write(&self) -> Result<PortWriteGuard<T>>;
 
-	/// Returns a mutable guard to the T.
+	/// Returns a mutable guard to the ports value T.
 	/// # Errors
 	/// - [`Error::IsLocked`], if port is locked.
 	/// - [`Error::NotFound`], if port is not in port list.
@@ -89,7 +99,7 @@ pub trait PortList {
 				if let Some(port) = dest_list.find(dest_port.clone()) {
 					if let Some(in_port) = port.as_in_port::<T>() {
 						if in_port.src().is_none() {
-							let _ = in_port.set_src(out_port.clone());
+							let _ = in_port.replace_src(out_port.clone());
 							Ok(())
 						} else {
 							Err(Error::SrcAlreadySet { port: dest_port })
@@ -241,7 +251,7 @@ pub trait PortList {
 		if let Some(port_) = self.find(port.clone()) {
 			let p = &*port_.port();
 			let any_port = AnyPort::as_any(p);
-			if let Some(inout_port) = any_port.downcast_ref::<InOutPort<T>>() {
+			if let Some(inout_port) = any_port.downcast_ref::<InputOutputPort<T>>() {
 				// Now we now this is an InOutPort<T>, return the output part.
 				inout_port.propagate();
 				Ok(())
@@ -313,34 +323,34 @@ pub trait PortHub: PortList {
 #[cfg(test)]
 mod tests {
 	use crate::{
-		in_port::InPort,
-		out_port::OutPort,
+		in_port::InputPort,
+		out_port::OutputPort,
 		port_list::{DynamicPortList, StaticPortList},
 	};
 
 	use super::*;
 
-	fn return_impl_getter() -> impl PortGetter<i32> {
-		InPort::new("port")
+	fn return_impl_in_port() -> impl InPort<i32> {
+		InputPort::new("port")
 	}
 
-	fn use_impl_getter(src: impl PortGetter<i32>) {
+	fn use_impl_in_port(src: impl InPort<i32>) {
 		assert!(src.read().is_err());
 		assert!(src.get().is_none());
 		assert!(src.take().is_none());
 	}
 
-	fn return_impl_setter() -> impl PortSetter<i32> {
-		OutPort::new("port")
+	fn return_impl_out_port() -> impl OutPort<i32> {
+		OutputPort::new("port")
 	}
 
-	fn use_impl_setter(src: impl PortSetter<i32>) {
+	fn use_impl_out_port(src: impl OutPort<i32>) {
 		src.set(22);
 		*src.write().unwrap() = 24;
 		assert_eq!(src.replace(42).unwrap(), 24);
 	}
 
-	fn return_impl_list() -> impl PortList {
+	fn return_impl_port_list() -> impl PortList {
 		StaticPortList::new([
 			Port::create_in_port::<i32>("in"),
 			Port::create_out_port::<i32>("out"),
@@ -348,14 +358,14 @@ mod tests {
 		])
 	}
 
-	fn use_impl_list(list: impl PortList) {
+	fn use_impl_port_list(list: impl PortList) {
 		assert!(list.find("port").is_none());
 		assert!(list.find("in").is_some());
 		assert!(list.find("inout").is_some());
 		assert!(list.find("out").is_some());
 	}
 
-	fn return_impl_hub() -> impl PortHub {
+	fn return_impl_port_hub() -> impl PortHub {
 		let mut list = DynamicPortList::new(Vec::new());
 		list.add(Port::create_in_port::<i32>("in"));
 		list.add(Port::create_out_port::<i32>("out"));
@@ -363,7 +373,7 @@ mod tests {
 		list
 	}
 
-	fn use_impl_hub(mut hub: impl PortHub) {
+	fn use_impl_port_hub(mut hub: impl PortHub) {
 		assert!(hub.find("port").is_none());
 		assert!(hub.find("in").is_some());
 		assert!(hub.find("inout").is_some());
@@ -377,20 +387,26 @@ mod tests {
 	}
 
 	#[test]
-	fn dyn_compatibility() {
-		let in_port = return_impl_getter();
-		use_impl_getter(in_port);
+	fn impl_compatibility() {
+		let in_port = return_impl_in_port();
+		use_impl_in_port(in_port);
 
-		let out_port = return_impl_setter();
-		use_impl_setter(out_port);
+		let out_port = return_impl_out_port();
+		use_impl_out_port(out_port);
 
-		let list = return_impl_list();
-		use_impl_list(list);
+		let list = return_impl_port_list();
+		use_impl_port_list(list);
 
-		let list = return_impl_hub();
-		use_impl_list(list);
+		let list = return_impl_port_hub();
+		use_impl_port_list(list);
 
-		let hub = return_impl_hub();
-		use_impl_hub(hub);
+		let hub = return_impl_port_hub();
+		use_impl_port_hub(hub);
 	}
+
+	//#[test]
+	//fn dyn_compatibility() {
+	//	let ip: Arc<dyn InPort<i32>> = InputPort::new("in_port");
+	//	let op: Arc<dyn OutPort<i32>> = OutputPort::new("out_port");
+	//}
 }

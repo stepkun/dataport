@@ -11,9 +11,9 @@ static STATIC_NAME: &str = "p3";
 macro_rules! test_getter_setter {
 	($tp:ty, $name:expr, $value:expr, $value2:expr) => {
 		// creation without value
-		let iop = InOutPort::<$tp>::new($name);
+		let iop = InputOutputPort::<$tp>::new($name);
 		// connect input and output!
-		assert!(iop.set_src(iop.dest()).is_none());
+		assert!(iop.replace_src(iop.output()).is_none());
 		assert!(iop.read().is_err());
 		assert!(iop.write().is_err());
 		assert!(iop.get().is_none());
@@ -25,9 +25,9 @@ macro_rules! test_getter_setter {
 		assert_eq!(iop.take().unwrap(), $value2);
 		assert!(iop.get().is_none());
 		// creation with value
-		let iop = InOutPort::<$tp>::with_value($name, $value);
+		let iop = InputOutputPort::<$tp>::with_value($name, $value);
 		// connect input and output!
-		assert!(iop.set_src(iop.dest()).is_none());
+		assert!(iop.replace_src(iop.output()).is_none());
 		iop.set($value);
 		let mut guard = iop.write().unwrap();
 		assert_eq!(*guard, $value);

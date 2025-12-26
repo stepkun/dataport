@@ -1,5 +1,5 @@
 // Copyright © 2025 Stephan Kunz
-//! Port.
+//! Implementation of a port providing both [`InPort`] and [`OutPort`].
 
 use core::any::Any;
 
@@ -10,24 +10,24 @@ use crate::{
 	any_port::AnyPort,
 	error::Result,
 	guards::{PortReadGuard, PortWriteGuard},
-	in_port::InPort,
-	out_port::OutPort,
-	traits::{PortBase, PortGetter, PortSetter},
+	in_port::InputPort,
+	out_port::OutputPort,
+	traits::{InPort, OutPort, PortBase},
 };
 
-/// InOutPort
+/// InputOutputPort
 /// Be aware, that the input and output side are not automatically connected.
 /// The input value has to be propagated manually.
-pub struct InOutPort<T> {
+pub struct InputOutputPort<T> {
 	/// Internal [`InPort`] which also provides an identifying name of the port,
 	/// which must be unique for a given item.
-	input: Arc<InPort<T>>,
+	input: Arc<InputPort<T>>,
 	/// Internal [`OutPort`] which provides the same unique identifying name of
 	/// the port as the internal [`InPort`].
-	output: Arc<OutPort<T>>,
+	output: Arc<OutputPort<T>>,
 }
 
-impl<T: 'static + Send + Sync> AnyPort for InOutPort<T> {
+impl<T: 'static + Send + Sync> AnyPort for InputOutputPort<T> {
 	fn as_any(&self) -> &dyn Any {
 		self
 	}
@@ -37,9 +37,9 @@ impl<T: 'static + Send + Sync> AnyPort for InOutPort<T> {
 	}
 }
 
-impl<T> core::fmt::Debug for InOutPort<T> {
+impl<T> core::fmt::Debug for InputOutputPort<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-		f.debug_struct("InOutPort")
+		f.debug_struct("InputOutputPort")
 			.field("name", &self.input.name())
 			//.field("input", &self.input)
 			//.field("output", &self.output)
@@ -47,20 +47,20 @@ impl<T> core::fmt::Debug for InOutPort<T> {
 	}
 }
 
-impl<T: 'static> PartialEq for InOutPort<T> {
+impl<T: 'static> PartialEq for InputOutputPort<T> {
 	/// Partial equality of an in/out port is, if input and output parts are partial equal
 	fn eq(&self, other: &Self) -> bool {
 		self.input == other.input && self.output == other.output
 	}
 }
 
-impl<T> PortBase for InOutPort<T> {
+impl<T> PortBase for InputOutputPort<T> {
 	fn name(&self) -> ConstString {
 		self.output.name()
 	}
 }
 
-impl<T> PortGetter<T> for InOutPort<T> {
+impl<T> InPort<T> for InputOutputPort<T> {
 	fn get(&self) -> Option<T>
 	where
 		T: Clone,
@@ -69,19 +69,27 @@ impl<T> PortGetter<T> for InOutPort<T> {
 	}
 
 	fn read(&self) -> Result<PortReadGuard<T>> {
-		PortGetter::read(&*self.input)
+		InPort::read(&*self.input)
 	}
 
 	fn try_read(&self) -> Result<PortReadGuard<T>> {
-		PortGetter::try_read(&*self.input)
+		InPort::try_read(&*self.input)
 	}
 
 	fn take(&self) -> Option<T> {
 		self.input.take()
 	}
+
+	fn src(&self) -> Option<Arc<OutputPort<T>>> {
+		self.input.src()
+	}
+
+	fn replace_src(&self, src: impl Into<Arc<OutputPort<T>>>) -> Option<Arc<OutputPort<T>>> {
+		self.input.replace_src(src)
+	}
 }
 
-impl<T> PortSetter<T> for InOutPort<T> {
+impl<T> OutPort<T> for InputOutputPort<T> {
 	fn replace(&self, value: impl Into<T>) -> Option<T> {
 		self.output.replace(value)
 	}
@@ -99,22 +107,22 @@ impl<T> PortSetter<T> for InOutPort<T> {
 	}
 }
 
-impl<T> InOutPort<T> {
+impl<T> InputOutputPort<T> {
 	#[must_use]
 	pub fn new(name: impl Into<ConstString>) -> Self {
 		let name = name.into();
 		Self {
-			input: Arc::new(InPort::<T>::new(name.clone())),
-			output: Arc::new(OutPort::<T>::new(name)),
+			input: Arc::new(InputPort::<T>::new(name.clone())),
+			output: Arc::new(OutputPort::<T>::new(name)),
 		}
 	}
 
 	#[must_use]
-	pub fn with_src(name: impl Into<ConstString>, src: impl Into<Arc<OutPort<T>>>) -> Self {
+	pub fn with_src(name: impl Into<ConstString>, src: impl Into<Arc<OutputPort<T>>>) -> Self {
 		let name = name.into();
 		Self {
-			input: Arc::new(InPort::<T>::with_src(name.clone(), src)),
-			output: Arc::new(OutPort::<T>::new(name)),
+			input: Arc::new(InputPort::<T>::with_src(name.clone(), src)),
+			output: Arc::new(OutputPort::<T>::new(name)),
 		}
 	}
 
@@ -122,24 +130,9 @@ impl<T> InOutPort<T> {
 	pub fn with_value(name: impl Into<ConstString>, value: impl Into<T>) -> Self {
 		let name = name.into();
 		Self {
-			input: Arc::new(InPort::<T>::new(name.clone())),
-			output: Arc::new(OutPort::<T>::with_value(name, value)),
+			input: Arc::new(InputPort::<T>::new(name.clone())),
+			output: Arc::new(OutputPort::<T>::with_value(name, value)),
 		}
-	}
-
-	#[must_use]
-	pub fn dest(&self) -> Arc<OutPort<T>> {
-		self.output.clone()
-	}
-
-	#[must_use]
-	pub fn src(&self) -> Option<Arc<OutPort<T>>> {
-		self.input.src()
-	}
-
-	#[must_use]
-	pub fn set_src(&self, src: impl Into<Arc<OutPort<T>>>) -> Option<Arc<OutPort<T>>> {
-		self.input.set_src(src)
 	}
 
 	/// Propagate an evantually existing value from input to output.
@@ -151,25 +144,25 @@ impl<T> InOutPort<T> {
 		};
 	}
 
-	pub(crate) fn input(&self) -> Arc<InPort<T>> {
+	pub fn input(&self) -> Arc<InputPort<T>> {
 		self.input.clone()
 	}
 
-	pub(crate) fn output(&self) -> Arc<OutPort<T>> {
+	pub fn output(&self) -> Arc<OutputPort<T>> {
 		self.output.clone()
 	}
 }
 
 /// Automatic conversion from InOutPort to InPort
-impl<T> From<InOutPort<T>> for Arc<InPort<T>> {
-	fn from(value: InOutPort<T>) -> Self {
+impl<T> From<InputOutputPort<T>> for Arc<InputPort<T>> {
+	fn from(value: InputOutputPort<T>) -> Self {
 		value.input.clone()
 	}
 }
 
 /// Automatic conversion from InOutPort to InPort
-impl<T> From<InOutPort<T>> for Arc<OutPort<T>> {
-	fn from(value: InOutPort<T>) -> Self {
+impl<T> From<InputOutputPort<T>> for Arc<OutputPort<T>> {
+	fn from(value: InputOutputPort<T>) -> Self {
 		value.output.clone()
 	}
 }
@@ -185,7 +178,7 @@ mod tests {
 	// check, that the auto traits are available.
 	#[test]
 	const fn normal_types() {
-		is_normal::<&InOutPort<f32>>();
-		is_normal::<InOutPort<String>>();
+		is_normal::<&InputOutputPort<f32>>();
+		is_normal::<InputOutputPort<String>>();
 	}
 }

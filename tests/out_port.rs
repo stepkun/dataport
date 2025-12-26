@@ -11,21 +11,21 @@ static STATIC_NAME: &str = "p3";
 macro_rules! test_setter {
 	($tp:ty, $name:expr, $value:expr, $value2:expr) => {
 		// separate creation and value setting
-		let op = OutPort::<$tp>::new($name);
+		let op = OutputPort::<$tp>::new($name);
 		assert!(op.write().is_err());
 		op.set($value);
 		assert_eq!(op.replace($value).unwrap(), $value);
 		*op.write().unwrap() = $value2;
 		assert_eq!(op.replace($value).unwrap(), $value2);
 		// separate creation and value replacing
-		let op = OutPort::<$tp>::new($name);
+		let op = OutputPort::<$tp>::new($name);
 		assert!(op.write().is_err());
 		assert!(op.replace($value).is_none());
 		assert_eq!(op.replace($value2).unwrap(), $value);
 		*op.write().unwrap() = $value;
 		assert_eq!(op.replace($value2).unwrap(), $value);
 		// creation with value
-		let op = OutPort::<$tp>::with_value($name, $value);
+		let op = OutputPort::<$tp>::with_value($name, $value);
 		let mut guard = op.write().unwrap();
 		assert_eq!(*guard, $value);
 		*guard = $value2;

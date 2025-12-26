@@ -5,7 +5,9 @@ use core::any::Any;
 
 use alloc::sync::Arc;
 
-use crate::{ConstString, any_port::AnyPort, in_out_port::InOutPort, in_port::InPort, out_port::OutPort, traits::PortBase};
+use crate::{
+	ConstString, any_port::AnyPort, in_out_port::InputOutputPort, in_port::InputPort, out_port::OutputPort, traits::PortBase,
+};
 
 /// Port.
 pub struct Port {
@@ -43,28 +45,28 @@ impl PortBase for Port {
 impl Port {
 	pub fn create_in_port<T: 'static + Send + Sync>(name: &'static str) -> Self {
 		Self {
-			port: Arc::new(InPort::<T>::new(name)),
+			port: Arc::new(InputPort::<T>::new(name)),
 		}
 	}
 
 	pub fn create_inout_port<T: 'static + Send + Sync>(name: &'static str) -> Self {
 		Self {
-			port: Arc::new(InOutPort::<T>::new(name)),
+			port: Arc::new(InputOutputPort::<T>::new(name)),
 		}
 	}
 
 	pub fn create_out_port<T: 'static + Send + Sync>(name: &'static str) -> Self {
 		Self {
-			port: Arc::new(OutPort::<T>::new(name)),
+			port: Arc::new(OutputPort::<T>::new(name)),
 		}
 	}
 
-	pub(crate) fn as_in_port<T: 'static + Send + Sync>(&self) -> Option<Arc<InPort<T>>> {
+	pub(crate) fn as_in_port<T: 'static + Send + Sync>(&self) -> Option<Arc<InputPort<T>>> {
 		// helper function to downcast the `Arc<dyn Any>` to `Arc<InPort<T>>`
 		fn cast_arc_any_to_in_port<T: 'static + Send + Sync>(
 			any_value: Arc<dyn Any + Send + Sync>,
-		) -> Option<Arc<InPort<T>>> {
-			any_value.downcast::<InPort<T>>().ok()
+		) -> Option<Arc<InputPort<T>>> {
+			any_value.downcast::<InputPort<T>>().ok()
 		}
 
 		let in_port = cast_arc_any_to_in_port::<T>(self.port.clone());
@@ -73,19 +75,19 @@ impl Port {
 		}
 
 		let any_port = AnyPort::as_any(&*self.port);
-		if let Some(inout_port) = any_port.downcast_ref::<InOutPort<T>>() {
+		if let Some(inout_port) = any_port.downcast_ref::<InputOutputPort<T>>() {
 			// Now we now this is an InOutPort<T>, return the input part.
 			return Some(inout_port.input());
 		}
 		None
 	}
 
-	pub(crate) fn as_out_port<T: 'static + Send + Sync>(&self) -> Option<Arc<OutPort<T>>> {
+	pub(crate) fn as_out_port<T: 'static + Send + Sync>(&self) -> Option<Arc<OutputPort<T>>> {
 		// helper function to downcast the `Arc<dyn Any>` to `Arc<OutPort<T>>`
 		fn cast_arc_any_to_out_port<T: 'static + Send + Sync>(
 			any_value: Arc<dyn Any + Send + Sync>,
-		) -> Option<Arc<OutPort<T>>> {
-			any_value.downcast::<OutPort<T>>().ok()
+		) -> Option<Arc<OutputPort<T>>> {
+			any_value.downcast::<OutputPort<T>>().ok()
 		}
 
 		let x = cast_arc_any_to_out_port::<T>(self.port.clone());
@@ -94,7 +96,7 @@ impl Port {
 		}
 
 		let any_port = AnyPort::as_any(&*self.port);
-		if let Some(inout_port) = any_port.downcast_ref::<InOutPort<T>>() {
+		if let Some(inout_port) = any_port.downcast_ref::<InputOutputPort<T>>() {
 			// Now we now this is an InOutPort<T>, return the output part.
 			return Some(inout_port.output());
 		}
@@ -127,21 +129,21 @@ mod tests {
 		assert!(p1.as_out_port::<i32>().is_none());
 		assert!(p1.as_in_port::<f64>().is_none());
 		assert!(p1.as_in_port::<i32>().is_some());
-		let in_port: Arc<InPort<i32>> = p1.as_in_port().unwrap();
+		let in_port: Arc<InputPort<i32>> = p1.as_in_port().unwrap();
 		assert_eq!(in_port.name(), "in".into());
 
 		let p2 = Port::create_out_port::<i32>("out");
 		assert!(p2.as_out_port::<f64>().is_none());
 		assert!(p2.as_out_port::<i32>().is_some());
-		let out_port: Arc<OutPort<i32>> = p2.as_out_port().unwrap();
+		let out_port: Arc<OutputPort<i32>> = p2.as_out_port().unwrap();
 		assert_eq!(out_port.name(), "out".into());
 
 		let p3 = Port::create_inout_port::<i32>("inout");
 		assert!(p3.as_in_port::<f64>().is_none());
 		assert!(p3.as_out_port::<f64>().is_none());
-		let in_port: Arc<InPort<i32>> = p3.as_in_port().unwrap();
+		let in_port: Arc<InputPort<i32>> = p3.as_in_port().unwrap();
 		assert_eq!(in_port.name(), "inout".into());
-		let out_port: Arc<OutPort<i32>> = p3.as_out_port().unwrap();
+		let out_port: Arc<OutputPort<i32>> = p3.as_out_port().unwrap();
 		assert_eq!(out_port.name(), "inout".into());
 	}
 }

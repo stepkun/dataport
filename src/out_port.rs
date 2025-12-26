@@ -1,5 +1,5 @@
 // Copyright © 2025 Stephan Kunz
-//! OutPort.
+//! Implementation of a port providing [`OutPort`].
 
 #![allow(unused)]
 
@@ -12,18 +12,18 @@ use crate::{
 	any_port::AnyPort,
 	error::{Error, Result},
 	guards::{PortReadGuard, PortWriteGuard},
-	traits::{PortBase, PortSetter},
+	traits::{OutPort, PortBase},
 };
 
-/// OutPort
-pub struct OutPort<T> {
+/// OutputPort
+pub struct OutputPort<T> {
 	/// An identifying name of the port, which must be unique for a given item.
 	name: ConstString,
 	/// The current value of the port.
 	value: Arc<RwLock<Option<T>>>,
 }
 
-impl<T: 'static + Send + Sync> AnyPort for OutPort<T> {
+impl<T: 'static + Send + Sync> AnyPort for OutputPort<T> {
 	fn as_any(&self) -> &dyn Any {
 		self
 	}
@@ -33,16 +33,16 @@ impl<T: 'static + Send + Sync> AnyPort for OutPort<T> {
 	}
 }
 
-impl<T> core::fmt::Debug for OutPort<T> {
+impl<T> core::fmt::Debug for OutputPort<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-		f.debug_struct("OutPort")
+		f.debug_struct("OutputPort")
 			.field("name", &self.name)
 			//.field("value", &self.value)
 			.finish_non_exhaustive()
 	}
 }
 
-impl<T: 'static> PartialEq for OutPort<T> {
+impl<T: 'static> PartialEq for OutputPort<T> {
 	/// Partial equality of an out port is, if both have the same name & value type
 	fn eq(&self, other: &Self) -> bool {
 		if self.name == other.name {
@@ -63,13 +63,13 @@ impl<T: 'static> PartialEq for OutPort<T> {
 	}
 }
 
-impl<T> PortBase for OutPort<T> {
+impl<T> PortBase for OutputPort<T> {
 	fn name(&self) -> ConstString {
 		self.name.clone()
 	}
 }
 
-impl<T> PortSetter<T> for OutPort<T> {
+impl<T> OutPort<T> for OutputPort<T> {
 	fn replace(&self, value: impl Into<T>) -> Option<T> {
 		self.value.write().replace(value.into())
 	}
@@ -103,7 +103,7 @@ impl<T> PortSetter<T> for OutPort<T> {
 	}
 }
 
-impl<T> OutPort<T> {
+impl<T> OutputPort<T> {
 	#[must_use]
 	pub fn new(name: impl Into<ConstString>) -> Self {
 		Self {
@@ -176,16 +176,16 @@ mod tests {
 	// check, that the auto traits are available.
 	#[test]
 	const fn normal_types() {
-		is_normal::<&OutPort<Vec<String>>>();
-		is_normal::<OutPort<Vec<i32>>>();
+		is_normal::<&OutputPort<Vec<String>>>();
+		is_normal::<OutputPort<Vec<i32>>>();
 	}
 
 	#[test]
 	fn non_public_accessors() {
-		let o1 = OutPort::<i32>::new("p1");
-		let o2 = OutPort::<f64>::new(CONST_NAME);
-		let o3 = OutPort::<String>::new(STATIC_NAME);
-		let o4 = OutPort::<&str>::with_value("p4", "hello world");
+		let o1 = OutputPort::<i32>::new("p1");
+		let o2 = OutputPort::<f64>::new(CONST_NAME);
+		let o3 = OutputPort::<String>::new(STATIC_NAME);
+		let o4 = OutputPort::<&str>::with_value("p4", "hello world");
 
 		o1.set(42);
 		o2.set(PI);

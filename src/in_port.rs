@@ -1,5 +1,5 @@
 // Copyright © 2025 Stephan Kunz
-//! Port.
+//! Implementation of a port providing [`InPort`].
 
 use core::{any::Any, ops::Deref};
 
@@ -10,19 +10,19 @@ use crate::{
 	any_port::AnyPort,
 	error::{Error, Result},
 	guards::PortReadGuard,
-	out_port::OutPort,
-	traits::{PortBase, PortGetter},
+	out_port::OutputPort,
+	traits::{InPort, PortBase},
 };
 
 /// InPort
-pub struct InPort<T> {
+pub struct InputPort<T> {
 	/// An identifying name of the port, which must be unique for a given item.
 	name: ConstString,
 	/// The source [`OutPort`] to fetch new values from.
-	src: RwLock<Option<Arc<OutPort<T>>>>,
+	src: RwLock<Option<Arc<OutputPort<T>>>>,
 }
 
-impl<T: 'static + Send + Sync> AnyPort for InPort<T> {
+impl<T: 'static + Send + Sync> AnyPort for InputPort<T> {
 	fn as_any(&self) -> &dyn Any {
 		self
 	}
@@ -32,16 +32,16 @@ impl<T: 'static + Send + Sync> AnyPort for InPort<T> {
 	}
 }
 
-impl<T> core::fmt::Debug for InPort<T> {
+impl<T> core::fmt::Debug for InputPort<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-		f.debug_struct("InPort")
+		f.debug_struct("InputPort")
 			.field("name", &self.name)
 			//.field("src", &self.src)
 			.finish_non_exhaustive()
 	}
 }
 
-impl<T: 'static> PartialEq for InPort<T> {
+impl<T: 'static> PartialEq for InputPort<T> {
 	/// Partial equality of an in port is, if both have the same name & value type
 	fn eq(&self, other: &Self) -> bool {
 		if self.name == other.name {
@@ -62,13 +62,13 @@ impl<T: 'static> PartialEq for InPort<T> {
 	}
 }
 
-impl<T> PortBase for InPort<T> {
+impl<T> PortBase for InputPort<T> {
 	fn name(&self) -> ConstString {
 		self.name.clone()
 	}
 }
 
-impl<T> PortGetter<T> for InPort<T> {
+impl<T> InPort<T> for InputPort<T> {
 	fn get(&self) -> Option<T>
 	where
 		T: Clone,
@@ -103,9 +103,17 @@ impl<T> PortGetter<T> for InPort<T> {
 			None
 		}
 	}
+
+	fn src(&self) -> Option<Arc<OutputPort<T>>> {
+		self.src.read().clone()
+	}
+
+	fn replace_src(&self, src: impl Into<Arc<OutputPort<T>>>) -> Option<Arc<OutputPort<T>>> {
+		self.src.write().replace(src.into())
+	}
 }
 
-impl<T> InPort<T> {
+impl<T> InputPort<T> {
 	#[must_use]
 	pub fn new(name: impl Into<ConstString>) -> Self {
 		Self {
@@ -115,21 +123,11 @@ impl<T> InPort<T> {
 	}
 
 	#[must_use]
-	pub fn with_src(name: impl Into<ConstString>, src: impl Into<Arc<OutPort<T>>>) -> Self {
+	pub fn with_src(name: impl Into<ConstString>, src: impl Into<Arc<OutputPort<T>>>) -> Self {
 		Self {
 			name: name.into(),
 			src: RwLock::new(Some(src.into())),
 		}
-	}
-
-	#[must_use]
-	pub fn src(&self) -> Option<Arc<OutPort<T>>> {
-		self.src.read().clone()
-	}
-
-	#[must_use]
-	pub fn set_src(&self, src: impl Into<Arc<OutPort<T>>>) -> Option<Arc<OutPort<T>>> {
-		self.src.write().replace(src.into())
 	}
 }
 
@@ -144,7 +142,7 @@ mod tests {
 	// check, that the auto traits are available.
 	#[test]
 	const fn normal_types() {
-		is_normal::<&InPort<i32>>();
-		is_normal::<InPort<String>>();
+		is_normal::<&InputPort<i32>>();
+		is_normal::<InputPort<String>>();
 	}
 }

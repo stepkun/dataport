@@ -29,11 +29,11 @@ type ConstString = Arc<str>;
 
 // flatten
 pub use error::Error;
-pub use in_out_port::InOutPort;
-pub use in_port::InPort;
-pub use out_port::OutPort;
+pub use in_out_port::InputOutputPort;
+pub use in_port::InputPort;
+pub use out_port::OutputPort;
 pub use port::Port;
 pub use port_list::{DynamicPortList, StaticPortList};
-pub use traits::{PortGetter, PortHub, PortList, PortSetter};
+pub use traits::{InPort, OutPort, PortHub, PortList};
 // re-exports:
 //pub use dataport_macros::???;
