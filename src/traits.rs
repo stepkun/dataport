@@ -34,6 +34,9 @@ pub trait InPort<T>: PortBase {
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
 	fn read(&self) -> Result<PortReadGuard<T>>;
 
+	/// Returns a non zero change sequence number, which wraps around to `1` after reaching u32::MAX.
+	fn sequence_id(&self) -> Option<u32>;
+
 	/// Returns the T, removing it from the port.
 	#[must_use]
 	fn take(&self) -> Option<T>;

@@ -12,35 +12,49 @@ macro_rules! test_getter_setter {
 	($tp:ty, $name:expr, $value:expr, $value2:expr) => {
 		// creation without value
 		let iop = InputOutputPort::<$tp>::new($name);
-		// connect input and output!
+		// connect input and output => leads to double increase of sequence id
 		assert!(iop.replace_src(iop.output()).is_none());
 		assert!(iop.read().is_err());
 		assert!(iop.write().is_err());
 		assert!(iop.get().is_none());
+		assert!(iop.sequence_id().is_none());
 		iop.set($value);
+		assert_eq!(iop.sequence_id().unwrap(), 1);
 		assert_eq!(iop.replace($value2).unwrap(), $value);
+		assert_eq!(iop.sequence_id().unwrap(), 2);
 		iop.propagate();
+		assert_eq!(iop.sequence_id().unwrap(), 4);
 		assert_eq!(iop.get().unwrap(), $value2);
 		assert_eq!(*iop.read().unwrap(), $value2);
 		assert_eq!(iop.take().unwrap(), $value2);
+		assert_eq!(iop.sequence_id().unwrap(), 5);
 		assert!(iop.get().is_none());
 		// creation with value
 		let iop = InputOutputPort::<$tp>::with_value($name, $value);
-		// connect input and output!
+		assert!(iop.sequence_id().is_none());
+		// connect input and output => leads to initial increase by 1 and later double increase of sequence id
 		assert!(iop.replace_src(iop.output()).is_none());
+		assert_eq!(iop.sequence_id().unwrap(), 1);
 		iop.set($value);
+		assert_eq!(iop.sequence_id().unwrap(), 2);
 		let mut guard = iop.write().unwrap();
 		assert_eq!(*guard, $value);
 		*guard = $value2;
 		assert_eq!(*guard, $value2);
 		drop(guard);
+		assert_eq!(iop.sequence_id().unwrap(), 3);
 		assert_eq!(iop.replace($value).unwrap(), $value2);
+		assert_eq!(iop.sequence_id().unwrap(), 4);
 		assert_eq!(iop.take().unwrap(), $value);
+		assert_eq!(iop.sequence_id().unwrap(), 5);
 		assert!(iop.replace($value2).is_none());
+		assert_eq!(iop.sequence_id().unwrap(), 6);
 		iop.propagate();
+		assert_eq!(iop.sequence_id().unwrap(), 8);
 		assert_eq!(iop.get().unwrap(), $value2);
 		assert_eq!(*iop.read().unwrap(), $value2);
 		assert_eq!(iop.take().unwrap(), $value2);
+		assert_eq!(iop.sequence_id().unwrap(), 9);
 		assert!(iop.get().is_none());
 	};
 }

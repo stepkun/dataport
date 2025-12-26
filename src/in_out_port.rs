@@ -72,6 +72,10 @@ impl<T> InPort<T> for InputOutputPort<T> {
 		InPort::read(&*self.input)
 	}
 
+	fn sequence_id(&self) -> Option<u32> {
+		self.input.sequence_id()
+	}
+
 	fn try_read(&self) -> Result<PortReadGuard<T>> {
 		InPort::try_read(&*self.input)
 	}
@@ -135,7 +139,7 @@ impl<T> InputOutputPort<T> {
 		}
 	}
 
-	/// Propagate an evantually existing value from input to output.
+	/// Propagate an eventually existing value from input to output.
 	pub fn propagate(&self) {
 		if let Some(src) = self.src()
 			&& let Some(value) = src.by_value()

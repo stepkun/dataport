@@ -11,15 +11,19 @@ static STATIC_NAME: &str = "p3";
 macro_rules! test_getter {
 	($tp:ty, $name:expr, $value:expr) => {
 		let ip = InputPort::<$tp>::new($name);
+		assert!(ip.sequence_id().is_none());
 		assert!(ip.read().is_err());
 		assert!(ip.get().is_none());
 		assert!(ip.take().is_none());
+		assert!(ip.sequence_id().is_none());
 
 		let op = OutputPort::<$tp>::with_value("test", $value);
 		let ip = InputPort::<$tp>::with_src($name, op);
+		assert_eq!(ip.sequence_id().unwrap(), 1);
 		assert_eq!(*ip.read().unwrap(), $value);
 		assert_eq!(ip.get().unwrap(), $value);
 		assert_eq!(ip.take().unwrap(), $value);
+		assert_eq!(ip.sequence_id().unwrap(), 2);
 	};
 }
 

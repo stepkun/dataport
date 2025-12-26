@@ -88,6 +88,14 @@ impl<T> InPort<T> for InputPort<T> {
 		}
 	}
 
+	fn sequence_id(&self) -> Option<u32> {
+		if let Some(src) = &*self.src.read() {
+			src.sequence_id()
+		} else {
+			None
+		}
+	}
+
 	fn try_read(&self) -> Result<PortReadGuard<T>> {
 		if let Some(src) = &*self.src.read() {
 			src.try_by_ref()
