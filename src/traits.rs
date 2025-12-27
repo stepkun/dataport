@@ -7,9 +7,9 @@ use crate::{
 	ConstString, OutputPort,
 	any_port::AnyPort,
 	error::{Error, Result},
-	guards::{PortReadGuard, PortWriteGuard},
 	in_out_port::InputOutputPort,
 	port::Port,
+	port_value::{PortValueReadGuard, PortValueWriteGuard},
 };
 
 /// Common features for all types of ports.
@@ -32,10 +32,11 @@ pub trait InPort<T>: PortBase {
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn read(&self) -> Result<PortReadGuard<T>>;
+	fn read(&self) -> Result<PortValueReadGuard<T>>;
 
-	/// Returns a non zero change sequence number, which wraps around to `1` after reaching u32::MAX.
-	fn sequence_id(&self) -> Option<u32>;
+	/// Returns the change sequence number, which wraps around to `1` after reaching u32::MAX.
+	/// A sequence id of `0` means that the value has never been set or changed.
+	fn sequence_number(&self) -> u32;
 
 	/// Returns the T, removing it from the port.
 	#[must_use]
@@ -46,7 +47,7 @@ pub trait InPort<T>: PortBase {
 	/// - [`Error::IsLocked`], if port is locked.
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn try_read(&self) -> Result<PortReadGuard<T>>;
+	fn try_read(&self) -> Result<PortValueReadGuard<T>>;
 
 	/// Returns a reference to the source of the input port.
 	#[must_use]
@@ -70,14 +71,14 @@ pub trait OutPort<T>: PortBase {
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn write(&self) -> Result<PortWriteGuard<T>>;
+	fn write(&self) -> Result<PortValueWriteGuard<T>>;
 
 	/// Returns a mutable guard to the ports value T.
 	/// # Errors
 	/// - [`Error::IsLocked`], if port is locked.
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn try_write(&self) -> Result<PortWriteGuard<T>>;
+	fn try_write(&self) -> Result<PortValueWriteGuard<T>>;
 }
 
 /// PortList.
@@ -125,7 +126,7 @@ pub trait PortList {
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn read<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortReadGuard<T>> {
+	fn read<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortValueReadGuard<T>> {
 		let port = port.into();
 		if let Some(port_) = self.find(port.clone()) {
 			// port must be input
@@ -144,7 +145,7 @@ pub trait PortList {
 	/// - [`Error::IsLocked`], if port is locked.
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn try_read<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortReadGuard<T>> {
+	fn try_read<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortValueReadGuard<T>> {
 		let port = port.into();
 		if let Some(port_) = self.find(port.clone()) {
 			// port must be input
@@ -162,7 +163,7 @@ pub trait PortList {
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn write<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortWriteGuard<T>> {
+	fn write<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortValueWriteGuard<T>> {
 		let port = port.into();
 		if let Some(port_) = self.find(port.clone()) {
 			// port must be input
@@ -181,7 +182,7 @@ pub trait PortList {
 	/// - [`Error::IsLocked`], if port is locked.
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn try_write<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortWriteGuard<T>> {
+	fn try_write<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortValueWriteGuard<T>> {
 		let port = port.into();
 		if let Some(port_) = self.find(port.clone()) {
 			// port must be input

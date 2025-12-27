@@ -1,5 +1,5 @@
 // Copyright © 2025 Stephan Kunz
-//! An type erased (abstract) port implementation.
+//! A type erased (abstract) port implementation.
 
 use core::any::Any;
 
@@ -10,6 +10,7 @@ use crate::{
 };
 
 /// Port.
+#[derive(Clone)]
 pub struct Port {
 	/// Any type of port
 	port: Arc<dyn AnyPort>,
@@ -20,6 +21,12 @@ impl core::fmt::Debug for Port {
 		f.debug_struct("Port")
 			.field("port", &self.port)
 			.finish_non_exhaustive()
+	}
+}
+
+impl<T: 'static + Send + Sync> From<InputOutputPort<T>> for Port {
+	fn from(value: InputOutputPort<T>) -> Self {
+		Self { port: Arc::new(value) }
 	}
 }
 
@@ -59,6 +66,21 @@ impl Port {
 		Self {
 			port: Arc::new(OutputPort::<T>::new(name)),
 		}
+	}
+
+	pub fn as_in_out_port<T: 'static + Send + Sync>(&self) -> Option<Arc<InputOutputPort<T>>> {
+		// helper function to downcast the `Arc<dyn Any>` to `Arc<InPort<T>>`
+		fn cast_arc_any_to_in_out_port<T: 'static + Send + Sync>(
+			any_value: Arc<dyn Any + Send + Sync>,
+		) -> Option<Arc<InputOutputPort<T>>> {
+			any_value.downcast::<InputOutputPort<T>>().ok()
+		}
+
+		let in_out_port = cast_arc_any_to_in_out_port::<T>(self.port.clone());
+		if in_out_port.is_some() {
+			return in_out_port;
+		}
+		None
 	}
 
 	pub(crate) fn as_in_port<T: 'static + Send + Sync>(&self) -> Option<Arc<InputPort<T>>> {

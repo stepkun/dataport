@@ -6,8 +6,6 @@
 #![allow(clippy::unwrap_used)]
 #![allow(unused)]
 
-use std::f64::consts::PI;
-
 use dataport::*;
 
 #[test]

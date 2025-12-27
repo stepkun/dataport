@@ -9,8 +9,8 @@ use crate::{
 	ConstString, RwLock,
 	any_port::AnyPort,
 	error::{Error, Result},
-	guards::PortReadGuard,
 	out_port::OutputPort,
+	port_value::PortValueReadGuard,
 	traits::{InPort, PortBase},
 };
 
@@ -80,7 +80,7 @@ impl<T> InPort<T> for InputPort<T> {
 		}
 	}
 
-	fn read(&self) -> Result<PortReadGuard<T>> {
+	fn read(&self) -> Result<PortValueReadGuard<T>> {
 		if let Some(src) = &*self.src.read() {
 			src.by_ref()
 		} else {
@@ -88,15 +88,15 @@ impl<T> InPort<T> for InputPort<T> {
 		}
 	}
 
-	fn sequence_id(&self) -> Option<u32> {
+	fn sequence_number(&self) -> u32 {
 		if let Some(src) = &*self.src.read() {
 			src.sequence_id()
 		} else {
-			None
+			0
 		}
 	}
 
-	fn try_read(&self) -> Result<PortReadGuard<T>> {
+	fn try_read(&self) -> Result<PortValueReadGuard<T>> {
 		if let Some(src) = &*self.src.read() {
 			src.try_by_ref()
 		} else {

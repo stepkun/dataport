@@ -10,12 +10,13 @@ extern crate alloc;
 
 mod any_port;
 mod error;
-mod guards;
 mod in_out_port;
 mod in_port;
 mod out_port;
 mod port;
 mod port_list;
+mod port_value;
+mod sequence_number;
 mod traits;
 
 use alloc::sync::Arc;
@@ -34,6 +35,7 @@ pub use in_port::InputPort;
 pub use out_port::OutputPort;
 pub use port::Port;
 pub use port_list::{DynamicPortList, StaticPortList};
-pub use traits::{InPort, OutPort, PortHub, PortList};
+pub use port_value::{PortValueReadGuard, PortValueWriteGuard};
+pub use traits::{InPort, OutPort, PortBase, PortHub, PortList};
 // re-exports:
 //pub use dataport_macros::???;

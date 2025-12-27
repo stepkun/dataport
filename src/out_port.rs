@@ -14,17 +14,18 @@ use crate::{
 	ConstString, RwLock,
 	any_port::AnyPort,
 	error::{Error, Result},
-	guards::{PortReadGuard, PortWriteGuard},
+	port,
+	port_value::{PortValue, PortValueReadGuard, PortValueWriteGuard},
+	sequence_number::SequenceNumber,
 	traits::{OutPort, PortBase},
 };
 
-pub(crate) type OutputValue<T> = (Option<T>, u32);
 /// OutputPort
 pub struct OutputPort<T> {
 	/// An identifying name of the port, which must be unique for a given item.
 	name: ConstString,
 	/// The current value of the port together with its change sequence.
-	value: Arc<RwLock<OutputValue<T>>>,
+	value: Arc<RwLock<PortValue<T>>>,
 }
 
 impl<T: 'static + Send + Sync> AnyPort for OutputPort<T> {
@@ -52,14 +53,14 @@ impl<T: 'static> PartialEq for OutputPort<T> {
 		if self.name == other.name {
 			let v1 = self.value.read();
 			let v2 = other.value.read();
-			if let Some(value1) = &v1.0
-				&& let Some(value2) = &v2.0
+			if let Some(value1) = v1.as_ref()
+				&& let Some(value2) = v2.as_ref()
 			{
 				// check type of value1 against type of value2
 				if value1.type_id() == value2.type_id() {
 					return true;
 				}
-			} else if v1.0.is_none() && v2.0.is_none() {
+			} else if v1.is_none() && v2.is_none() {
 				return true;
 			}
 		}
@@ -75,45 +76,32 @@ impl<T> PortBase for OutputPort<T> {
 
 impl<T> OutPort<T> for OutputPort<T> {
 	fn replace(&self, value: impl Into<T>) -> Option<T> {
-		let mut guard = self.value.write();
-		let old = guard.0.replace(value.into());
-		if guard.1 < u32::MAX {
-			guard.1 += 1;
-		} else {
-			guard.1 = 1;
-		}
-		old
+		self.value.write().replace(value.into())
 	}
 
 	fn set(&self, value: impl Into<T>) {
-		let mut guard = self.value.write();
-		let _ = guard.0.replace(value.into());
-		if guard.1 < u32::MAX {
-			guard.1 += 1;
-		} else {
-			guard.1 = 1;
-		}
+		self.value.write().set(value.into())
 	}
 
-	fn write(&self) -> Result<PortWriteGuard<T>> {
+	fn write(&self) -> Result<PortValueWriteGuard<T>> {
 		// Test for value is separate to not pass a locked value into the guard.
-		let has_value = self.value.read().0.is_some();
+		let has_value = self.value.read().is_some();
 		if has_value {
-			PortWriteGuard::new(self.name.clone(), self.value.clone())
+			PortValueWriteGuard::new(self.name.clone(), self.value.clone())
 		} else {
 			Err(Error::NoValueSet { port: self.name.clone() })
 		}
 	}
 
-	fn try_write(&self) -> Result<PortWriteGuard<T>> {
+	fn try_write(&self) -> Result<PortValueWriteGuard<T>> {
 		// Test for value is separate to not pass a locked value into the guard.
 		let has_value = if let Some(guard) = self.value.try_read() {
-			guard.0.is_some()
+			guard.is_some()
 		} else {
 			return Err(Error::IsLocked { port: self.name.clone() });
 		};
 		if has_value {
-			PortWriteGuard::try_new(self.name.clone(), self.value.clone())
+			PortValueWriteGuard::try_new(self.name.clone(), self.value.clone())
 		} else {
 			Err(Error::NoValueSet { port: self.name.clone() })
 		}
@@ -125,39 +113,41 @@ impl<T> OutputPort<T> {
 	pub fn new(name: impl Into<ConstString>) -> Self {
 		Self {
 			name: name.into(),
-			value: Arc::new(RwLock::new((None, 0))),
+			value: Arc::new(RwLock::new(PortValue::<T>::default())),
 		}
 	}
 
 	#[must_use]
 	pub fn with_value(name: impl Into<ConstString>, value: impl Into<T>) -> Self {
+		let mut port_value = PortValue::<T>::default();
+		port_value.set(value.into());
 		Self {
 			name: name.into(),
-			value: Arc::new(RwLock::new((Some(value.into()), 1))),
+			value: Arc::new(RwLock::new(port_value)),
 		}
 	}
 
 	/// Helper function to solve ambiguity.
-	pub(crate) fn by_ref(&self) -> Result<PortReadGuard<T>> {
+	pub(crate) fn by_ref(&self) -> Result<PortValueReadGuard<T>> {
 		// Test for value is separate to not pass a locked value into the guard.
-		let has_value = self.value.read().0.is_some();
+		let has_value = self.value.read().is_some();
 		if has_value {
-			PortReadGuard::new(self.name.clone(), self.value.clone())
+			PortValueReadGuard::new(self.name.clone(), self.value.clone())
 		} else {
 			Err(Error::NoValueSet { port: self.name.clone() })
 		}
 	}
 
 	/// Helper function to solve ambiguity.
-	pub(crate) fn try_by_ref(&self) -> Result<PortReadGuard<T>> {
+	pub(crate) fn try_by_ref(&self) -> Result<PortValueReadGuard<T>> {
 		// Test for value is separate to not pass a locked value into the guard.
 		let has_value = if let Some(guard) = self.value.try_read() {
-			guard.0.is_some()
+			guard.is_some()
 		} else {
 			return Err(Error::IsLocked { port: self.name.clone() });
 		};
 		if has_value {
-			PortReadGuard::try_new(self.name.clone(), self.value.clone())
+			PortValueReadGuard::try_new(self.name.clone(), self.value.clone())
 		} else {
 			Err(Error::NoValueSet { port: self.name.clone() })
 		}
@@ -168,25 +158,17 @@ impl<T> OutputPort<T> {
 	where
 		T: Clone,
 	{
-		self.value.read().0.clone()
+		self.value.read().get()
 	}
 
 	#[must_use]
 	pub(crate) fn by_value(&self) -> Option<T> {
-		let mut guard = self.value.write();
-		let old = guard.0.take();
-		if guard.1 < u32::MAX {
-			guard.1 += 1;
-		} else {
-			guard.1 = 1;
-		}
-		old
+		self.value.write().take()
 	}
 
 	#[must_use]
-	pub(crate) fn sequence_id(&self) -> Option<u32> {
-		let sid = self.value.read().1;
-		if sid != 0 { Some(sid) } else { None }
+	pub(crate) fn sequence_id(&self) -> u32 {
+		self.value.read().sequence_number()
 	}
 }
 
@@ -216,17 +198,17 @@ mod tests {
 		let o2 = OutputPort::<f64>::new(CONST_NAME);
 		let o3 = OutputPort::<String>::new(STATIC_NAME);
 		let o4 = OutputPort::<&str>::with_value("p4", "hello world");
-		assert!(o1.sequence_id().is_none());
-		assert!(o2.sequence_id().is_none());
-		assert!(o3.sequence_id().is_none());
-		assert_eq!(o4.sequence_id().unwrap(), 1);
+		assert_eq!(o1.sequence_id(), 0);
+		assert_eq!(o2.sequence_id(), 0);
+		assert_eq!(o3.sequence_id(), 0);
+		assert_eq!(o4.sequence_id(), 1);
 
 		o1.set(42);
 		o2.set(PI);
 		o3.set(String::from("the answer"));
-		assert_eq!(o1.sequence_id().unwrap(), 1);
-		assert_eq!(o2.sequence_id().unwrap(), 1);
-		assert_eq!(o3.sequence_id().unwrap(), 1);
+		assert_eq!(o1.sequence_id(), 1);
+		assert_eq!(o2.sequence_id(), 1);
+		assert_eq!(o3.sequence_id(), 1);
 
 		// separate block to release locks
 		{
@@ -253,10 +235,10 @@ mod tests {
 			assert!(o3.try_write().is_err());
 			assert!(o4.try_write().is_err());
 
-			assert_eq!(o1.sequence_id().unwrap(), 1);
-			assert_eq!(o2.sequence_id().unwrap(), 1);
-			assert_eq!(o3.sequence_id().unwrap(), 1);
-			assert_eq!(o4.sequence_id().unwrap(), 1);
+			assert_eq!(o1.sequence_id(), 1);
+			assert_eq!(o2.sequence_id(), 1);
+			assert_eq!(o3.sequence_id(), 1);
+			assert_eq!(o4.sequence_id(), 1);
 		}
 
 		// separate block to release locks
@@ -276,20 +258,20 @@ mod tests {
 			assert!(o3.try_by_ref().is_err());
 			assert!(o4.try_by_ref().is_err());
 		}
-		assert_eq!(o1.sequence_id().unwrap(), 1);
-		assert_eq!(o2.sequence_id().unwrap(), 1);
-		assert_eq!(o3.sequence_id().unwrap(), 1);
-		assert_eq!(o4.sequence_id().unwrap(), 1);
+		assert_eq!(o1.sequence_id(), 1);
+		assert_eq!(o2.sequence_id(), 1);
+		assert_eq!(o3.sequence_id(), 1);
+		assert_eq!(o4.sequence_id(), 1);
 
 		assert_eq!(o1.by_value().unwrap(), 42);
 		assert_eq!(o2.by_value().unwrap(), PI);
 		assert_eq!(o3.by_value().unwrap(), String::from("the answer"));
 		assert_eq!(o4.by_value().unwrap(), "hello world");
 
-		assert_eq!(o1.sequence_id().unwrap(), 2);
-		assert_eq!(o2.sequence_id().unwrap(), 2);
-		assert_eq!(o3.sequence_id().unwrap(), 2);
-		assert_eq!(o4.sequence_id().unwrap(), 2);
+		assert_eq!(o1.sequence_id(), 2);
+		assert_eq!(o2.sequence_id(), 2);
+		assert_eq!(o3.sequence_id(), 2);
+		assert_eq!(o4.sequence_id(), 2);
 
 		assert!(o1.by_ref().is_err());
 		assert!(o1.try_by_ref().is_err());

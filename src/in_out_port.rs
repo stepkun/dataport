@@ -9,9 +9,9 @@ use crate::{
 	ConstString,
 	any_port::AnyPort,
 	error::Result,
-	guards::{PortReadGuard, PortWriteGuard},
 	in_port::InputPort,
 	out_port::OutputPort,
+	port_value::{PortValueReadGuard, PortValueWriteGuard},
 	traits::{InPort, OutPort, PortBase},
 };
 
@@ -68,15 +68,15 @@ impl<T> InPort<T> for InputOutputPort<T> {
 		self.input.get()
 	}
 
-	fn read(&self) -> Result<PortReadGuard<T>> {
+	fn read(&self) -> Result<PortValueReadGuard<T>> {
 		InPort::read(&*self.input)
 	}
 
-	fn sequence_id(&self) -> Option<u32> {
-		self.input.sequence_id()
+	fn sequence_number(&self) -> u32 {
+		self.input.sequence_number()
 	}
 
-	fn try_read(&self) -> Result<PortReadGuard<T>> {
+	fn try_read(&self) -> Result<PortValueReadGuard<T>> {
 		InPort::try_read(&*self.input)
 	}
 
@@ -102,11 +102,11 @@ impl<T> OutPort<T> for InputOutputPort<T> {
 		self.output.set(value)
 	}
 
-	fn write(&self) -> Result<PortWriteGuard<T>> {
+	fn write(&self) -> Result<PortValueWriteGuard<T>> {
 		self.output.write()
 	}
 
-	fn try_write(&self) -> Result<PortWriteGuard<T>> {
+	fn try_write(&self) -> Result<PortValueWriteGuard<T>> {
 		self.output.try_write()
 	}
 }
