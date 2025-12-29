@@ -27,4 +27,4 @@ doc-comment = "0.3.4"
 
 [features]
 default = ["std"]
-std = []
+std = ["spin/std"]

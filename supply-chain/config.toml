@@ -14,7 +14,3 @@ criteria = "safe-to-deploy"
 [[exemptions.doc-comment]]
 version = "0.3.4"
 criteria = "safe-to-run"
-
-[[exemptions.paste]]
-version = "1.0.15"
-criteria = "safe-to-deploy"

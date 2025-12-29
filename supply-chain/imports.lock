@@ -1,2 +1,6 @@
 
 # cargo-vet imports lock
+
+[[unpublished.dataport]]
+version = "0.0.1"
+audited_as = "0.0.0"

@@ -81,8 +81,15 @@ pub trait OutPort<T>: PortBase {
 	fn try_write(&self) -> Result<PortValueWriteGuard<T>>;
 }
 
-/// PortList.
-pub trait PortList {
+/// Something that provides ports.
+pub trait PortProvider {
+	/// Lookup a [`Port`].
+	#[must_use]
+	fn find(&self, name: impl Into<ConstString>) -> Option<&Port>;
+}
+
+/// Accessors to ports.
+pub trait PortAccessors: PortProvider {
 	/// Connects the ouput of src_port to dest_list's dest_port.
 	/// # Errors
 	/// - [`Error::NotFound`], if one of the ports is not in port list.
@@ -122,6 +129,24 @@ pub trait PortList {
 		}
 	}
 
+	/// Returns a copy of the value of that port.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
+	fn get<T: 'static + Clone + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<Option<T>> {
+		let port = port.into();
+		if let Some(port_) = self.find(port.clone()) {
+			// port must be input
+			if let Some(in_port) = port_.as_in_port::<T>() {
+				Ok(in_port.get())
+			} else {
+				Err(Error::WrongType { port })
+			}
+		} else {
+			Err(Error::NotFound { port })
+		}
+	}
+
 	/// Returns an immutable guard to the T.
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
@@ -151,6 +176,60 @@ pub trait PortList {
 			// port must be input
 			if let Some(in_port) = port_.as_in_port::<T>() {
 				(*in_port).try_read()
+			} else {
+				Err(Error::WrongType { port })
+			}
+		} else {
+			Err(Error::NotFound { port })
+		}
+	}
+
+	/// Replaces the port's value with the `value` and returns the old value.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
+	fn replace<T: 'static + Send + Sync>(&self, port: &'static str, value: T) -> Result<Option<T>> {
+		if let Some(port_) = self.find(port) {
+			// src_port must be output
+			if let Some(out_port) = port_.as_out_port::<T>() {
+				Ok(out_port.replace(value))
+			} else {
+				Err(Error::WrongType { port: port.into() })
+			}
+		} else {
+			Err(Error::NotFound { port: port.into() })
+		}
+	}
+
+	/// Sets the port to the value.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
+	fn set<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>, value: T) -> Result<()> {
+		let port = port.into();
+		if let Some(port_) = self.find(port.clone()) {
+			// src_port must be output
+			if let Some(out_port) = port_.as_out_port::<T>() {
+				out_port.set(value);
+				Ok(())
+			} else {
+				Err(Error::WrongType { port })
+			}
+		} else {
+			Err(Error::NotFound { port })
+		}
+	}
+
+	/// Returns the value of that port.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
+	fn take<T: 'static + Clone + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<Option<T>> {
+		let port = port.into();
+		if let Some(port_) = self.find(port.clone()) {
+			// port must be input
+			if let Some(in_port) = port_.as_in_port::<T>() {
+				Ok(in_port.get())
 			} else {
 				Err(Error::WrongType { port })
 			}
@@ -195,53 +274,10 @@ pub trait PortList {
 			Err(Error::NotFound { port })
 		}
 	}
+}
 
-	/// Lookup a [`Port`].
-	#[must_use]
-	fn find(&self, name: impl Into<ConstString>) -> Option<&Port> {
-		let name = name.into();
-		self.portlist()
-			.iter()
-			.find(|&port| port.name() == name.clone())
-			.map(|v| v as _)
-	}
-
-	/// Returns a copy of the value of that port.
-	/// # Errors
-	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn get<T: 'static + Clone + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<Option<T>> {
-		let port = port.into();
-		if let Some(port_) = self.find(port.clone()) {
-			// port must be input
-			if let Some(in_port) = port_.as_in_port::<T>() {
-				Ok(in_port.get())
-			} else {
-				Err(Error::WrongType { port })
-			}
-		} else {
-			Err(Error::NotFound { port })
-		}
-	}
-
-	/// Returns the value of that port.
-	/// # Errors
-	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn take<T: 'static + Clone + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<Option<T>> {
-		let port = port.into();
-		if let Some(port_) = self.find(port.clone()) {
-			// port must be input
-			if let Some(in_port) = port_.as_in_port::<T>() {
-				Ok(in_port.get())
-			} else {
-				Err(Error::WrongType { port })
-			}
-		} else {
-			Err(Error::NotFound { port })
-		}
-	}
-
+/// PortList.
+pub trait PortList: PortAccessors {
 	/// Returns a reference to the port list.
 	#[must_use]
 	fn portlist(&self) -> &[Port];
@@ -266,41 +302,19 @@ pub trait PortList {
 			Err(Error::NotFound { port })
 		}
 	}
+}
 
-	/// Sets the port to the value.
-	/// # Errors
-	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn set<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>, value: T) -> Result<()> {
-		let port = port.into();
-		if let Some(port_) = self.find(port.clone()) {
-			// src_port must be output
-			if let Some(out_port) = port_.as_out_port::<T>() {
-				out_port.set(value);
-				Ok(())
-			} else {
-				Err(Error::WrongType { port })
-			}
-		} else {
-			Err(Error::NotFound { port })
-		}
-	}
+/// Implement PortAccessors for anything that implements PortList
+impl<T: PortList> PortAccessors for T {}
 
-	/// Replaces the port's value with the `value` and returns the old value.
-	/// # Errors
-	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn replace<T: 'static + Send + Sync>(&self, port: &'static str, value: T) -> Result<Option<T>> {
-		if let Some(port_) = self.find(port) {
-			// src_port must be output
-			if let Some(out_port) = port_.as_out_port::<T>() {
-				Ok(out_port.replace(value))
-			} else {
-				Err(Error::WrongType { port: port.into() })
-			}
-		} else {
-			Err(Error::NotFound { port: port.into() })
-		}
+/// Implement PortProvider for anything that implements PortList
+impl<T: PortList> PortProvider for T {
+	fn find(&self, name: impl Into<ConstString>) -> Option<&Port> {
+		let name = name.into();
+		self.portlist()
+			.iter()
+			.find(|&port| port.name() == name.clone())
+			.map(|v| v as _)
 	}
 }
 

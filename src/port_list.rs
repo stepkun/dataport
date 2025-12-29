@@ -1,11 +1,14 @@
 // Copyright © 2025 Stephan Kunz
-//! List of ports.
+//! Static and dynamic list of ports.
 
 use core::ops::{Deref, DerefMut};
 
 use alloc::vec::Vec;
 
-use crate::{port::Port, traits::PortHub, traits::PortList};
+use crate::{
+	port::Port,
+	traits::{PortHub, PortList},
+};
 
 /// StaticPortList.
 pub struct StaticPortList<const S: usize>([Port; S]);
@@ -71,6 +74,8 @@ mod tests {
 	use alloc::string::String;
 
 	use super::*;
+
+	use crate::traits::PortProvider;
 
 	const fn is_normal<T: Sized + Send + Sync>() {}
 
