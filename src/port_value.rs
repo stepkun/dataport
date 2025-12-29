@@ -21,6 +21,12 @@ impl<T> Default for PortValue<T> {
 }
 
 impl<T> PortValue<T> {
+	pub(crate) fn new(value: impl Into<T>) -> Self {
+		let mut sq = SequenceNumber::default();
+		sq.increment();
+		Self(Some(value.into()), sq)
+	}
+
 	pub(crate) const fn as_ref(&self) -> Option<&T> {
 		self.0.as_ref()
 	}
@@ -33,18 +39,18 @@ impl<T> PortValue<T> {
 		self.0.is_none()
 	}
 
-	pub(crate) fn replace(&mut self, value: T) -> Option<T> {
+	pub(crate) fn replace(&mut self, value: impl Into<T>) -> Option<T> {
 		self.1.increment();
-		self.0.replace(value)
+		self.0.replace(value.into())
 	}
 
 	pub(crate) const fn sequence_number(&self) -> u32 {
 		self.1.value()
 	}
 
-	pub(crate) fn set(&mut self, value: T) {
+	pub(crate) fn set(&mut self, value: impl Into<T>) {
 		self.1.increment();
-		self.0 = Some(value)
+		self.0 = Some(value.into())
 	}
 
 	pub(crate) fn take(&mut self) -> Option<T> {
@@ -105,7 +111,7 @@ impl<T> PortValueReadGuard<T> {
 				let ptr_t: *const T = value;
 				ptr_t
 			} else {
-				return Err(Error::NoValueSet { port: port.into() });
+				return Err(Error::ValueNotSet { port: port.into() });
 			}
 		};
 
@@ -126,7 +132,7 @@ impl<T> PortValueReadGuard<T> {
 					let ptr_t: *const T = value;
 					ptr_t
 				} else {
-					return Err(Error::NoValueSet { port: port.into() });
+					return Err(Error::ValueNotSet { port: port.into() });
 				}
 			} else {
 				return Err(Error::IsLocked { port: port.into() });
@@ -203,7 +209,7 @@ impl<T> PortValueWriteGuard<T> {
 				let ptr_seq_id: *mut SequenceNumber = &raw mut x.1;
 				(ptr_t, ptr_seq_id)
 			} else {
-				return Err(Error::NoValueSet { port: port.into() });
+				return Err(Error::ValueNotSet { port: port.into() });
 			}
 		};
 
@@ -230,7 +236,7 @@ impl<T> PortValueWriteGuard<T> {
 					let ptr_seq_id: *mut SequenceNumber = &raw mut x.1;
 					(ptr_t, ptr_seq_id)
 				} else {
-					return Err(Error::NoValueSet { port: port.into() });
+					return Err(Error::ValueNotSet { port: port.into() });
 				}
 			} else {
 				return Err(Error::IsLocked { port: port.into() });
@@ -246,16 +252,18 @@ impl<T> PortValueWriteGuard<T> {
 	}
 }
 
-//#[cfg(test)]
-//mod tests {
-//	use super::*;
-//
-//	const fn is_normal<T: Sized + Send + Sync>() {}
-//
-//	// check, that the auto traits are available.
-//	#[test]
-//	const fn normal_types() {
-//		is_normal::<PortReadGuard<i32>>();
-//		is_normal::<PortWriteGuard<i32>>();
-//	}
-//}
+#[cfg(test)]
+mod tests {
+	use alloc::string::String;
+
+	use super::*;
+
+	const fn is_normal<T: Sized + Send + Sync>() {}
+
+	// check, that the auto traits are available.
+	#[test]
+	const fn normal_types() {
+		is_normal::<&PortValue<i32>>();
+		is_normal::<PortValue<String>>();
+	}
+}

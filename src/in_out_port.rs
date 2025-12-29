@@ -1,30 +1,23 @@
 // Copyright © 2025 Stephan Kunz
 //! Implementation of a port providing both [`InPort`] and [`OutPort`].
 
+#![allow(unused)]
+
 use core::any::Any;
 
 use alloc::sync::Arc;
 
 use crate::{
-	ConstString,
-	any_port::AnyPort,
+	ConstString, Error, RwLock,
 	error::Result,
-	in_port::InputPort,
-	out_port::OutputPort,
-	port_value::{PortValueReadGuard, PortValueWriteGuard},
-	traits::{InPort, OutPort, PortBase},
+	port_data::PortData,
+	port_value::{PortValue, PortValueReadGuard, PortValueWriteGuard},
+	traits::{AnyPort, InPort, OutPort, PortBase},
 };
 
 /// InputOutputPort
-/// Be aware, that the input and output side are not automatically connected.
-/// The input value has to be propagated manually.
 pub struct InputOutputPort<T> {
-	/// Internal [`InPort`] which also provides an identifying name of the port,
-	/// which must be unique for a given item.
-	input: Arc<InputPort<T>>,
-	/// Internal [`OutPort`] which provides the same unique identifying name of
-	/// the port as the internal [`InPort`].
-	output: Arc<OutputPort<T>>,
+	data: RwLock<PortData<T>>,
 }
 
 impl<T: 'static + Send + Sync> AnyPort for InputOutputPort<T> {
@@ -40,23 +33,26 @@ impl<T: 'static + Send + Sync> AnyPort for InputOutputPort<T> {
 impl<T> core::fmt::Debug for InputOutputPort<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		f.debug_struct("InputOutputPort")
-			.field("name", &self.input.name())
-			//.field("input", &self.input)
-			//.field("output", &self.output)
-			.finish_non_exhaustive()
+			.field("data", &self.data)
+			.finish()
 	}
 }
 
 impl<T: 'static> PartialEq for InputOutputPort<T> {
 	/// Partial equality of an in/out port is, if input and output parts are partial equal
 	fn eq(&self, other: &Self) -> bool {
-		self.input == other.input && self.output == other.output
+		todo!();
+		false
 	}
 }
 
 impl<T> PortBase for InputOutputPort<T> {
 	fn name(&self) -> ConstString {
-		self.output.name()
+		self.data.read().name()
+	}
+
+	fn sequence_number(&self) -> u32 {
+		self.data.read().sequence_number()
 	}
 }
 
@@ -65,109 +61,109 @@ impl<T> InPort<T> for InputOutputPort<T> {
 	where
 		T: Clone,
 	{
-		self.input.get()
+		self.data.read().get()
 	}
 
 	fn read(&self) -> Result<PortValueReadGuard<T>> {
-		InPort::read(&*self.input)
-	}
-
-	fn sequence_number(&self) -> u32 {
-		self.input.sequence_number()
+		// Test for value is separate to not pass a locked value into the guard.
+		let has_value = self.data.read().value().read().is_some();
+		if has_value {
+			PortValueReadGuard::new(self.data.read().name(), self.data.read().value())
+		} else {
+			Err(Error::ValueNotSet {
+				port: self.data.read().name(),
+			})
+		}
 	}
 
 	fn try_read(&self) -> Result<PortValueReadGuard<T>> {
-		InPort::try_read(&*self.input)
-	}
-
-	fn take(&self) -> Option<T> {
-		self.input.take()
-	}
-
-	fn src(&self) -> Option<Arc<OutputPort<T>>> {
-		self.input.src()
-	}
-
-	fn replace_src(&self, src: impl Into<Arc<OutputPort<T>>>) -> Option<Arc<OutputPort<T>>> {
-		self.input.replace_src(src)
+		// Test for value is separate to not pass a locked value into the guard.
+		let has_value = if let Some(guard) = self.data.read().value().try_read() {
+			guard.is_some()
+		} else {
+			return Err(Error::IsLocked {
+				port: self.data.read().name(),
+			});
+		};
+		if has_value {
+			PortValueReadGuard::try_new(self.data.read().name(), self.data.read().value())
+		} else {
+			Err(Error::ValueNotSet {
+				port: self.data.read().name(),
+			})
+		}
 	}
 }
 
 impl<T> OutPort<T> for InputOutputPort<T> {
 	fn replace(&self, value: impl Into<T>) -> Option<T> {
-		self.output.replace(value)
+		self.data
+			.read()
+			.value()
+			.write()
+			.replace(value.into())
 	}
 
 	fn set(&self, value: impl Into<T>) {
-		self.output.set(value)
+		self.data.read().value().write().set(value.into())
+	}
+
+	fn take(&self) -> Option<T> {
+		self.data.read().value().write().take()
 	}
 
 	fn write(&self) -> Result<PortValueWriteGuard<T>> {
-		self.output.write()
+		// Test for value is separate to not pass a locked value into the guard.
+		let has_value = self.data.read().value().read().is_some();
+		if has_value {
+			PortValueWriteGuard::new(self.data.read().name(), self.data.read().value())
+		} else {
+			Err(Error::ValueNotSet {
+				port: self.data.read().name(),
+			})
+		}
 	}
 
 	fn try_write(&self) -> Result<PortValueWriteGuard<T>> {
-		self.output.try_write()
+		// Test for value is separate to not pass a locked value into the guard.
+		let has_value = if let Some(guard) = self.data.read().value().try_read() {
+			guard.is_some()
+		} else {
+			return Err(Error::IsLocked {
+				port: self.data.read().name(),
+			});
+		};
+		if has_value {
+			PortValueWriteGuard::try_new(self.data.read().name(), self.data.read().value())
+		} else {
+			Err(Error::ValueNotSet {
+				port: self.data.read().name(),
+			})
+		}
 	}
 }
 
 impl<T> InputOutputPort<T> {
 	#[must_use]
 	pub fn new(name: impl Into<ConstString>) -> Self {
-		let name = name.into();
 		Self {
-			input: Arc::new(InputPort::<T>::new(name.clone())),
-			output: Arc::new(OutputPort::<T>::new(name)),
-		}
-	}
-
-	#[must_use]
-	pub fn with_src(name: impl Into<ConstString>, src: impl Into<Arc<OutputPort<T>>>) -> Self {
-		let name = name.into();
-		Self {
-			input: Arc::new(InputPort::<T>::with_src(name.clone(), src)),
-			output: Arc::new(OutputPort::<T>::new(name)),
+			data: RwLock::new(PortData::new(name.into())),
 		}
 	}
 
 	#[must_use]
 	pub fn with_value(name: impl Into<ConstString>, value: impl Into<T>) -> Self {
-		let name = name.into();
 		Self {
-			input: Arc::new(InputPort::<T>::new(name.clone())),
-			output: Arc::new(OutputPort::<T>::with_value(name, value)),
+			data: RwLock::new(PortData::with_value(name.into(), value.into())),
 		}
 	}
 
-	/// Propagate an eventually existing value from input to output.
-	pub fn propagate(&self) {
-		if let Some(src) = self.src()
-			&& let Some(value) = src.by_value()
-		{
-			self.output.set(value);
-		};
+	pub(crate) fn value(&self) -> Arc<RwLock<PortValue<T>>> {
+		self.data.read().value()
 	}
 
-	pub fn input(&self) -> Arc<InputPort<T>> {
-		self.input.clone()
-	}
-
-	pub fn output(&self) -> Arc<OutputPort<T>> {
-		self.output.clone()
-	}
-}
-
-/// Automatic conversion from InOutPort to InPort
-impl<T> From<InputOutputPort<T>> for Arc<InputPort<T>> {
-	fn from(value: InputOutputPort<T>) -> Self {
-		value.input.clone()
-	}
-}
-
-/// Automatic conversion from InOutPort to InPort
-impl<T> From<InputOutputPort<T>> for Arc<OutputPort<T>> {
-	fn from(value: InputOutputPort<T>) -> Self {
-		value.output.clone()
+	pub(crate) fn set_value(&self, value: Arc<RwLock<PortValue<T>>>) {
+		self.data.write().set_value(value);
 	}
 }
 

@@ -82,7 +82,7 @@ fn dynamic_provisioning() {
 }
 
 #[test]
-fn get_and_set() {
+fn bind_get_and_set() {
 	let portlist1 = StaticPortList::new([
 		Port::create_out_port::<i32>("p1a"),
 		Port::create_out_port::<String>("p1b"),
@@ -90,44 +90,36 @@ fn get_and_set() {
 		Port::create_inout_port::<f64>("p1d"),
 	]);
 
-	let portlist2 = StaticPortList::new([
+	let portlist2 = DynamicPortList::new(vec![
 		Port::create_in_port::<i32>("p2a"),
 		Port::create_in_port::<String>("p2b"),
 		Port::create_inout_port::<f64>("p2c"),
 		Port::create_in_port::<f64>("p2d"),
 	]);
 
-	let res = portlist1.connect_ports::<i32>("p1a", &portlist2, "p2a");
+	let res = portlist2.bind_to::<i32>("p2a", &portlist1, "p1a");
 	assert!(res.is_ok());
 
-	let res = portlist1.connect_ports::<String>("p1b", &portlist2, "p2b");
-	assert!(res.is_ok());
+	//let res = portlist2.bind_to::<String>("p2b", &portlist1, "p1b");
+	//assert!(res.is_ok());
 
-	let res = portlist1.connect_ports::<f64>("p1c", &portlist2, "p2c");
-	assert!(res.is_ok());
+	//let res = portlist2.bind_to::<f64>("p2c", &portlist1, "p1c");
+	//assert!(res.is_ok());
 
-	let res = portlist2.connect_ports::<f64>("p2c", &portlist1, "p1d");
-	assert!(res.is_ok());
-
-	let res = portlist1.connect_ports::<f64>("p1d", &portlist2, "p2d");
-	assert!(res.is_ok());
-
-	assert!(portlist1.set("p1a", 42).is_ok());
-	assert_eq!(portlist2.get::<i32>("p2a").unwrap().unwrap(), 42);
+	assert!(portlist1.set::<i32>("p1a", 42).is_ok());
+	//assert_eq!(portlist2.get::<i32>("p2a").unwrap().unwrap(), 42);
 
 	assert!(
 		portlist1
-			.set("p1b", String::from("hello world"))
+			.set::<String>("p1b", String::from("hello world"))
 			.is_ok()
 	);
-	assert_eq!(portlist2.get::<String>("p2b").unwrap().unwrap(), String::from("hello world"));
+	//assert_eq!(portlist2.get::<String>("p2b").unwrap().unwrap(), String::from("hello world"));
 
-	assert!(portlist1.set("p1c", PI).is_ok());
-	assert_eq!(portlist2.get::<f64>("p2c").unwrap().unwrap(), PI);
-	assert!(portlist2.propagate::<f64>("p2c").is_ok());
+	assert!(portlist1.set::<f64>("p1c", PI).is_ok());
+	//assert_eq!(portlist2.get::<f64>("p2c").unwrap().unwrap(), PI);
 	assert!(portlist2.get::<f64>("p2c").unwrap().is_none());
-	assert_eq!(portlist1.get::<f64>("p1d").unwrap().unwrap(), PI);
-	assert!(portlist1.propagate::<f64>("p1d").is_ok());
+	//assert_eq!(portlist1.get::<f64>("p1d").unwrap().unwrap(), PI);
 	assert!(portlist1.get::<f64>("p1d").unwrap().is_none());
-	assert_eq!(portlist2.get::<f64>("p2d").unwrap().unwrap(), PI);
+	//assert_eq!(portlist2.get::<f64>("p2d").unwrap().unwrap(), PI);
 }

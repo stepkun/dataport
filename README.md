@@ -1,5 +1,5 @@
 # dataports
-Port abstractions for data types
+Port abstractions for data types.
 
 ## License
 

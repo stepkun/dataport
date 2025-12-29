@@ -12,8 +12,6 @@ macro_rules! test_getter_setter {
 	($tp:ty, $name:expr, $value:expr, $value2:expr) => {
 		// creation without value
 		let iop = InputOutputPort::<$tp>::new($name);
-		// connect input and output => leads to double increase of sequence id
-		assert!(iop.replace_src(iop.output()).is_none());
 		assert!(iop.read().is_err());
 		assert!(iop.write().is_err());
 		assert!(iop.get().is_none());
@@ -22,18 +20,13 @@ macro_rules! test_getter_setter {
 		assert_eq!(iop.sequence_number(), 1);
 		assert_eq!(iop.replace($value2).unwrap(), $value);
 		assert_eq!(iop.sequence_number(), 2);
-		iop.propagate();
-		assert_eq!(iop.sequence_number(), 4);
 		assert_eq!(iop.get().unwrap(), $value2);
 		assert_eq!(*iop.read().unwrap(), $value2);
 		assert_eq!(iop.take().unwrap(), $value2);
-		assert_eq!(iop.sequence_number(), 5);
+		assert_eq!(iop.sequence_number(), 3);
 		assert!(iop.get().is_none());
 		// creation with value
 		let iop = InputOutputPort::<$tp>::with_value($name, $value);
-		assert_eq!(iop.sequence_number(), 0);
-		// connect input and output => leads to initial increase by 1 and later double increase of sequence id
-		assert!(iop.replace_src(iop.output()).is_none());
 		assert_eq!(iop.sequence_number(), 1);
 		iop.set($value);
 		assert_eq!(iop.sequence_number(), 2);
@@ -49,12 +42,10 @@ macro_rules! test_getter_setter {
 		assert_eq!(iop.sequence_number(), 5);
 		assert!(iop.replace($value2).is_none());
 		assert_eq!(iop.sequence_number(), 6);
-		iop.propagate();
-		assert_eq!(iop.sequence_number(), 8);
 		assert_eq!(iop.get().unwrap(), $value2);
 		assert_eq!(*iop.read().unwrap(), $value2);
 		assert_eq!(iop.take().unwrap(), $value2);
-		assert_eq!(iop.sequence_number(), 9);
+		assert_eq!(iop.sequence_number(), 7);
 		assert!(iop.get().is_none());
 	};
 }

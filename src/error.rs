@@ -24,13 +24,13 @@ pub enum Error {
 		/// Name of the port.
 		port: ConstString,
 	},
-	/// No default value defined for a port.
-	NoValueSet {
+	/// A port is already bound.
+	PortAlreadyBound {
 		/// Name of the port.
 		port: ConstString,
 	},
-	/// Source of input port already set.
-	SrcAlreadySet {
+	/// No value defined for a port.
+	ValueNotSet {
 		/// Name of the port.
 		port: ConstString,
 	},
@@ -50,8 +50,8 @@ impl core::fmt::Debug for Error {
 			Self::IsLocked { port } => write!(f, "IsLocked(port: {port})"),
 			Self::NoSrcSet { port } => write!(f, "NoSrcSet(port: {port})"),
 			Self::NotFound { port } => write!(f, "NotFound(port: {port})"),
-			Self::NoValueSet { port } => write!(f, "NoValueSet(port: {port})"),
-			Self::SrcAlreadySet { port } => write!(f, "SrcAlreadySet(port: {port})"),
+			Self::PortAlreadyBound { port } => write!(f, "PortAlreadyBound(port: {port})"),
+			Self::ValueNotSet { port } => write!(f, "NoValueSet(port: {port})"),
 			Self::WrongType { port } => write!(f, "WrongType(port: {port})"),
 		}
 	}
@@ -63,8 +63,8 @@ impl core::fmt::Display for Error {
 			Self::IsLocked { port } => write!(f, "port '{port}' is currently locked"),
 			Self::NoSrcSet { port } => write!(f, "no source set for value of port '{port}'"),
 			Self::NotFound { port } => write!(f, "port '{port}' was not found"),
-			Self::NoValueSet { port } => write!(f, "no value set in port '{port}'"),
-			Self::SrcAlreadySet { port } => write!(f, "source of input port '{port}' is already set"),
+			Self::PortAlreadyBound { port } => write!(f, "port '{port}' is already bound"),
+			Self::ValueNotSet { port } => write!(f, "no value set for port '{port}'"),
 			Self::WrongType { port } => write!(f, "port: '{port}' has not the wanted type"),
 		}
 	}

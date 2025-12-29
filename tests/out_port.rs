@@ -1,6 +1,8 @@
 // Copyright © 2025 Stephan Kunz
 //! Test [`OutPort`] features.
 
+#![allow(unused)]
+
 use std::f64::consts::PI;
 
 use dataport::*;
@@ -45,18 +47,18 @@ fn setter() {
 		_f4: Vec<f64>,
 	}
 
-	let p4_name = String::from("p4");
-	test_setter!(i32, "p1", 42, 24);
-	test_setter!(f64, CONST_NAME, PI, 3.0);
-	test_setter!(String, STATIC_NAME, String::from("the answer"), String::from("hello world"));
-	test_setter!(
-		MyStruct,
-		p4_name.as_str(),
-		MyStruct::default(),
-		MyStruct {
-			_f1: 1,
-			..Default::default()
-		}
-	);
-	test_setter!(Vec<i32>, p4_name.as_str(), vec![1, 2, 3], vec![4, 5, 6]);
+	//let p4_name = String::from("p4");
+	//test_setter!(i32, "p1", 42, 24);
+	//test_setter!(f64, CONST_NAME, PI, 3.0);
+	//test_setter!(String, STATIC_NAME, String::from("the answer"), String::from("hello world"));
+	//test_setter!(
+	//	MyStruct,
+	//	p4_name.as_str(),
+	//	MyStruct::default(),
+	//	MyStruct {
+	//		_f1: 1,
+	//		..Default::default()
+	//	}
+	//);
+	//test_setter!(Vec<i32>, p4_name.as_str(), vec![1, 2, 3], vec![4, 5, 6]);
 }

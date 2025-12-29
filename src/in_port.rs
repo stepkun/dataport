@@ -1,25 +1,23 @@
 // Copyright © 2025 Stephan Kunz
 //! Implementation of a port providing [`InPort`].
 
-use core::{any::Any, ops::Deref};
+#![allow(unused)]
+
+use core::any::Any;
 
 use alloc::sync::Arc;
 
 use crate::{
-	ConstString, RwLock,
-	any_port::AnyPort,
-	error::{Error, Result},
-	out_port::OutputPort,
-	port_value::PortValueReadGuard,
-	traits::{InPort, PortBase},
+	ConstString, Error, RwLock,
+	error::Result,
+	port_data::PortData,
+	port_value::{PortValue, PortValueReadGuard},
+	traits::{AnyPort, InPort, PortBase},
 };
 
 /// InPort
 pub struct InputPort<T> {
-	/// An identifying name of the port, which must be unique for a given item.
-	name: ConstString,
-	/// The source [`OutPort`] to fetch new values from.
-	src: RwLock<Option<Arc<OutputPort<T>>>>,
+	data: RwLock<PortData<T>>,
 }
 
 impl<T: 'static + Send + Sync> AnyPort for InputPort<T> {
@@ -35,36 +33,40 @@ impl<T: 'static + Send + Sync> AnyPort for InputPort<T> {
 impl<T> core::fmt::Debug for InputPort<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		f.debug_struct("InputPort")
-			.field("name", &self.name)
-			//.field("src", &self.src)
-			.finish_non_exhaustive()
+			.field("data", &self.data)
+			.finish()
 	}
 }
 
 impl<T: 'static> PartialEq for InputPort<T> {
 	/// Partial equality of an in port is, if both have the same name & value type
 	fn eq(&self, other: &Self) -> bool {
-		if self.name == other.name {
-			let v1 = self.src.read();
-			let v2 = other.src.read();
-			if let Some(value1) = &*v1
-				&& let Some(value2) = &*v2
-			{
-				// check type of value1 against type of value2
-				if value1.deref().type_id() == value2.deref().type_id() {
-					return true;
-				}
-			} else if v1.is_none() && v2.is_none() {
-				return true;
-			}
-		}
-		false
+		todo!()
+		//		if self.data.read().name() == other.data.read().name() {
+		//			let v1 = self.value.read();
+		//			let v2 = other.value.read();
+		//			if let Some(value1) = v1.as_ref()
+		//				&& let Some(value2) = v2.as_ref()
+		//			{
+		//				// check type of value1 against type of value2
+		//				if value1.type_id() == value2.type_id() {
+		//					return true;
+		//				}
+		//			} else if v1.is_none() && v2.is_none() {
+		//				return true;
+		//			}
+		//		}
+		//		false
 	}
 }
 
 impl<T> PortBase for InputPort<T> {
 	fn name(&self) -> ConstString {
-		self.name.clone()
+		self.data.read().name()
+	}
+
+	fn sequence_number(&self) -> u32 {
+		self.data.read().sequence_number()
 	}
 }
 
@@ -73,51 +75,37 @@ impl<T> InPort<T> for InputPort<T> {
 	where
 		T: Clone,
 	{
-		if let Some(src) = &*self.src.read() {
-			src.by_copy()
-		} else {
-			None
-		}
+		self.data.read().get()
 	}
 
 	fn read(&self) -> Result<PortValueReadGuard<T>> {
-		if let Some(src) = &*self.src.read() {
-			src.by_ref()
+		// Test for value is separate to not pass a locked value into the guard.
+		let has_value = self.data.read().value().read().is_some();
+		if has_value {
+			PortValueReadGuard::new(self.data.read().name(), self.data.read().value())
 		} else {
-			Err(Error::NoSrcSet { port: self.name.clone() })
-		}
-	}
-
-	fn sequence_number(&self) -> u32 {
-		if let Some(src) = &*self.src.read() {
-			src.sequence_id()
-		} else {
-			0
+			Err(Error::ValueNotSet {
+				port: self.data.read().name(),
+			})
 		}
 	}
 
 	fn try_read(&self) -> Result<PortValueReadGuard<T>> {
-		if let Some(src) = &*self.src.read() {
-			src.try_by_ref()
+		// Test for value is separate to not pass a locked value into the guard.
+		let has_value = if let Some(guard) = self.data.read().value().try_read() {
+			guard.is_some()
 		} else {
-			Err(Error::NoSrcSet { port: self.name.clone() })
-		}
-	}
-
-	fn take(&self) -> Option<T> {
-		if let Some(src) = &*self.src.read() {
-			src.by_value()
+			return Err(Error::IsLocked {
+				port: self.data.read().name(),
+			});
+		};
+		if has_value {
+			PortValueReadGuard::try_new(self.data.read().name(), self.data.read().value())
 		} else {
-			None
+			Err(Error::ValueNotSet {
+				port: self.data.read().name(),
+			})
 		}
-	}
-
-	fn src(&self) -> Option<Arc<OutputPort<T>>> {
-		self.src.read().clone()
-	}
-
-	fn replace_src(&self, src: impl Into<Arc<OutputPort<T>>>) -> Option<Arc<OutputPort<T>>> {
-		self.src.write().replace(src.into())
 	}
 }
 
@@ -125,17 +113,23 @@ impl<T> InputPort<T> {
 	#[must_use]
 	pub fn new(name: impl Into<ConstString>) -> Self {
 		Self {
-			name: name.into(),
-			src: RwLock::new(None),
+			data: RwLock::new(PortData::new(name.into())),
 		}
 	}
 
 	#[must_use]
-	pub fn with_src(name: impl Into<ConstString>, src: impl Into<Arc<OutputPort<T>>>) -> Self {
+	pub(crate) fn with_value(name: impl Into<ConstString>, value: impl Into<T>) -> Self {
 		Self {
-			name: name.into(),
-			src: RwLock::new(Some(src.into())),
+			data: RwLock::new(PortData::with_value(name.into(), value.into())),
 		}
+	}
+
+	pub(crate) fn value(&self) -> Arc<RwLock<PortValue<T>>> {
+		self.data.read().value()
+	}
+
+	pub(crate) fn set_value(&self, value: Arc<RwLock<PortValue<T>>>) {
+		self.data.write().set_value(value);
 	}
 }
 

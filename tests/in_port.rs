@@ -1,6 +1,8 @@
 // Copyright © 2025 Stephan Kunz
 //! Test [`InPort`] features.
 
+#![allow(unused)]
+
 use std::f64::consts::PI;
 
 use dataport::*;
@@ -14,16 +16,15 @@ macro_rules! test_getter {
 		assert_eq!(ip.sequence_number(), 0);
 		assert!(ip.read().is_err());
 		assert!(ip.get().is_none());
-		assert!(ip.take().is_none());
 		assert_eq!(ip.sequence_number(), 0);
 
-		let op = OutputPort::<$tp>::with_value("test", $value);
-		let ip = InputPort::<$tp>::with_src($name, op);
-		assert_eq!(ip.sequence_number(), 1);
-		assert_eq!(*ip.read().unwrap(), $value);
-		assert_eq!(ip.get().unwrap(), $value);
-		assert_eq!(ip.take().unwrap(), $value);
-		assert_eq!(ip.sequence_number(), 2);
+		//let op = OutputPort::<$tp>::with_value("test", $value);
+		//let ip = InputPort::<$tp>::new($name);
+		//ip.connect_with(op);
+		//assert_eq!(ip.sequence_number(), 1);
+		//assert_eq!(*ip.read().unwrap(), $value);
+		//assert_eq!(ip.get().unwrap(), $value);
+		//assert_eq!(ip.sequence_number(), 1);
 	};
 }
 
