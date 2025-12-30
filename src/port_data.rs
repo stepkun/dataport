@@ -22,16 +22,6 @@ pub(crate) struct PortData<T> {
 	value: Arc<RwLock<PortValue<T>>>,
 }
 
-impl<T: 'static + Send + Sync> AnyPort for PortData<T> {
-	fn as_any(&self) -> &dyn Any {
-		self
-	}
-
-	fn as_mut_any(&mut self) -> &mut dyn Any {
-		self
-	}
-}
-
 impl<T> core::fmt::Debug for PortData<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		f.debug_struct("InputOutputPort")

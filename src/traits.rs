@@ -26,7 +26,8 @@ pub(crate) trait AnySendSync: Any + Send + Sync {
 	fn as_mut_any(&mut self) -> &mut dyn Any;
 }
 
-/// Implementation for any type that has a `static` lifetime and implements [`Send`] and [`Sync`].
+/// Blank implementation for any type that has a `static` lifetime and implements
+/// [`Send`] and [`Sync`].
 impl<T: 'static + Send + Sync> AnySendSync for T {
 	fn as_any(&self) -> &dyn Any {
 		self
@@ -47,6 +48,18 @@ pub(crate) trait AnyPort: AnySendSync + core::fmt::Debug + PortCommons {
 	fn as_mut_any(&mut self) -> &mut dyn Any;
 }
 
+/// Blank implementation for any type that has a `static` lifetime and implements
+/// [`core::fmt::Debug`], [`PortCommons`], [`Send`] and [`Sync`].
+impl<T: 'static + core::fmt::Debug + PortCommons + Send + Sync> AnyPort for T {
+	fn as_any(&self) -> &dyn Any {
+		self
+	}
+
+	fn as_mut_any(&mut self) -> &mut dyn Any {
+		self
+	}
+}
+
 /// Common features for all types of ports.
 pub trait PortCommons {
 	/// Returns an identifying name of the port.
@@ -59,7 +72,7 @@ pub trait PortCommons {
 	fn sequence_number(&self) -> u32;
 }
 
-/// Trait for input port types.
+/// Trait for incoming port types.
 pub trait InPort<T>: PortCommons {
 	/// Returns a clone/copy of the T.
 	#[must_use]
@@ -81,7 +94,7 @@ pub trait InPort<T>: PortCommons {
 	fn try_read(&self) -> Result<PortValueReadGuard<T>>;
 }
 
-/// Trait for output port types.
+/// Trait for outgoing port types.
 pub trait OutPort<T>: PortCommons {
 	/// Sets a new value to the T and returns the old T.
 	#[must_use]
@@ -333,43 +346,6 @@ mod tests {
 		assert_eq!(src.take().unwrap(), 42);
 	}
 
-	/*
-	   fn return_impl_port_list() -> impl PortList {
-		   StaticPortList::new([
-			   Port::create_in_port::<i32>("in"),
-			   Port::create_out_port::<i32>("out"),
-			   Port::create_inout_port::<i32>("inout"),
-		   ])
-	   }
-
-	   fn use_impl_port_list(list: impl PortList) {
-		   assert!(list.find("port").is_none());
-		   assert!(list.find("in").is_some());
-		   assert!(list.find("inout").is_some());
-		   assert!(list.find("out").is_some());
-	   }
-
-	   fn return_impl_port_hub() -> impl PortHub {
-		   let mut list = DynamicPortList::new(Vec::new());
-		   list.add(Port::create_in_port::<i32>("in"));
-		   list.add(Port::create_out_port::<i32>("out"));
-		   list.add(Port::create_inout_port::<i32>("inout"));
-		   list
-	   }
-
-	   fn use_impl_port_hub(mut hub: impl PortHub) {
-		   assert!(hub.find("port").is_none());
-		   assert!(hub.find("in").is_some());
-		   assert!(hub.find("inout").is_some());
-		   assert!(hub.find("out").is_some());
-		   hub.remove("in");
-		   hub.remove("out");
-		   hub.remove("inout");
-		   assert!(hub.find("in").is_none());
-		   assert!(hub.find("inout").is_none());
-		   assert!(hub.find("out").is_none());
-	   }
-	*/
 	#[test]
 	fn impl_compatibility() {
 		let in_port = return_impl_in_port();
@@ -377,17 +353,6 @@ mod tests {
 
 		let out_port = return_impl_out_port();
 		use_impl_out_port(out_port);
-
-		/*
-			   let list = return_impl_port_list();
-			   use_impl_port_list(list);
-
-			   let list = return_impl_port_hub();
-			   use_impl_port_list(list);
-
-			   let hub = return_impl_port_hub();
-			   use_impl_port_hub(hub);
-		*/
 	}
 
 	//#[test]

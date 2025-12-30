@@ -20,16 +20,6 @@ pub struct InputPort<T> {
 	data: RwLock<PortData<T>>,
 }
 
-impl<T: 'static + Send + Sync> AnyPort for InputPort<T> {
-	fn as_any(&self) -> &dyn Any {
-		self
-	}
-
-	fn as_mut_any(&mut self) -> &mut dyn Any {
-		self
-	}
-}
-
 impl<T> core::fmt::Debug for InputPort<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		f.debug_struct("InputPort")
