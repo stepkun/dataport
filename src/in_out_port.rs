@@ -12,7 +12,7 @@ use crate::{
 	error::Result,
 	port_data::PortData,
 	port_value::{PortValue, PortValueReadGuard, PortValueWriteGuard},
-	traits::{AnyPort, InPort, OutPort, PortBase},
+	traits::{AnyPort, InPort, OutPort, PortCommons},
 };
 
 /// InputOutputPort
@@ -46,7 +46,7 @@ impl<T: 'static> PartialEq for InputOutputPort<T> {
 	}
 }
 
-impl<T> PortBase for InputOutputPort<T> {
+impl<T> PortCommons for InputOutputPort<T> {
 	fn name(&self) -> ConstString {
 		self.data.read().name()
 	}

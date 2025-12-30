@@ -25,7 +25,12 @@ pub enum Error {
 		port: ConstString,
 	},
 	/// A port is already bound.
-	PortAlreadyBound {
+	AlreadyBound {
+		/// Name of the port.
+		port: ConstString,
+	},
+	/// A port is already defined set of ports.
+	AlreadyExists {
 		/// Name of the port.
 		port: ConstString,
 	},
@@ -47,10 +52,11 @@ impl core::error::Error for Error {}
 impl core::fmt::Debug for Error {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		match self {
+			Self::AlreadyBound { port } => write!(f, "AlreadyBound(port: {port})"),
+			Self::AlreadyExists { port } => write!(f, "AlreadyExists(port: {port})"),
 			Self::IsLocked { port } => write!(f, "IsLocked(port: {port})"),
 			Self::NoSrcSet { port } => write!(f, "NoSrcSet(port: {port})"),
 			Self::NotFound { port } => write!(f, "NotFound(port: {port})"),
-			Self::PortAlreadyBound { port } => write!(f, "PortAlreadyBound(port: {port})"),
 			Self::ValueNotSet { port } => write!(f, "NoValueSet(port: {port})"),
 			Self::WrongType { port } => write!(f, "WrongType(port: {port})"),
 		}
@@ -60,10 +66,11 @@ impl core::fmt::Debug for Error {
 impl core::fmt::Display for Error {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		match self {
+			Self::AlreadyBound { port } => write!(f, "port '{port}' is already bound"),
+			Self::AlreadyExists { port } => write!(f, "port '{port}' is already defined"),
 			Self::IsLocked { port } => write!(f, "port '{port}' is currently locked"),
 			Self::NoSrcSet { port } => write!(f, "no source set for value of port '{port}'"),
 			Self::NotFound { port } => write!(f, "port '{port}' was not found"),
-			Self::PortAlreadyBound { port } => write!(f, "port '{port}' is already bound"),
 			Self::ValueNotSet { port } => write!(f, "no value set for port '{port}'"),
 			Self::WrongType { port } => write!(f, "port: '{port}' has not the wanted type"),
 		}

@@ -11,7 +11,7 @@ use crate::{
 	ConstString, Error, RwLock,
 	error::Result,
 	port_value::{PortValue, PortValueReadGuard, PortValueWriteGuard},
-	traits::{AnyPort, InPort, OutPort, PortBase},
+	traits::{AnyPort, InPort, OutPort, PortCommons},
 };
 
 /// PortData.
@@ -63,7 +63,7 @@ impl<T: 'static> PartialEq for PortData<T> {
 	}
 }
 
-impl<T> PortBase for PortData<T> {
+impl<T> PortCommons for PortData<T> {
 	fn name(&self) -> ConstString {
 		self.name.clone()
 	}

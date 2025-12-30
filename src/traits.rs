@@ -37,7 +37,7 @@ impl<T: 'static + Send + Sync> AnySendSync for T {
 	}
 }
 
-pub(crate) trait AnyPort: AnySendSync + core::fmt::Debug + PortBase {
+pub(crate) trait AnyPort: AnySendSync + core::fmt::Debug + PortCommons {
 	/// Convert to Any
 	#[must_use]
 	fn as_any(&self) -> &dyn Any;
@@ -48,7 +48,7 @@ pub(crate) trait AnyPort: AnySendSync + core::fmt::Debug + PortBase {
 }
 
 /// Common features for all types of ports.
-pub trait PortBase {
+pub trait PortCommons {
 	/// Returns an identifying name of the port.
 	/// Must be unique within an item providing multiple ports.
 	#[must_use]
@@ -60,7 +60,7 @@ pub trait PortBase {
 }
 
 /// Trait for input port types.
-pub trait InPort<T>: PortBase {
+pub trait InPort<T>: PortCommons {
 	/// Returns a clone/copy of the T.
 	#[must_use]
 	fn get(&self) -> Option<T>
@@ -82,7 +82,7 @@ pub trait InPort<T>: PortBase {
 }
 
 /// Trait for output port types.
-pub trait OutPort<T>: PortBase {
+pub trait OutPort<T>: PortCommons {
 	/// Sets a new value to the T and returns the old T.
 	#[must_use]
 	fn replace(&self, value: impl Into<T>) -> Option<T>;
@@ -350,11 +350,7 @@ pub trait PortHub: PortList {
 
 #[cfg(test)]
 mod tests {
-	use crate::{
-		in_port::InputPort,
-		out_port::OutputPort,
-		port_list::{DynamicPortList, StaticPortList},
-	};
+	use crate::{in_port::InputPort, out_port::OutputPort, port_hub::DynamicPortList, port_list::StaticPortList};
 
 	use super::*;
 

@@ -13,7 +13,7 @@ use crate::{
 	in_port::InputPort,
 	out_port::OutputPort,
 	port_value::PortValue,
-	traits::{AnyPort, PortBase},
+	traits::{AnyPort, PortCommons},
 };
 
 /// Port.
@@ -50,7 +50,7 @@ impl PartialEq for Port {
 	}
 }
 
-impl PortBase for Port {
+impl PortCommons for Port {
 	fn name(&self) -> ConstString {
 		self.port.name()
 	}
@@ -112,6 +112,10 @@ impl Port {
 		}
 
 		None
+	}
+
+	pub fn as_in_out_port<T: 'static + Send + Sync>(&self) -> Option<Arc<InputOutputPort<T>>> {
+		cast_arc_any_to_in_out_port::<T>(self.port.clone())
 	}
 
 	pub(crate) fn as_out_value<T: 'static + Send + Sync>(&self) -> Option<Arc<RwLock<PortValue<T>>>> {
