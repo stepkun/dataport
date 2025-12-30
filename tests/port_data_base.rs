@@ -1,5 +1,5 @@
 // Copyright © 2025 Stephan Kunz
-//! Test [`PortBase`]
+//! Test [`PortDataBase`]
 
 #![allow(unused)]
 

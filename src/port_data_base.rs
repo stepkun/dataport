@@ -8,8 +8,7 @@ use crate::{
 	error::{Error, Result},
 	in_out_port::InputOutputPort,
 	port::Port,
-	port_value::{PortValueReadGuard, PortValueWriteGuard},
-	traits::{InPort, OutPort, PortCommons},
+	traits::{InOutPort, InPort, PortCommons},
 };
 
 /// A database like container for [`Port`]s.
@@ -93,20 +92,6 @@ impl PortDataBase {
 		}
 	}
 
-	/// Returns a copy of the value of type `T` stored in the [`Port`] under `key`.
-	/// # Errors
-	/// - [`Error::NotFound`]  if `key` is not contained.
-	/// - [`Error::WrongType`] if the entry has not the expected type `T`.
-	pub fn get<T: 'static + Clone + Send + Sync>(&self, key: &str) -> Result<Option<T>> {
-		self.0.get(key).map_or_else(
-			|| Err(Error::NotFound { port: key.into() }),
-			|port| {
-				port.as_in_out_port::<T>()
-					.map_or_else(|| Err(Error::WrongType { port: key.into() }), |port| Ok(port.get()))
-			},
-		)
-	}
-
 	/// Returns a reference to the [`Port`]
 	/// # Errors
 	/// - [`Error::NotFound`] if `key` is not contained.
@@ -114,55 +99,6 @@ impl PortDataBase {
 		self.0
 			.get(key)
 			.map_or_else(|| Err(Error::NotFound { port: key.into() }), Ok)
-	}
-
-	/// Returns a read guard to the `T` of the [`Port`] stored under `key`.
-	/// The [`Port`] is locked for write while this guard is held.
-	///
-	/// You need to drop the received [`PortReadGuard`] before using any write operation.
-	/// # Errors
-	/// - [`Error::NotFound`]  if `key` is not contained.
-	/// - [`Error::WrongType`] if the port has not the expected type `T`.
-	pub fn read<T: 'static + Send + Sync>(&self, key: &str) -> Result<PortValueReadGuard<T>> {
-		self.0.get(key).map_or_else(
-			|| Err(Error::NotFound { port: key.into() }),
-			|port| {
-				port.as_in_out_port::<T>().map_or_else(
-					|| Err(Error::WrongType { port: key.into() }),
-					|port| port.read().map_or_else(Err, Ok),
-				)
-			},
-		)
-	}
-
-	/// Returns a read guard to the `T` of the [`Port`] stored under `key`.
-	/// The [`Port`] is locked for write while this guard is held.
-	///
-	/// You need to drop the received [`PortReadGuard`] before using any write operation.
-	/// # Errors
-	/// - [`Error::IsLocked`]  if the [`Port`] is locked by someone else.
-	/// - [`Error::NotFound`]  if `key` is not contained.
-	/// - [`Error::WrongType`] if the [`Port`] has not the expected type `T`.
-	pub fn try_read<T: 'static + Send + Sync>(&self, key: &str) -> Result<PortValueReadGuard<T>> {
-		self.0.get(key).map_or_else(
-			|| Err(Error::NotFound { port: key.into() }),
-			|port| {
-				port.as_in_out_port::<T>().map_or_else(
-					|| Err(Error::WrongType { port: key.into() }),
-					|port| port.try_read().map_or_else(Err, Ok),
-				)
-			},
-		)
-	}
-
-	/// Returns the sequence number of the [`Port`]s value.
-	/// # Errors
-	/// - [`Error::NotFound`] if `key` is not contained.
-	pub fn sequence_number(&self, key: &str) -> Result<u32> {
-		self.0.get(key).map_or_else(
-			|| Err(Error::NotFound { port: key.into() }),
-			|port| Ok(port.sequence_number()),
-		)
 	}
 
 	/// Updates a value of type `T` stored under `key` and returns the old value.
@@ -176,49 +112,6 @@ impl PortDataBase {
 				port.as_in_out_port::<T>().map_or_else(
 					|| Err(Error::WrongType { port: key.into() }),
 					|port| Ok(port.replace(value.into())),
-				)
-			},
-		)
-	}
-
-	/// Returns a write guard to the `T` of the [`Port`] stored under `key`.
-	/// The [`Port`] is locked for read & write while this guard is held.
-	/// Multiple changes during holding the guard are counted as a single change,
-	/// so `sequence_id()`will only increase by 1.
-	///
-	/// You need to drop the received [`PortWriteGuard`] before using any other operation.
-	/// # Errors
-	/// - [`Error::NotFound`]  if `key` is not contained.
-	/// - [`Error::WrongType`] if the entry has not the expected type `T`.
-	pub fn write<T: 'static + Send + Sync>(&self, key: &str) -> Result<PortValueWriteGuard<T>> {
-		self.0.get(key).map_or_else(
-			|| Err(Error::NotFound { port: key.into() }),
-			|port| {
-				port.as_in_out_port::<T>().map_or_else(
-					|| Err(Error::WrongType { port: key.into() }),
-					|port| port.write().map_or_else(Err, Ok),
-				)
-			},
-		)
-	}
-
-	/// Returns a write guard to the `T` of the [`Port`] stored under `key`.
-	/// The [`Port`] is locked for read & write while this guard is held.
-	/// Multiple changes during holding the guard are counted as a single change,
-	/// so `sequence_id()`will only increase by 1.
-	///
-	/// You need to drop the received [`PortWriteGuard`] before using any other operation.
-	/// # Errors
-	/// - [`Error::IsLocked`]  if the [`Port`] is locked by someone else.
-	/// - [`Error::NotFound`]  if `key` is not contained.
-	/// - [`Error::WrongType`] if the [`Port`] has not the expected type `T`.
-	pub fn try_write<T: 'static + Send + Sync>(&self, key: &str) -> Result<PortValueWriteGuard<T>> {
-		self.0.get(key).map_or_else(
-			|| Err(Error::NotFound { port: key.into() }),
-			|port| {
-				port.as_in_out_port::<T>().map_or_else(
-					|| Err(Error::WrongType { port: key.into() }),
-					|port| port.try_write().map_or_else(Err, Ok),
 				)
 			},
 		)

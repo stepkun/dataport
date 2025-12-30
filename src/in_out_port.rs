@@ -8,7 +8,7 @@ use crate::{
 	error::{Error, Result},
 	port_data::PortData,
 	port_value::{PortValuePtr, PortValueReadGuard, PortValueWriteGuard},
-	traits::{InPort, OutPort, PortCommons},
+	traits::{InOutPort, InPort, OutPort, PortCommons},
 };
 
 /// InputOutputPort
@@ -85,9 +85,13 @@ impl<T> InPort<T> for InputOutputPort<T> {
 			})
 		}
 	}
+
+	fn take(&self) -> Option<T> {
+		self.0.read().value().write().take()
+	}
 }
 
-impl<T> OutPort<T> for InputOutputPort<T> {
+impl<T> InOutPort<T> for InputOutputPort<T> {
 	fn replace(&self, value: impl Into<T>) -> Option<T> {
 		self.0
 			.read()
@@ -95,13 +99,11 @@ impl<T> OutPort<T> for InputOutputPort<T> {
 			.write()
 			.replace(value.into())
 	}
+}
 
+impl<T> OutPort<T> for InputOutputPort<T> {
 	fn set(&self, value: impl Into<T>) {
 		self.0.read().value().write().set(value.into())
-	}
-
-	fn take(&self) -> Option<T> {
-		self.0.read().value().write().take()
 	}
 
 	fn write(&self) -> Result<PortValueWriteGuard<T>> {

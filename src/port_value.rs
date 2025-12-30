@@ -11,11 +11,12 @@ use crate::{
 	sequence_number::SequenceNumber,
 };
 
-/// Pointer type definition to a [`PortValue`]
+/// Type definition for a pointer to a [`PortValue`]
 pub(crate) type PortValuePtr<T> = Arc<RwLock<PortValue<T>>>;
 
 /// Internal representation of a ports value.
-/// The data together with its change sequence number.
+/// The data `T` together with its [`SequenceNumber`].
+/// The `PortValue` is shared between the bound ports.
 pub(crate) struct PortValue<T>(Option<T>, SequenceNumber);
 
 impl<T> Default for PortValue<T> {

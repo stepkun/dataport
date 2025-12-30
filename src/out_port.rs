@@ -53,20 +53,8 @@ impl<T> PortCommons for OutputPort<T> {
 }
 
 impl<T> OutPort<T> for OutputPort<T> {
-	fn replace(&self, value: impl Into<T>) -> Option<T> {
-		self.0
-			.read()
-			.value()
-			.write()
-			.replace(value.into())
-	}
-
 	fn set(&self, value: impl Into<T>) {
 		self.0.read().value().write().set(value.into())
-	}
-
-	fn take(&self) -> Option<T> {
-		self.0.read().value().write().take()
 	}
 
 	fn write(&self) -> Result<PortValueWriteGuard<T>> {

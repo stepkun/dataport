@@ -83,6 +83,10 @@ impl<T> InPort<T> for InputPort<T> {
 			})
 		}
 	}
+
+	fn take(&self) -> Option<T> {
+		self.0.read().value().write().take()
+	}
 }
 
 impl<T> InputPort<T> {

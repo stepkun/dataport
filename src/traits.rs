@@ -92,20 +92,23 @@ pub trait InPort<T>: PortCommons {
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
 	fn try_read(&self) -> Result<PortValueReadGuard<T>>;
-}
-
-/// Trait for outgoing port types.
-pub trait OutPort<T>: PortCommons {
-	/// Sets a new value to the T and returns the old T.
-	#[must_use]
-	fn replace(&self, value: impl Into<T>) -> Option<T>;
-
-	/// Sets a new value to the T.
-	fn set(&self, value: impl Into<T>);
 
 	/// Returns the T, removing it from the port.
 	#[must_use]
 	fn take(&self) -> Option<T>;
+}
+
+/// Trait for combined in/out port types.
+pub trait InOutPort<T> {
+	/// Sets a new value to the T and returns the old T.
+	#[must_use]
+	fn replace(&self, value: impl Into<T>) -> Option<T>;
+}
+
+/// Trait for outgoing port types.
+pub trait OutPort<T>: PortCommons {
+	/// Sets a new value to the T.
+	fn set(&self, value: impl Into<T>);
 
 	/// Returns a mutable guard to the ports value T.
 	/// # Errors
@@ -245,6 +248,18 @@ pub trait PortAccessors: PortProvider {
 		}
 	}
 
+	/// Returns the sequence number of the [`Port`]s value.
+	/// # Errors
+	/// - [`Error::NotFound`] if `port` is not contained.
+	fn sequence_number(&self, port: impl Into<ConstString>) -> Result<u32> {
+		let port = port.into();
+		if let Some(port_ref) = self.find(port.clone()) {
+			Ok(port_ref.sequence_number())
+		} else {
+			Err(Error::NotFound { port })
+		}
+	}
+
 	/// Sets the port to the value.
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
@@ -333,6 +348,16 @@ mod tests {
 	fn use_impl_in_port(src: impl InPort<i32>) {
 		assert!(src.read().is_err());
 		assert!(src.get().is_none());
+		assert!(src.take().is_none());
+	}
+
+	fn return_impl_inout_port() -> impl InOutPort<i32> {
+		InputOutputPort::new("port")
+	}
+
+	fn use_impl_inout_port(src: impl InOutPort<i32>) {
+		assert!(src.replace(24).is_none());
+		assert_eq!(src.replace(42).unwrap(), 24);
 	}
 
 	fn return_impl_out_port() -> impl OutPort<i32> {
@@ -342,8 +367,6 @@ mod tests {
 	fn use_impl_out_port(src: impl OutPort<i32>) {
 		src.set(22);
 		*src.write().unwrap() = 24;
-		assert_eq!(src.replace(42).unwrap(), 24);
-		assert_eq!(src.take().unwrap(), 42);
 	}
 
 	#[test]
@@ -353,6 +376,9 @@ mod tests {
 
 		let out_port = return_impl_out_port();
 		use_impl_out_port(out_port);
+
+		let inout_port = return_impl_inout_port();
+		use_impl_inout_port(inout_port);
 	}
 
 	//#[test]

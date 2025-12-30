@@ -9,23 +9,22 @@ use crate::{
 	ConstString, RwLock,
 	error::{Error, Result},
 	port_value::{PortValue, PortValuePtr, PortValueReadGuard, PortValueWriteGuard},
-	traits::{InPort, OutPort, PortCommons},
+	traits::{InOutPort, InPort, OutPort, PortCommons},
 };
 
 /// PortData.
 pub(crate) struct PortData<T> {
-	/// An identifying name of the port, which must be unique for a given item.
+	/// An identifying name of the port, which must be unique for a given [`PortProvider`](crate::traits::PortProvider).
 	name: ConstString,
-	/// The current value of the port together with its change sequence.
+	/// The current value `T` of the port together with its [`SequenceNumber`](crate::sequence_number::SequenceNumber).
 	value: PortValuePtr<T>,
 }
 
 impl<T> core::fmt::Debug for PortData<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		f.debug_struct("InputOutputPort")
-			.field("name", &self.name())
-			//.field("input", &self.input)
-			//.field("output", &self.output)
+			.field("name", &self.name)
+			//.field("value", &self.value)
 			.finish_non_exhaustive()
 	}
 }
@@ -92,19 +91,21 @@ impl<T> InPort<T> for PortData<T> {
 			Err(Error::ValueNotSet { port: self.name.clone() })
 		}
 	}
-}
-
-impl<T> OutPort<T> for PortData<T> {
-	fn replace(&self, value: impl Into<T>) -> Option<T> {
-		self.value.write().replace(value.into())
-	}
-
-	fn set(&self, value: impl Into<T>) {
-		self.value.write().set(value.into())
-	}
 
 	fn take(&self) -> Option<T> {
 		self.value.write().take()
+	}
+}
+
+impl<T> InOutPort<T> for PortData<T> {
+	fn replace(&self, value: impl Into<T>) -> Option<T> {
+		self.value.write().replace(value.into())
+	}
+}
+
+impl<T> OutPort<T> for PortData<T> {
+	fn set(&self, value: impl Into<T>) {
+		self.value.write().set(value.into())
 	}
 
 	fn write(&self) -> Result<PortValueWriteGuard<T>> {
