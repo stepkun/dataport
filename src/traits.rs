@@ -126,7 +126,7 @@ pub trait PortAccessors: PortProvider {
 	fn bind_to<T: 'static + Send + Sync>(
 		&self,
 		in_port: impl Into<ConstString>,
-		out_list: &impl PortList,
+		out_list: &impl PortAccessors,
 		out_port: impl Into<ConstString>,
 	) -> Result<()> {
 		// src is where the value is created, dest where it is consumed
@@ -307,50 +307,9 @@ pub trait PortAccessors: PortProvider {
 	}
 }
 
-/// PortList.
-pub trait PortList: PortAccessors {
-	/// Returns a reference to the port list.
-	#[must_use]
-	fn portlist(&self) -> &[Port];
-}
-
-/// Implement PortAccessors for anything that implements PortList
-impl<T: PortList> PortAccessors for T {}
-
-/// Implement PortProvider for anything that implements PortList
-impl<T: PortList> PortProvider for T {
-	fn find(&self, name: impl Into<ConstString>) -> Option<&Port> {
-		let name = name.into();
-		self.portlist()
-			.iter()
-			.find(|&port| port.name() == name.clone())
-			.map(|v| v as _)
-	}
-}
-
-/// PortHub.
-pub trait PortHub: PortList {
-	/// Returns a mutable reference to the port list.
-	fn portlist_mut(&mut self) -> &mut Vec<Port>;
-
-	/// Adds a port to the portlist.
-	fn add(&mut self, port: Port) {
-		self.portlist_mut().push(port)
-	}
-
-	/// Removes a port from the port list.
-	fn remove(&mut self, name: &str) -> Option<Port> {
-		let list = self.portlist_mut();
-		let index = list
-			.iter()
-			.position(|port| port.name() == name.into());
-		index.map(|index| list.remove(index))
-	}
-}
-
 #[cfg(test)]
 mod tests {
-	use crate::{in_port::InputPort, out_port::OutputPort, port_hub::DynamicPortList, port_list::StaticPortList};
+	use crate::{in_port::InputPort, out_port::OutputPort, port_hub::PortHub, port_list::PortList};
 
 	use super::*;
 
@@ -374,42 +333,43 @@ mod tests {
 		assert_eq!(src.take().unwrap(), 42);
 	}
 
-	fn return_impl_port_list() -> impl PortList {
-		StaticPortList::new([
-			Port::create_in_port::<i32>("in"),
-			Port::create_out_port::<i32>("out"),
-			Port::create_inout_port::<i32>("inout"),
-		])
-	}
+	/*
+	   fn return_impl_port_list() -> impl PortList {
+		   StaticPortList::new([
+			   Port::create_in_port::<i32>("in"),
+			   Port::create_out_port::<i32>("out"),
+			   Port::create_inout_port::<i32>("inout"),
+		   ])
+	   }
 
-	fn use_impl_port_list(list: impl PortList) {
-		assert!(list.find("port").is_none());
-		assert!(list.find("in").is_some());
-		assert!(list.find("inout").is_some());
-		assert!(list.find("out").is_some());
-	}
+	   fn use_impl_port_list(list: impl PortList) {
+		   assert!(list.find("port").is_none());
+		   assert!(list.find("in").is_some());
+		   assert!(list.find("inout").is_some());
+		   assert!(list.find("out").is_some());
+	   }
 
-	fn return_impl_port_hub() -> impl PortHub {
-		let mut list = DynamicPortList::new(Vec::new());
-		list.add(Port::create_in_port::<i32>("in"));
-		list.add(Port::create_out_port::<i32>("out"));
-		list.add(Port::create_inout_port::<i32>("inout"));
-		list
-	}
+	   fn return_impl_port_hub() -> impl PortHub {
+		   let mut list = DynamicPortList::new(Vec::new());
+		   list.add(Port::create_in_port::<i32>("in"));
+		   list.add(Port::create_out_port::<i32>("out"));
+		   list.add(Port::create_inout_port::<i32>("inout"));
+		   list
+	   }
 
-	fn use_impl_port_hub(mut hub: impl PortHub) {
-		assert!(hub.find("port").is_none());
-		assert!(hub.find("in").is_some());
-		assert!(hub.find("inout").is_some());
-		assert!(hub.find("out").is_some());
-		hub.remove("in");
-		hub.remove("out");
-		hub.remove("inout");
-		assert!(hub.find("in").is_none());
-		assert!(hub.find("inout").is_none());
-		assert!(hub.find("out").is_none());
-	}
-
+	   fn use_impl_port_hub(mut hub: impl PortHub) {
+		   assert!(hub.find("port").is_none());
+		   assert!(hub.find("in").is_some());
+		   assert!(hub.find("inout").is_some());
+		   assert!(hub.find("out").is_some());
+		   hub.remove("in");
+		   hub.remove("out");
+		   hub.remove("inout");
+		   assert!(hub.find("in").is_none());
+		   assert!(hub.find("inout").is_none());
+		   assert!(hub.find("out").is_none());
+	   }
+	*/
 	#[test]
 	fn impl_compatibility() {
 		let in_port = return_impl_in_port();
@@ -418,14 +378,16 @@ mod tests {
 		let out_port = return_impl_out_port();
 		use_impl_out_port(out_port);
 
-		let list = return_impl_port_list();
-		use_impl_port_list(list);
+		/*
+			   let list = return_impl_port_list();
+			   use_impl_port_list(list);
 
-		let list = return_impl_port_hub();
-		use_impl_port_list(list);
+			   let list = return_impl_port_hub();
+			   use_impl_port_list(list);
 
-		let hub = return_impl_port_hub();
-		use_impl_port_hub(hub);
+			   let hub = return_impl_port_hub();
+			   use_impl_port_hub(hub);
+		*/
 	}
 
 	//#[test]

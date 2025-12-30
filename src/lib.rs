@@ -37,9 +37,9 @@ pub use in_port::InputPort;
 pub use out_port::OutputPort;
 pub use port::Port;
 pub use port_base::PortBase;
-pub use port_hub::DynamicPortList;
-pub use port_list::StaticPortList;
+pub use port_hub::PortHub;
+pub use port_list::PortList;
 pub use port_value::{PortValueReadGuard, PortValueWriteGuard};
-pub use traits::{InPort, OutPort, PortAccessors, PortCommons, PortHub, PortList, PortProvider};
+pub use traits::{InPort, OutPort, PortAccessors, PortCommons, PortProvider};
 // re-exports:
 //pub use dataport_macros::???;
