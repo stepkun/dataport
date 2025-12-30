@@ -1,5 +1,5 @@
 // Copyright © 2025 Stephan Kunz
-//! A specialsequence number.
+//! A special [`SequenceNumber`].
 
 /// A sequence number which starts at `0` but wraps around to `1`.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

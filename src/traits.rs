@@ -1,21 +1,19 @@
 // Copyright © 2025 Stephan Kunz
 //! Traits for working with ports and lists of ports.
 
-#![allow(unused)]
-
 use core::any::Any;
 
-use alloc::{sync::Arc, vec::Vec};
-
 use crate::{
-	ConstString, InputPort, OutputPort, RwLock,
+	ConstString,
 	error::{Error, Result},
 	in_out_port::InputOutputPort,
+	in_port::InputPort,
 	port::Port,
-	port_value::{PortValue, PortValueReadGuard, PortValueWriteGuard},
+	port_value::{PortValueReadGuard, PortValueWriteGuard},
 };
 
 /// The `AnySendSync` trait allows to send data between threads.
+#[allow(unused)]
 pub(crate) trait AnySendSync: Any + Send + Sync {
 	/// Convert to Any
 	#[must_use]
@@ -38,6 +36,8 @@ impl<T: 'static + Send + Sync> AnySendSync for T {
 	}
 }
 
+/// The `AnyPort` trait allows to send port data between threads.
+#[allow(unused)]
 pub(crate) trait AnyPort: AnySendSync + core::fmt::Debug + PortCommons {
 	/// Convert to Any
 	#[must_use]
@@ -157,7 +157,7 @@ pub trait PortAccessors: PortProvider {
 						.port()
 						.downcast_ref::<InputOutputPort<T>>()
 					{
-						todo!(); //input_output_port.set_value(out_value);
+						input_output_port.set_value(out_value);
 						Ok(())
 					} else {
 						Err(Error::WrongType { port: dest_port })
@@ -322,7 +322,7 @@ pub trait PortAccessors: PortProvider {
 
 #[cfg(test)]
 mod tests {
-	use crate::{in_port::InputPort, out_port::OutputPort, port_hub::PortHub, port_list::PortList};
+	use crate::{in_port::InputPort, out_port::OutputPort};
 
 	use super::*;
 

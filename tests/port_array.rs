@@ -1,5 +1,5 @@
 // Copyright © 2025 Stephan Kunz
-//! Test [`PortHub`] features.
+//! Test [`PortList`] features.
 
 use std::f64::consts::PI;
 
@@ -8,31 +8,26 @@ use dataport::*;
 const CONST_NAME: &str = "p2";
 static STATIC_NAME: &str = "p3";
 
-struct DynamicStruct {
+struct BasicStruct {
 	_other_field: i32,
-	ports: PortHub,
+	ports: PortArray<3>,
 }
 
 #[test]
-/// Communication hubs need to 'provide' ports dynamically.
-fn provisioning() {
-	let mut s1 = DynamicStruct {
+/// 'Things' that have ports 'declare' their ports statically.
+fn declaration() {
+	let s1 = BasicStruct {
 		_other_field: 1,
-		ports: PortHub::default(),
+		ports: PortArray::new([
+			Port::create_in_port::<i32>("p1"),
+			Port::create_inout_port::<f64>(CONST_NAME),
+			Port::create_out_port::<String>(STATIC_NAME),
+		]),
 	};
-	assert!(s1.ports.find("p1").is_none());
-	assert!(s1.ports.find(CONST_NAME).is_none());
-	assert!(s1.ports.find(STATIC_NAME).is_none());
 
-	s1.ports.add(Port::create_in_port::<i32>("p1"));
-	s1.ports
-		.add(Port::create_inout_port::<f64>(CONST_NAME));
-	s1.ports
-		.add(Port::create_out_port::<String>(STATIC_NAME));
-
-	let s2 = DynamicStruct {
-		_other_field: 1,
-		ports: PortHub::new(vec![
+	let s2 = BasicStruct {
+		_other_field: 2,
+		ports: PortArray::new([
 			Port::create_out_port::<String>(STATIC_NAME),
 			Port::create_inout_port::<f64>(CONST_NAME),
 			Port::create_in_port::<i32>("p1"),
@@ -49,14 +44,14 @@ fn provisioning() {
 
 #[test]
 fn bind_get_and_set() {
-	let portlist1 = PortHub::new(vec![
+	let portlist1 = PortArray::new([
 		Port::create_out_port::<i32>("p1a"),
 		Port::create_out_port::<String>("p1b"),
 		Port::create_out_port::<f64>("p1c"),
 		Port::create_inout_port::<f64>("p1d"),
 	]);
 
-	let portlist2 = PortHub::new(vec![
+	let portlist2 = PortArray::new([
 		Port::create_in_port::<i32>("p2a"),
 		Port::create_in_port::<String>("p2b"),
 		Port::create_inout_port::<f64>("p2c"),

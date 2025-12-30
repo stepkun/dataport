@@ -1,33 +1,55 @@
 // Copyright © 2025 Stephan Kunz
-//! Implementation of the [`Portbase`].
-
-#![allow(unused)]
+//! Implementation of a [`PortDataBase`].
 
 use alloc::collections::btree_map::BTreeMap;
 
 use crate::{
-	ConstString, Error, InPort, InputOutputPort, OutPort, Port, PortCommons, PortValueReadGuard, PortValueWriteGuard,
-	error::Result,
+	ConstString, PortAccessors, PortProvider,
+	error::{Error, Result},
+	in_out_port::InputOutputPort,
+	port::Port,
+	port_value::{PortValueReadGuard, PortValueWriteGuard},
+	traits::{InPort, OutPort, PortCommons},
 };
 
-/// Holds all [`Databoard`](crate::databoard::Databoard) data.
+/// A database like container for [`Port`]s.
 #[derive(Default)]
-pub struct PortBase {
-	storage: BTreeMap<ConstString, Port>,
+#[repr(transparent)]
+pub struct PortDataBase(BTreeMap<ConstString, Port>);
+
+impl core::fmt::Debug for PortDataBase {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+		f.debug_tuple("PortDataBase")
+			.field(&self.0)
+			.finish()
+	}
 }
 
-impl PortBase {
+impl PortProvider for PortDataBase {
+	fn find(&self, name: impl Into<ConstString>) -> Option<&Port> {
+		let name = name.into();
+		self.0
+			.values()
+			.into_iter()
+			.find(|&port| port.name() == name)
+			.map(|v| v as _)
+	}
+}
+
+impl PortAccessors for PortDataBase {}
+
+impl PortDataBase {
 	/// Returns `true` if a [`Port`] with name `key` is available, otherwise `false`.
 	#[must_use]
 	pub fn contains_key(&self, key: &str) -> bool {
-		self.storage.contains_key(key)
+		self.0.contains_key(key)
 	}
 
 	/// Returns  a result of `true` if a [`Port`] under`key` of type `T` is available, otherwise a result of `false`.
 	/// # Errors
 	/// - [`Error::WrongType`] if the [`Port`] has not the expected type `T`.
 	pub fn contains<T: 'static + Send + Sync>(&self, key: &str) -> Result<bool> {
-		self.storage.get(key).map_or(Ok(false), |port| {
+		self.0.get(key).map_or(Ok(false), |port| {
 			port.as_in_out_port::<T>().map_or_else(
 				|| Err(Error::WrongType { port: key.into() }),
 				|port| if port.name().as_ref() == key { Ok(true) } else { Ok(false) },
@@ -40,12 +62,12 @@ impl PortBase {
 	/// - [`Error::AlreadyExists`] if `key` already exists.
 	pub fn create<T: 'static + Send + Sync>(&mut self, key: impl Into<ConstString>, value: impl Into<T>) -> Result<()> {
 		let key = key.into();
-		if self.storage.contains_key(&key) {
+		if self.0.contains_key(&key) {
 			return Err(Error::AlreadyExists { port: key });
 		}
 		let iop = InputOutputPort::<T>::with_value(key.clone(), value);
 		let port = Port::from(iop);
-		self.storage.insert(key, port);
+		self.0.insert(key, port);
 		Ok(())
 	}
 
@@ -55,7 +77,7 @@ impl PortBase {
 	/// - [`Error::WrongType`] if the entry has not the expected type `T`.
 	pub fn delete<T: 'static + Send + Sync>(&mut self, key: &str) -> Result<T> {
 		match self.contains::<T>(key) {
-			Ok(_) => self.storage.remove(key).map_or_else(
+			Ok(_) => self.0.remove(key).map_or_else(
 				|| Err(Error::NotFound { port: key.into() }),
 				|port| {
 					port.as_in_out_port::<T>().map_or_else(
@@ -76,7 +98,7 @@ impl PortBase {
 	/// - [`Error::NotFound`]  if `key` is not contained.
 	/// - [`Error::WrongType`] if the entry has not the expected type `T`.
 	pub fn get<T: 'static + Clone + Send + Sync>(&self, key: &str) -> Result<Option<T>> {
-		self.storage.get(key).map_or_else(
+		self.0.get(key).map_or_else(
 			|| Err(Error::NotFound { port: key.into() }),
 			|port| {
 				port.as_in_out_port::<T>()
@@ -85,13 +107,13 @@ impl PortBase {
 		)
 	}
 
-	/// Returns a clone of the [`Port`]
+	/// Returns a reference to the [`Port`]
 	/// # Errors
 	/// - [`Error::NotFound`] if `key` is not contained.
-	pub fn port(&self, key: &str) -> Result<Port> {
-		self.storage
+	pub fn port(&self, key: &str) -> Result<&Port> {
+		self.0
 			.get(key)
-			.map_or_else(|| Err(Error::NotFound { port: key.into() }), |port| Ok(port.clone()))
+			.map_or_else(|| Err(Error::NotFound { port: key.into() }), Ok)
 	}
 
 	/// Returns a read guard to the `T` of the [`Port`] stored under `key`.
@@ -102,7 +124,7 @@ impl PortBase {
 	/// - [`Error::NotFound`]  if `key` is not contained.
 	/// - [`Error::WrongType`] if the port has not the expected type `T`.
 	pub fn read<T: 'static + Send + Sync>(&self, key: &str) -> Result<PortValueReadGuard<T>> {
-		self.storage.get(key).map_or_else(
+		self.0.get(key).map_or_else(
 			|| Err(Error::NotFound { port: key.into() }),
 			|port| {
 				port.as_in_out_port::<T>().map_or_else(
@@ -122,7 +144,7 @@ impl PortBase {
 	/// - [`Error::NotFound`]  if `key` is not contained.
 	/// - [`Error::WrongType`] if the [`Port`] has not the expected type `T`.
 	pub fn try_read<T: 'static + Send + Sync>(&self, key: &str) -> Result<PortValueReadGuard<T>> {
-		self.storage.get(key).map_or_else(
+		self.0.get(key).map_or_else(
 			|| Err(Error::NotFound { port: key.into() }),
 			|port| {
 				port.as_in_out_port::<T>().map_or_else(
@@ -137,7 +159,7 @@ impl PortBase {
 	/// # Errors
 	/// - [`Error::NotFound`] if `key` is not contained.
 	pub fn sequence_number(&self, key: &str) -> Result<u32> {
-		self.storage.get(key).map_or_else(
+		self.0.get(key).map_or_else(
 			|| Err(Error::NotFound { port: key.into() }),
 			|port| Ok(port.sequence_number()),
 		)
@@ -148,7 +170,7 @@ impl PortBase {
 	/// - [`Error::NotFound`]  if `key` is not contained.
 	/// - [`Error::WrongType`] if the [`Port`] has not the expected type `T`.
 	pub fn update<T: 'static + Send + Sync>(&self, key: &str, value: impl Into<T>) -> Result<Option<T>> {
-		self.storage.get(key).map_or_else(
+		self.0.get(key).map_or_else(
 			|| Err(Error::NotFound { port: key.into() }),
 			|port| {
 				port.as_in_out_port::<T>().map_or_else(
@@ -169,7 +191,7 @@ impl PortBase {
 	/// - [`Error::NotFound`]  if `key` is not contained.
 	/// - [`Error::WrongType`] if the entry has not the expected type `T`.
 	pub fn write<T: 'static + Send + Sync>(&self, key: &str) -> Result<PortValueWriteGuard<T>> {
-		self.storage.get(key).map_or_else(
+		self.0.get(key).map_or_else(
 			|| Err(Error::NotFound { port: key.into() }),
 			|port| {
 				port.as_in_out_port::<T>().map_or_else(
@@ -191,7 +213,7 @@ impl PortBase {
 	/// - [`Error::NotFound`]  if `key` is not contained.
 	/// - [`Error::WrongType`] if the [`Port`] has not the expected type `T`.
 	pub fn try_write<T: 'static + Send + Sync>(&self, key: &str) -> Result<PortValueWriteGuard<T>> {
-		self.storage.get(key).map_or_else(
+		self.0.get(key).map_or_else(
 			|| Err(Error::NotFound { port: key.into() }),
 			|port| {
 				port.as_in_out_port::<T>().map_or_else(
@@ -213,6 +235,6 @@ mod tests {
 
 	#[test]
 	const fn normal_types() {
-		is_normal::<PortBase>();
+		is_normal::<PortDataBase>();
 	}
 }

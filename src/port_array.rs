@@ -1,17 +1,24 @@
 // Copyright © 2025 Stephan Kunz
-//! Dynamic list of ports.
+//! Static array of ports.
 
-use core::ops::{Deref, DerefMut};
+use core::ops::Deref;
 
-use alloc::vec::Vec;
+use crate::{
+	port::Port,
+	traits::{PortAccessors, PortCommons, PortProvider},
+};
 
-use crate::{PortAccessors, PortCommons, PortProvider, port::Port};
+/// An array like container for [`Port`]s.
+#[repr(transparent)]
+pub struct PortArray<const S: usize>([Port; S]);
 
-/// PortHub.
-#[derive(Default)]
-pub struct PortHub(Vec<Port>);
+impl<const S: usize> core::fmt::Debug for PortArray<S> {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+		f.debug_tuple("PortArray").field(&self.0).finish()
+	}
+}
 
-impl Deref for PortHub {
+impl<const S: usize> Deref for PortArray<S> {
 	type Target = [Port];
 
 	fn deref(&self) -> &Self::Target {
@@ -19,15 +26,9 @@ impl Deref for PortHub {
 	}
 }
 
-impl DerefMut for PortHub {
-	fn deref_mut(&mut self) -> &mut Self::Target {
-		&mut self.0
-	}
-}
+impl<const S: usize> PortAccessors for PortArray<S> {}
 
-impl PortAccessors for PortHub {}
-
-impl PortProvider for PortHub {
+impl<const S: usize> PortProvider for PortArray<S> {
 	fn find(&self, name: impl Into<crate::ConstString>) -> Option<&Port> {
 		let name = name.into();
 		self.0
@@ -37,29 +38,15 @@ impl PortProvider for PortHub {
 	}
 }
 
-impl PortHub {
-	pub fn new(ports: Vec<Port>) -> Self {
+impl<const S: usize> PortArray<S> {
+	pub fn new(ports: [Port; S]) -> Self {
 		Self(ports)
-	}
-
-	/// Adds a port to the portlist.
-	pub fn add(&mut self, port: Port) {
-		self.0.push(port)
-	}
-
-	/// Removes a port from the port list.
-	pub fn remove(&mut self, name: &str) -> Option<Port> {
-		let index = self
-			.0
-			.iter()
-			.position(|port| port.name() == name.into());
-		index.map(|index| self.0.remove(index))
 	}
 }
 
 #[cfg(test)]
 mod tests {
-	use alloc::{string::String, vec};
+	use alloc::string::String;
 
 	use super::*;
 
@@ -70,8 +57,8 @@ mod tests {
 	// check, that the auto traits are available.
 	#[test]
 	const fn normal_types() {
-		is_normal::<&PortHub>();
-		is_normal::<PortHub>();
+		is_normal::<&PortArray<2>>();
+		is_normal::<PortArray<4>>();
 	}
 
 	const CONST_NAME: &str = "p2";
@@ -80,13 +67,13 @@ mod tests {
 	// test constructors.
 	#[test]
 	fn constructors() {
-		let _s0 = PortHub::new(vec![]);
-		let _s1 = PortHub::new(vec![Port::create_in_port::<i32>("p1")]);
-		let _s2 = PortHub::new(vec![
+		let _s0 = PortArray::new([]);
+		let _s1 = PortArray::new([Port::create_in_port::<i32>("p1")]);
+		let _s2 = PortArray::new([
 			Port::create_in_port::<i32>("p1"),
 			Port::create_in_port::<f64>(CONST_NAME),
 		]);
-		let _s3 = PortHub::new(vec![
+		let _s3 = PortArray::new([
 			Port::create_in_port::<i32>("p1"),
 			Port::create_in_port::<f64>(CONST_NAME),
 			Port::create_in_port::<String>(STATIC_NAME),
@@ -96,7 +83,7 @@ mod tests {
 	// test constructors.
 	#[test]
 	fn find() {
-		let s = PortHub::new(vec![
+		let s = PortArray::new([
 			Port::create_in_port::<i32>("p1"),
 			Port::create_in_port::<f64>(CONST_NAME),
 			Port::create_in_port::<String>(STATIC_NAME),

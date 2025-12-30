@@ -1,39 +1,47 @@
 // Copyright © 2025 Stephan Kunz
 //! A type erased (abstract) port implementation.
 
-#![allow(unused)]
-
-use core::{any::Any, ops::Deref};
+use core::any::Any;
 
 use alloc::sync::Arc;
 
 use crate::{
-	ConstString, RwLock,
+	ConstString,
 	in_out_port::InputOutputPort,
 	in_port::InputPort,
 	out_port::OutputPort,
-	port_value::PortValue,
+	port_value::PortValuePtr,
 	traits::{AnyPort, PortCommons},
 };
 
 /// Port.
 #[derive(Clone)]
-pub struct Port {
-	/// Any type of port
-	port: Arc<dyn AnyPort>,
-}
+#[repr(transparent)]
+pub struct Port(Arc<dyn AnyPort>);
 
 impl core::fmt::Debug for Port {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-		f.debug_struct("Port")
-			.field("port", &self.port)
+		f.debug_tuple("Port")
+			.field(&self.0)
 			.finish_non_exhaustive()
 	}
 }
 
 impl<T: 'static + Send + Sync> From<InputOutputPort<T>> for Port {
 	fn from(value: InputOutputPort<T>) -> Self {
-		Self { port: Arc::new(value) }
+		Self(Arc::new(value))
+	}
+}
+
+impl<T: 'static + Send + Sync> From<InputPort<T>> for Port {
+	fn from(value: InputPort<T>) -> Self {
+		Self(Arc::new(value))
+	}
+}
+
+impl<T: 'static + Send + Sync> From<OutputPort<T>> for Port {
+	fn from(value: OutputPort<T>) -> Self {
+		Self(Arc::new(value))
 	}
 }
 
@@ -42,7 +50,7 @@ impl PartialEq for Port {
 	fn eq(&self, other: &Self) -> bool {
 		if self.name() == other.name()
 		  // check the 'dyn AnyPort', not the Arc 
-		  && (*self.port).type_id() == (*other.port).type_id()
+		  && (*self.0).type_id() == (*other.0).type_id()
 		{
 			return true;
 		}
@@ -52,11 +60,11 @@ impl PartialEq for Port {
 
 impl PortCommons for Port {
 	fn name(&self) -> ConstString {
-		self.port.name()
+		self.0.name()
 	}
 
 	fn sequence_number(&self) -> u32 {
-		self.port.sequence_number()
+		self.0.sequence_number()
 	}
 }
 
@@ -79,34 +87,28 @@ fn cast_arc_any_to_out_port<T: 'static + Send + Sync>(any_value: Arc<dyn Any + S
 
 impl Port {
 	pub fn create_in_port<T: 'static + Send + Sync>(name: &'static str) -> Self {
-		Self {
-			port: Arc::new(InputPort::<T>::new(name)),
-		}
+		Self(Arc::new(InputPort::<T>::new(name)))
 	}
 
 	pub fn create_inout_port<T: 'static + Send + Sync>(name: &'static str) -> Self {
-		Self {
-			port: Arc::new(InputOutputPort::<T>::new(name)),
-		}
+		Self(Arc::new(InputOutputPort::<T>::new(name)))
 	}
 
 	pub fn create_out_port<T: 'static + Send + Sync>(name: &'static str) -> Self {
-		Self {
-			port: Arc::new(OutputPort::<T>::new(name)),
-		}
+		Self(Arc::new(OutputPort::<T>::new(name)))
 	}
 
 	pub(crate) fn port(&self) -> &dyn Any {
-		&*self.port
+		&*self.0
 	}
 
-	pub(crate) fn as_in_value<T: 'static + Send + Sync>(&self) -> Option<Arc<RwLock<PortValue<T>>>> {
-		let in_port = cast_arc_any_to_in_port::<T>(self.port.clone());
+	pub(crate) fn as_in_value<T: 'static + Send + Sync>(&self) -> Option<PortValuePtr<T>> {
+		let in_port = cast_arc_any_to_in_port::<T>(self.0.clone());
 		if let Some(port) = in_port {
 			return Some(port.value());
 		}
 
-		let in_out_port = cast_arc_any_to_in_out_port::<T>(self.port.clone());
+		let in_out_port = cast_arc_any_to_in_out_port::<T>(self.0.clone());
 		if let Some(port) = in_out_port {
 			return Some(port.value());
 		}
@@ -115,16 +117,16 @@ impl Port {
 	}
 
 	pub fn as_in_out_port<T: 'static + Send + Sync>(&self) -> Option<Arc<InputOutputPort<T>>> {
-		cast_arc_any_to_in_out_port::<T>(self.port.clone())
+		cast_arc_any_to_in_out_port::<T>(self.0.clone())
 	}
 
-	pub(crate) fn as_out_value<T: 'static + Send + Sync>(&self) -> Option<Arc<RwLock<PortValue<T>>>> {
-		let out_port = cast_arc_any_to_out_port::<T>(self.port.clone());
+	pub(crate) fn as_out_value<T: 'static + Send + Sync>(&self) -> Option<PortValuePtr<T>> {
+		let out_port = cast_arc_any_to_out_port::<T>(self.0.clone());
 		if let Some(port) = out_port {
 			return Some(port.value());
 		}
 
-		let in_out_port = cast_arc_any_to_in_out_port::<T>(self.port.clone());
+		let in_out_port = cast_arc_any_to_in_out_port::<T>(self.0.clone());
 		if let Some(port) = in_out_port {
 			return Some(port.value());
 		}
@@ -132,7 +134,7 @@ impl Port {
 		None
 	}
 
-	pub(crate) fn as_value<T: 'static + Send + Sync>(&self) -> Option<Arc<RwLock<PortValue<T>>>> {
+	pub(crate) fn as_value<T: 'static + Send + Sync>(&self) -> Option<PortValuePtr<T>> {
 		if let Some(value) = self.as_in_value() {
 			Some(value)
 		} else {

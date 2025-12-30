@@ -13,7 +13,7 @@ static STATIC_NAME: &str = "p3";
 #[test]
 #[allow(clippy::cognitive_complexity)]
 fn access() {
-	let mut pb = PortBase::default();
+	let mut pb = PortDataBase::default();
 	assert!(!pb.contains_key("test"));
 	assert!(pb.port("test").is_err());
 	assert!(!pb.contains::<i32>("test").unwrap());

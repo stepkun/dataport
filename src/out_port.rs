@@ -1,5 +1,5 @@
 // Copyright © 2025 Stephan Kunz
-//! Implementation of a port providing [`OutPort`].
+//! Implementation of a port providing the trait [`OutPort`].
 
 #![allow(unused)]
 
@@ -11,19 +11,18 @@ use crate::{
 	ConstString, RwLock,
 	error::{Error, Result},
 	port_data::PortData,
-	port_value::{PortValue, PortValueReadGuard, PortValueWriteGuard},
+	port_value::{PortValuePtr, PortValueReadGuard, PortValueWriteGuard},
 	traits::{AnyPort, OutPort, PortCommons},
 };
 
 /// OutputPort
-pub struct OutputPort<T> {
-	data: RwLock<PortData<T>>,
-}
+#[repr(transparent)]
+pub struct OutputPort<T>(RwLock<PortData<T>>);
 
 impl<T> core::fmt::Debug for OutputPort<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-		f.debug_struct("OutputPort")
-			.field("data", &self.data)
+		f.debug_tuple("OutputPort")
+			.field(&self.0)
 			.finish()
 	}
 }
@@ -31,9 +30,9 @@ impl<T> core::fmt::Debug for OutputPort<T> {
 impl<T: 'static> PartialEq for OutputPort<T> {
 	/// Partial equality of an out port is, if both have the same name & value type
 	fn eq(&self, other: &Self) -> bool {
-		if self.data.read().name() == other.data.read().name() {
-			let v1 = self.data.read().value();
-			let v2 = other.data.read().value();
+		if self.0.read().name() == other.0.read().name() {
+			let v1 = self.0.read().value();
+			let v2 = other.0.read().value();
 			// check type of v1 against type of v2
 			if v1.type_id() == v2.type_id() {
 				return true;
@@ -45,17 +44,17 @@ impl<T: 'static> PartialEq for OutputPort<T> {
 
 impl<T> PortCommons for OutputPort<T> {
 	fn name(&self) -> ConstString {
-		self.data.read().name()
+		self.0.read().name()
 	}
 
 	fn sequence_number(&self) -> u32 {
-		self.data.read().sequence_number()
+		self.0.read().sequence_number()
 	}
 }
 
 impl<T> OutPort<T> for OutputPort<T> {
 	fn replace(&self, value: impl Into<T>) -> Option<T> {
-		self.data
+		self.0
 			.read()
 			.value()
 			.write()
@@ -63,39 +62,39 @@ impl<T> OutPort<T> for OutputPort<T> {
 	}
 
 	fn set(&self, value: impl Into<T>) {
-		self.data.read().value().write().set(value.into())
+		self.0.read().value().write().set(value.into())
 	}
 
 	fn take(&self) -> Option<T> {
-		self.data.read().value().write().take()
+		self.0.read().value().write().take()
 	}
 
 	fn write(&self) -> Result<PortValueWriteGuard<T>> {
 		// Test for value is separate to not pass a locked value into the guard.
-		let has_value = self.data.read().value().read().is_some();
+		let has_value = self.0.read().value().read().is_some();
 		if has_value {
-			PortValueWriteGuard::new(self.data.read().name(), self.data.read().value())
+			PortValueWriteGuard::new(self.0.read().name(), self.0.read().value())
 		} else {
 			Err(Error::ValueNotSet {
-				port: self.data.read().name(),
+				port: self.0.read().name(),
 			})
 		}
 	}
 
 	fn try_write(&self) -> Result<PortValueWriteGuard<T>> {
 		// Test for value is separate to not pass a locked value into the guard.
-		let has_value = if let Some(guard) = self.data.read().value().try_read() {
+		let has_value = if let Some(guard) = self.0.read().value().try_read() {
 			guard.is_some()
 		} else {
 			return Err(Error::IsLocked {
-				port: self.data.read().name(),
+				port: self.0.read().name(),
 			});
 		};
 		if has_value {
-			PortValueWriteGuard::try_new(self.data.read().name(), self.data.read().value())
+			PortValueWriteGuard::try_new(self.0.read().name(), self.0.read().value())
 		} else {
 			Err(Error::ValueNotSet {
-				port: self.data.read().name(),
+				port: self.0.read().name(),
 			})
 		}
 	}
@@ -104,27 +103,23 @@ impl<T> OutPort<T> for OutputPort<T> {
 impl<T> OutputPort<T> {
 	#[must_use]
 	pub fn new(name: impl Into<ConstString>) -> Self {
-		Self {
-			data: RwLock::new(PortData::new(name.into())),
-		}
+		Self(RwLock::new(PortData::new(name.into())))
 	}
 
 	#[must_use]
 	pub(crate) fn with_value(name: impl Into<ConstString>, value: impl Into<T>) -> Self {
-		Self {
-			data: RwLock::new(PortData::with_value(name.into(), value.into())),
-		}
+		Self(RwLock::new(PortData::with_value(name.into(), value.into())))
 	}
 
 	/// Helper function to solve ambiguity.
 	pub(crate) fn by_ref(&self) -> Result<PortValueReadGuard<T>> {
 		// Test for value is separate to not pass a locked value into the guard.
-		let has_value = self.data.read().value().read().is_some();
+		let has_value = self.0.read().value().read().is_some();
 		if has_value {
-			PortValueReadGuard::new(self.data.read().name(), self.data.read().value())
+			PortValueReadGuard::new(self.0.read().name(), self.0.read().value())
 		} else {
 			Err(Error::ValueNotSet {
-				port: self.data.read().name(),
+				port: self.0.read().name(),
 			})
 		}
 	}
@@ -132,18 +127,18 @@ impl<T> OutputPort<T> {
 	/// Helper function to solve ambiguity.
 	pub(crate) fn try_by_ref(&self) -> Result<PortValueReadGuard<T>> {
 		// Test for value is separate to not pass a locked value into the guard.
-		let has_value = if let Some(guard) = self.data.read().value().try_read() {
+		let has_value = if let Some(guard) = self.0.read().value().try_read() {
 			guard.is_some()
 		} else {
 			return Err(Error::IsLocked {
-				port: self.data.read().name(),
+				port: self.0.read().name(),
 			});
 		};
 		if has_value {
-			PortValueReadGuard::try_new(self.data.read().name(), self.data.read().value())
+			PortValueReadGuard::try_new(self.0.read().name(), self.0.read().value())
 		} else {
 			Err(Error::ValueNotSet {
-				port: self.data.read().name(),
+				port: self.0.read().name(),
 			})
 		}
 	}
@@ -153,20 +148,20 @@ impl<T> OutputPort<T> {
 	where
 		T: Clone,
 	{
-		self.data.read().value().read().get()
+		self.0.read().value().read().get()
 	}
 
 	#[must_use]
 	pub(crate) fn by_value(&self) -> Option<T> {
-		self.data.read().value().write().take()
+		self.0.read().value().write().take()
 	}
 
-	pub(crate) fn value(&self) -> Arc<RwLock<PortValue<T>>> {
-		self.data.read().value()
+	pub(crate) fn value(&self) -> PortValuePtr<T> {
+		self.0.read().value()
 	}
 
-	pub(crate) fn set_value(&self, value: Arc<RwLock<PortValue<T>>>) {
-		self.data.write().set_value(value);
+	pub(crate) fn set_value(&self, value: PortValuePtr<T>) {
+		self.0.write().set_value(value);
 	}
 }
 

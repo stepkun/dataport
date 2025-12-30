@@ -1,17 +1,15 @@
 // Copyright © 2025 Stephan Kunz
-//! Generic implementation of a port.
-
-#![allow(unused)]
+//! Implementation of internal [`PortData`].
 
 use core::any::Any;
 
 use alloc::sync::Arc;
 
 use crate::{
-	ConstString, Error, RwLock,
-	error::Result,
-	port_value::{PortValue, PortValueReadGuard, PortValueWriteGuard},
-	traits::{AnyPort, InPort, OutPort, PortCommons},
+	ConstString, RwLock,
+	error::{Error, Result},
+	port_value::{PortValue, PortValuePtr, PortValueReadGuard, PortValueWriteGuard},
+	traits::{InPort, OutPort, PortCommons},
 };
 
 /// PortData.
@@ -19,7 +17,7 @@ pub(crate) struct PortData<T> {
 	/// An identifying name of the port, which must be unique for a given item.
 	name: ConstString,
 	/// The current value of the port together with its change sequence.
-	value: Arc<RwLock<PortValue<T>>>,
+	value: PortValuePtr<T>,
 }
 
 impl<T> core::fmt::Debug for PortData<T> {
@@ -151,11 +149,11 @@ impl<T> PortData<T> {
 		}
 	}
 
-	pub(crate) fn value(&self) -> Arc<RwLock<PortValue<T>>> {
+	pub(crate) fn value(&self) -> PortValuePtr<T> {
 		self.value.clone()
 	}
 
-	pub(crate) fn set_value(&mut self, value: Arc<RwLock<PortValue<T>>>) {
+	pub(crate) fn set_value(&mut self, value: PortValuePtr<T>) {
 		self.value = value
 	}
 }

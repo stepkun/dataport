@@ -11,12 +11,25 @@ use crate::{
 	sequence_number::SequenceNumber,
 };
 
-/// Internal representation of a ports value including its change sequence number.
+/// Pointer type definition to a [`PortValue`]
+pub(crate) type PortValuePtr<T> = Arc<RwLock<PortValue<T>>>;
+
+/// Internal representation of a ports value.
+/// The data together with its change sequence number.
 pub(crate) struct PortValue<T>(Option<T>, SequenceNumber);
 
 impl<T> Default for PortValue<T> {
 	fn default() -> Self {
 		Self(None, SequenceNumber::default())
+	}
+}
+
+impl<T: core::fmt::Debug> core::fmt::Debug for PortValue<T> {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+		f.debug_tuple("PortValue")
+			.field(&self.0)
+			.field(&self.1)
+			.finish()
 	}
 }
 
@@ -72,7 +85,7 @@ impl<T: Clone> PortValue<T> {
 #[must_use = "a `PortValueReadGuard` should be used"]
 pub struct PortValueReadGuard<T> {
 	/// `Arc` to a `value`
-	value: Arc<RwLock<PortValue<T>>>,
+	value: PortValuePtr<T>,
 	/// Immutable pointer to content of the `value` above
 	ptr_t: *const T,
 }
@@ -101,7 +114,7 @@ impl<T> PortValueReadGuard<T> {
 	/// Returns a read guard to a T.
 	/// # Errors
 	/// - [`Error::NoValueSet`] if the port does not yet contain a value.
-	pub(crate) fn new(port: impl Into<ConstString>, value: Arc<RwLock<PortValue<T>>>) -> Result<Self> {
+	pub(crate) fn new(port: impl Into<ConstString>, value: PortValuePtr<T>) -> Result<Self> {
 		// we know this pointer is valid since the guard owns the value
 		let ptr_t = {
 			let guard = value.read();
@@ -122,7 +135,7 @@ impl<T> PortValueReadGuard<T> {
 	/// # Errors
 	/// - [`Error::IsLocked`]  if the entry is locked by someone else.
 	/// - [`Error::NoValueSet`] if the port does not yet contain a value.
-	pub(crate) fn try_new(port: impl Into<ConstString>, value: Arc<RwLock<PortValue<T>>>) -> Result<Self> {
+	pub(crate) fn try_new(port: impl Into<ConstString>, value: PortValuePtr<T>) -> Result<Self> {
 		// we know this pointer is valid since the guard owns the value
 		let ptr_t = {
 			if let Some(guard) = value.try_read() {
@@ -150,7 +163,7 @@ impl<T> PortValueReadGuard<T> {
 #[must_use = "a `PortValueWriteGuard` should be used"]
 pub struct PortValueWriteGuard<T> {
 	/// `Arc` to a `value`.
-	value: Arc<RwLock<PortValue<T>>>,
+	value: PortValuePtr<T>,
 	/// Mutable pointer to content of the `value` above.
 	ptr_t: *mut T,
 	/// Mutable pointer to the sequence_id.
@@ -198,7 +211,7 @@ impl<T> PortValueWriteGuard<T> {
 	/// Returns a write guard to a T.
 	/// # Errors
 	/// - [`Error::NoValueSet`] if the port does not yet contain a value.
-	pub(crate) fn new(port: impl Into<ConstString>, value: Arc<RwLock<PortValue<T>>>) -> Result<Self> {
+	pub(crate) fn new(port: impl Into<ConstString>, value: PortValuePtr<T>) -> Result<Self> {
 		// we know this pointer is valid since the guard owns the value
 		let (ptr_t, ptr_seq_id) = {
 			let guard = value.write();
@@ -225,7 +238,7 @@ impl<T> PortValueWriteGuard<T> {
 	/// # Errors
 	/// - [`Error::IsLocked`]  if the entry is locked by someone else.
 	/// - [`Error::NoValueSet`] if the port does not yet contain a value.
-	pub(crate) fn try_new(port: impl Into<ConstString>, value: Arc<RwLock<PortValue<T>>>) -> Result<Self> {
+	pub(crate) fn try_new(port: impl Into<ConstString>, value: PortValuePtr<T>) -> Result<Self> {
 		// we know this pointer is valid since the guard owns the value
 		let (ptr_t, ptr_seq_id) = {
 			if let Some(guard) = value.try_write() {
