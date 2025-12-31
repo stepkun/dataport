@@ -83,7 +83,7 @@ impl PortDataBase {
 						|| Err(Error::WrongType { port: key.into() }),
 						|port| {
 							port.take()
-								.map_or_else(|| Err(Error::ValueNotSet { port: key.into() }), |value| Ok(value))
+								.map_or_else(|| Err(Error::NoValueSet { port: key.into() }), |value| Ok(value))
 						},
 					)
 				},
@@ -95,10 +95,10 @@ impl PortDataBase {
 	/// Returns a reference to the [`Port`]
 	/// # Errors
 	/// - [`Error::NotFound`] if `key` is not contained.
-	pub fn port(&self, key: &str) -> Result<&Port> {
+	pub fn port(&self, key: &str) -> Result<Port> {
 		self.0
 			.get(key)
-			.map_or_else(|| Err(Error::NotFound { port: key.into() }), Ok)
+			.map_or_else(|| Err(Error::NotFound { port: key.into() }), |port| Ok(port.clone()))
 	}
 
 	/// Updates a value of type `T` stored under `key` and returns the old value.

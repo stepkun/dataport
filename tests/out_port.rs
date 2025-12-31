@@ -47,7 +47,7 @@ fn setter() {
 		_f4: Vec<f64>,
 	}
 
-	//let p4_name = String::from("p4");
+	//let p4_name = String::from("{p4}");
 	//test_setter!(i32, "p1", 42, 24);
 	//test_setter!(f64, CONST_NAME, PI, 3.0);
 	//test_setter!(String, STATIC_NAME, String::from("the answer"), String::from("hello world"));

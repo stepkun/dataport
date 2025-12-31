@@ -68,19 +68,19 @@ fn bind_get_and_set() {
 	//assert!(res.is_ok());
 
 	assert!(portlist1.set::<i32>("p1a", 42).is_ok());
-	//assert_eq!(portlist2.get::<i32>("p2a").unwrap().unwrap(), 42);
+	//assert_eq!(portlist2.get::<i32>("p2a").unwrap(), 42);
 
 	assert!(
 		portlist1
 			.set::<String>("p1b", String::from("hello world"))
 			.is_ok()
 	);
-	//assert_eq!(portlist2.get::<String>("p2b").unwrap().unwrap(), String::from("hello world"));
+	//assert_eq!(portlist2.get::<String>("p2b").unwrap(), String::from("hello world"));
 
 	assert!(portlist1.set::<f64>("p1c", PI).is_ok());
-	//assert_eq!(portlist2.get::<f64>("p2c").unwrap().unwrap(), PI);
-	assert!(portlist2.get::<f64>("p2c").unwrap().is_none());
-	//assert_eq!(portlist1.get::<f64>("p1d").unwrap().unwrap(), PI);
-	assert!(portlist1.get::<f64>("p1d").unwrap().is_none());
-	//assert_eq!(portlist2.get::<f64>("p2d").unwrap().unwrap(), PI);
+	//assert_eq!(portlist2.get::<f64>("p2c").unwrap(), PI);
+	assert!(portlist2.get::<f64>("p2c").is_err());
+	//assert_eq!(portlist1.get::<f64>("p1d").unwrap(), PI);
+	assert!(portlist1.get::<f64>("p1d").is_err());
+	//assert_eq!(portlist2.get::<f64>("p2d").unwrap(), PI);
 }

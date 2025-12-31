@@ -86,15 +86,15 @@ fn cast_arc_any_to_out_port<T: 'static + Send + Sync>(any_value: Arc<dyn Any + S
 }
 
 impl Port {
-	pub fn create_in_port<T: 'static + Send + Sync>(name: &'static str) -> Self {
+	pub fn create_in_port<T: 'static + Send + Sync>(name: impl Into<ConstString>) -> Self {
 		Self(Arc::new(InputPort::<T>::new(name)))
 	}
 
-	pub fn create_inout_port<T: 'static + Send + Sync>(name: &'static str) -> Self {
+	pub fn create_inout_port<T: 'static + Send + Sync>(name: impl Into<ConstString>) -> Self {
 		Self(Arc::new(InputOutputPort::<T>::new(name)))
 	}
 
-	pub fn create_out_port<T: 'static + Send + Sync>(name: &'static str) -> Self {
+	pub fn create_out_port<T: 'static + Send + Sync>(name: impl Into<ConstString>) -> Self {
 		Self(Arc::new(OutputPort::<T>::new(name)))
 	}
 
@@ -116,7 +116,7 @@ impl Port {
 		None
 	}
 
-	pub fn as_in_out_port<T: 'static + Send + Sync>(&self) -> Option<Arc<InputOutputPort<T>>> {
+	pub(crate) fn as_in_out_port<T: 'static + Send + Sync>(&self) -> Option<Arc<InputOutputPort<T>>> {
 		cast_arc_any_to_in_out_port::<T>(self.0.clone())
 	}
 
@@ -141,10 +141,20 @@ impl Port {
 			self.as_out_value()
 		}
 	}
+
+	pub fn get<T: 'static + Clone + Send + Sync>(&self) -> Option<T> {
+		if let Some(value) = self.as_in_value::<T>() {
+			value.read().get()
+		} else {
+			None
+		}
+	}
 }
 
 #[cfg(test)]
 mod tests {
+	use alloc::{string::String, vec::Vec};
+
 	use super::*;
 
 	const fn is_normal<T: Sized + Send + Sync>() {}
@@ -156,31 +166,70 @@ mod tests {
 		is_normal::<Port>();
 	}
 
-	/*
-	   // check casting.
-	   #[test]
-	   fn casting() {
-		   let p1 = Port::create_in_port::<i32>("in");
-		   assert!(p1.as_out_port::<f64>().is_none());
-		   assert!(p1.as_out_port::<i32>().is_none());
-		   assert!(p1.as_in_port::<f64>().is_none());
-		   assert!(p1.as_in_port::<i32>().is_some());
-		   let in_port: Arc<InputPort<i32>> = p1.as_in_port().unwrap();
-		   assert_eq!(in_port.name(), "in".into());
+	const CONST_NAME: &str = "p2";
+	static STATIC_NAME: &str = "p3";
 
-		   let p2 = Port::create_out_port::<i32>("out");
-		   assert!(p2.as_out_port::<f64>().is_none());
-		   assert!(p2.as_out_port::<i32>().is_some());
-		   let out_port: Arc<OutputPort<i32>> = p2.as_out_port().unwrap();
-		   assert_eq!(out_port.name(), "out".into());
+	macro_rules! test_casting {
+		($tp1:ty, $tp2:ty, $name:expr) => {
+			// create with tp1
+			let p1 = Port::create_in_port::<$tp1>($name);
+			assert!(p1.as_in_value::<$tp1>().is_some());
+			assert!(p1.as_in_value::<$tp2>().is_none());
+			assert!(p1.as_out_value::<$tp1>().is_none());
+			assert!(p1.as_out_value::<$tp2>().is_none());
+			assert_eq!(p1.name(), $name.into());
 
-		   let p3 = Port::create_inout_port::<i32>("inout");
-		   assert!(p3.as_in_port::<f64>().is_none());
-		   assert!(p3.as_out_port::<f64>().is_none());
-		   let in_port: Arc<InputPort<i32>> = p3.as_in_port().unwrap();
-		   assert_eq!(in_port.name(), "inout".into());
-		   let out_port: Arc<OutputPort<i32>> = p3.as_out_port().unwrap();
-		   assert_eq!(out_port.name(), "inout".into());
-	   }
-	*/
+			let p2 = Port::create_out_port::<$tp1>($name);
+			assert!(p2.as_in_value::<$tp1>().is_none());
+			assert!(p2.as_in_value::<$tp2>().is_none());
+			assert!(p2.as_out_value::<$tp1>().is_some());
+			assert!(p2.as_out_value::<$tp2>().is_none());
+			assert_eq!(p2.name(), $name.into());
+
+			let p3 = Port::create_inout_port::<$tp1>($name);
+			assert!(p3.as_in_value::<$tp1>().is_some());
+			assert!(p3.as_in_value::<$tp2>().is_none());
+			assert!(p3.as_out_value::<$tp1>().is_some());
+			assert!(p3.as_out_value::<$tp2>().is_none());
+			assert_eq!(p3.name(), $name.into());
+
+			// create with tp2
+			let p1 = Port::create_in_port::<$tp2>($name);
+			assert!(p1.as_in_value::<$tp2>().is_some());
+			assert!(p1.as_in_value::<$tp1>().is_none());
+			assert!(p1.as_out_value::<$tp2>().is_none());
+			assert!(p1.as_out_value::<$tp1>().is_none());
+			assert_eq!(p1.name(), $name.into());
+
+			let p2 = Port::create_out_port::<$tp2>($name);
+			assert!(p2.as_in_value::<$tp2>().is_none());
+			assert!(p2.as_in_value::<$tp1>().is_none());
+			assert!(p2.as_out_value::<$tp2>().is_some());
+			assert!(p2.as_out_value::<$tp1>().is_none());
+			assert_eq!(p2.name(), $name.into());
+
+			let p3 = Port::create_inout_port::<$tp2>($name);
+			assert!(p3.as_in_value::<$tp2>().is_some());
+			assert!(p3.as_in_value::<$tp1>().is_none());
+			assert!(p3.as_out_value::<$tp2>().is_some());
+			assert!(p3.as_out_value::<$tp1>().is_none());
+			assert_eq!(p3.name(), $name.into());
+		};
+	}
+
+	// check casting.
+	#[test]
+	fn casting() {
+		struct MyStruct {
+			_f1: i32,
+			_f2: f64,
+			_f3: String,
+			_f4: Vec<f64>,
+		}
+		let p4_name = String::from("{p4}");
+		test_casting!(i32, f64, "p1");
+		test_casting!(String, MyStruct, CONST_NAME);
+		test_casting!(&str, String, STATIC_NAME);
+		test_casting!(Vec<Vec<String>>, Vec<String>, p4_name.as_str());
+	}
 }

@@ -125,7 +125,7 @@ impl<T> PortValueReadGuard<T> {
 				let ptr_t: *const T = value;
 				ptr_t
 			} else {
-				return Err(Error::ValueNotSet { port: port.into() });
+				return Err(Error::NoValueSet { port: port.into() });
 			}
 		};
 
@@ -146,7 +146,7 @@ impl<T> PortValueReadGuard<T> {
 					let ptr_t: *const T = value;
 					ptr_t
 				} else {
-					return Err(Error::ValueNotSet { port: port.into() });
+					return Err(Error::NoValueSet { port: port.into() });
 				}
 			} else {
 				return Err(Error::IsLocked { port: port.into() });
@@ -223,7 +223,7 @@ impl<T> PortValueWriteGuard<T> {
 				let ptr_seq_id: *mut SequenceNumber = &raw mut x.1;
 				(ptr_t, ptr_seq_id)
 			} else {
-				return Err(Error::ValueNotSet { port: port.into() });
+				return Err(Error::NoValueSet { port: port.into() });
 			}
 		};
 
@@ -250,7 +250,7 @@ impl<T> PortValueWriteGuard<T> {
 					let ptr_seq_id: *mut SequenceNumber = &raw mut x.1;
 					(ptr_t, ptr_seq_id)
 				} else {
-					return Err(Error::ValueNotSet { port: port.into() });
+					return Err(Error::NoValueSet { port: port.into() });
 				}
 			} else {
 				return Err(Error::IsLocked { port: port.into() });

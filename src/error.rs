@@ -35,7 +35,12 @@ pub enum Error {
 		port: ConstString,
 	},
 	/// No value defined for a port.
-	ValueNotSet {
+	NoValueSet {
+		/// Name of the port.
+		port: ConstString,
+	},
+	/// Value not initialized for a port.
+	ValueNotInitialized {
 		/// Name of the port.
 		port: ConstString,
 	},
@@ -57,7 +62,8 @@ impl core::fmt::Debug for Error {
 			Self::IsLocked { port } => write!(f, "IsLocked(port: {port})"),
 			Self::NoSrcSet { port } => write!(f, "NoSrcSet(port: {port})"),
 			Self::NotFound { port } => write!(f, "NotFound(port: {port})"),
-			Self::ValueNotSet { port } => write!(f, "NoValueSet(port: {port})"),
+			Self::NoValueSet { port } => write!(f, "NoValueSet(port: {port})"),
+			Self::ValueNotInitialized { port } => write!(f, "NoValueSet(port: {port})"),
 			Self::WrongType { port } => write!(f, "WrongType(port: {port})"),
 		}
 	}
@@ -71,7 +77,8 @@ impl core::fmt::Display for Error {
 			Self::IsLocked { port } => write!(f, "port '{port}' is currently locked"),
 			Self::NoSrcSet { port } => write!(f, "no source set for value of port '{port}'"),
 			Self::NotFound { port } => write!(f, "port '{port}' was not found"),
-			Self::ValueNotSet { port } => write!(f, "no value set for port '{port}'"),
+			Self::NoValueSet { port } => write!(f, "no value set for port '{port}'"),
+			Self::ValueNotInitialized { port } => write!(f, "port {port} hs not been initialized with a value"),
 			Self::WrongType { port } => write!(f, "port: '{port}' has not the wanted type"),
 		}
 	}

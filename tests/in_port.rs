@@ -38,7 +38,7 @@ fn getter() {
 		_f4: Vec<f64>,
 	}
 
-	let p4_name = String::from("p4");
+	let p4_name = String::from("{p4}");
 	test_getter!(i32, "p1", 42);
 	test_getter!(f64, CONST_NAME, PI);
 	test_getter!(String, STATIC_NAME, String::from("hello world"));

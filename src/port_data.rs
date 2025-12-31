@@ -74,7 +74,7 @@ impl<T> InPort<T> for PortData<T> {
 		if has_value {
 			PortValueReadGuard::new(self.name.clone(), self.value.clone())
 		} else {
-			Err(Error::ValueNotSet { port: self.name.clone() })
+			Err(Error::NoValueSet { port: self.name.clone() })
 		}
 	}
 
@@ -88,7 +88,7 @@ impl<T> InPort<T> for PortData<T> {
 		if has_value {
 			PortValueReadGuard::try_new(self.name.clone(), self.value.clone())
 		} else {
-			Err(Error::ValueNotSet { port: self.name.clone() })
+			Err(Error::NoValueSet { port: self.name.clone() })
 		}
 	}
 
@@ -114,7 +114,7 @@ impl<T> OutPort<T> for PortData<T> {
 		if has_value {
 			PortValueWriteGuard::new(self.name.clone(), self.value.clone())
 		} else {
-			Err(Error::ValueNotSet { port: self.name.clone() })
+			Err(Error::NoValueSet { port: self.name.clone() })
 		}
 	}
 
@@ -128,7 +128,7 @@ impl<T> OutPort<T> for PortData<T> {
 		if has_value {
 			PortValueWriteGuard::try_new(self.name.clone(), self.value.clone())
 		} else {
-			Err(Error::ValueNotSet { port: self.name.clone() })
+			Err(Error::NoValueSet { port: self.name.clone() })
 		}
 	}
 }

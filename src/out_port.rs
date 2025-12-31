@@ -63,7 +63,7 @@ impl<T> OutPort<T> for OutputPort<T> {
 		if has_value {
 			PortValueWriteGuard::new(self.0.read().name(), self.0.read().value())
 		} else {
-			Err(Error::ValueNotSet {
+			Err(Error::NoValueSet {
 				port: self.0.read().name(),
 			})
 		}
@@ -81,7 +81,7 @@ impl<T> OutPort<T> for OutputPort<T> {
 		if has_value {
 			PortValueWriteGuard::try_new(self.0.read().name(), self.0.read().value())
 		} else {
-			Err(Error::ValueNotSet {
+			Err(Error::NoValueSet {
 				port: self.0.read().name(),
 			})
 		}
@@ -106,7 +106,7 @@ impl<T> OutputPort<T> {
 		if has_value {
 			PortValueReadGuard::new(self.0.read().name(), self.0.read().value())
 		} else {
-			Err(Error::ValueNotSet {
+			Err(Error::NoValueSet {
 				port: self.0.read().name(),
 			})
 		}
@@ -125,7 +125,7 @@ impl<T> OutputPort<T> {
 		if has_value {
 			PortValueReadGuard::try_new(self.0.read().name(), self.0.read().value())
 		} else {
-			Err(Error::ValueNotSet {
+			Err(Error::NoValueSet {
 				port: self.0.read().name(),
 			})
 		}

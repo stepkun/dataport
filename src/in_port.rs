@@ -60,7 +60,7 @@ impl<T> InPort<T> for InputPort<T> {
 		if has_value {
 			PortValueReadGuard::new(self.0.read().name(), self.0.read().value())
 		} else {
-			Err(Error::ValueNotSet {
+			Err(Error::NoValueSet {
 				port: self.0.read().name(),
 			})
 		}
@@ -78,7 +78,7 @@ impl<T> InPort<T> for InputPort<T> {
 		if has_value {
 			PortValueReadGuard::try_new(self.0.read().name(), self.0.read().value())
 		} else {
-			Err(Error::ValueNotSet {
+			Err(Error::NoValueSet {
 				port: self.0.read().name(),
 			})
 		}

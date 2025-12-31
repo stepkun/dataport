@@ -180,14 +180,18 @@ pub trait PortAccessors: PortProvider {
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn get<T: 'static + Clone + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<Option<T>> {
+	fn get<T: 'static + Clone + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<T> {
 		let port = port.into();
 		if let Some(port_ref) = self.find(port.clone()) {
 			// port must have a value of the wanted type
 			if let Some(value) = port_ref.as_value::<T>() {
-				Ok(value.read().get())
+				if let Some(value) = value.read().get() {
+					Ok(value)
+				} else {
+					Err(Error::ValueNotInitialized { port })
+				}
 			} else {
-				Err(Error::ValueNotSet { port })
+				Err(Error::NoValueSet { port })
 			}
 		} else {
 			Err(Error::NotFound { port })
@@ -205,7 +209,7 @@ pub trait PortAccessors: PortProvider {
 			if let Some(value_ref) = port_ref.as_value::<T>() {
 				PortValueReadGuard::new(port_ref.name(), value_ref.clone())
 			} else {
-				Err(Error::ValueNotSet { port })
+				Err(Error::NoValueSet { port })
 			}
 		} else {
 			Err(Error::NotFound { port })
@@ -224,7 +228,7 @@ pub trait PortAccessors: PortProvider {
 			if let Some(value_ref) = port_ref.as_value::<T>() {
 				PortValueReadGuard::try_new(port_ref.name(), value_ref.clone())
 			} else {
-				Err(Error::ValueNotSet { port })
+				Err(Error::NoValueSet { port })
 			}
 		} else {
 			Err(Error::NotFound { port })
@@ -241,7 +245,7 @@ pub trait PortAccessors: PortProvider {
 			if let Some(value_ref) = port_ref.as_value::<T>() {
 				Ok(value_ref.write().replace(value))
 			} else {
-				Err(Error::ValueNotSet { port: port.into() })
+				Err(Error::NoValueSet { port: port.into() })
 			}
 		} else {
 			Err(Error::NotFound { port: port.into() })
@@ -272,7 +276,7 @@ pub trait PortAccessors: PortProvider {
 				value_ref.write().set(value);
 				Ok(())
 			} else {
-				Err(Error::ValueNotSet { port })
+				Err(Error::NoValueSet { port })
 			}
 		} else {
 			Err(Error::NotFound { port })
@@ -290,7 +294,7 @@ pub trait PortAccessors: PortProvider {
 			if let Some(value_ref) = port_ref.as_value::<T>() {
 				Ok(value_ref.write().take())
 			} else {
-				Err(Error::ValueNotSet { port })
+				Err(Error::NoValueSet { port })
 			}
 		} else {
 			Err(Error::NotFound { port })
@@ -308,7 +312,7 @@ pub trait PortAccessors: PortProvider {
 			if let Some(value_ref) = port_ref.as_value::<T>() {
 				PortValueWriteGuard::new(port_ref.name(), value_ref.clone())
 			} else {
-				Err(Error::ValueNotSet { port })
+				Err(Error::NoValueSet { port })
 			}
 		} else {
 			Err(Error::NotFound { port })
@@ -327,7 +331,7 @@ pub trait PortAccessors: PortProvider {
 			if let Some(value_ref) = port_ref.as_value::<T>() {
 				PortValueWriteGuard::try_new(port_ref.name(), value_ref.clone())
 			} else {
-				Err(Error::ValueNotSet { port })
+				Err(Error::NoValueSet { port })
 			}
 		} else {
 			Err(Error::NotFound { port })

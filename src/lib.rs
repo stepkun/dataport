@@ -39,6 +39,7 @@ pub use port::Port;
 pub use port_array::PortArray;
 pub use port_data_base::PortDataBase;
 pub use port_list::PortList;
+pub use port_value::{PortValueReadGuard, PortValueWriteGuard};
 pub use traits::{InOutPort, InPort, OutPort, PortAccessors, PortCommons, PortProvider};
 // re-exports:
 //pub use dataport_macros::???;

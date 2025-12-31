@@ -30,13 +30,13 @@ fn access() {
 	assert!(pb.contains_key("test"));
 	assert!(pb.port("test").is_ok());
 	assert!(pb.contains::<i32>("test").unwrap());
-	assert_eq!(pb.get::<i32>("test").unwrap().unwrap(), 42);
+	assert_eq!(pb.get::<i32>("test").unwrap(), 42);
 	assert_eq!(*pb.read::<i32>("test").unwrap(), 42);
 	assert_eq!(*pb.try_read::<i32>("test").unwrap(), 42);
 	assert_eq!(pb.sequence_number("test").unwrap(), 1);
 
 	assert!(pb.update::<i32>("test", 24).is_ok());
-	assert_eq!(pb.get::<i32>("test").unwrap().unwrap(), 24);
+	assert_eq!(pb.get::<i32>("test").unwrap(), 24);
 	assert_eq!(pb.sequence_number("test").unwrap(), 2);
 
 	{
@@ -52,7 +52,7 @@ fn access() {
 		assert!(pb.try_write::<i32>("test").is_err());
 	}
 
-	assert_eq!(pb.get::<i32>("test").unwrap().unwrap(), 42);
+	assert_eq!(pb.get::<i32>("test").unwrap(), 42);
 	assert_eq!(pb.sequence_number("test").unwrap(), 3);
 
 	assert!(pb.delete::<i32>("test").is_ok());
