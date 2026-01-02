@@ -159,7 +159,7 @@ macro_rules! test_connections {
 	($tp:ty, $name: expr, $value:expr) => {
 		//let ip = InputPort::<$tp>::new($name);
 		//let iop = InputOutputPort::<$tp>::new($name);
-		let op = OutputPort::<$tp>::new($name);
+		let op = OutBoundPort::<$tp>::new($name);
 
 		op.set($value);
 		//assert!(iop.replace_src(op).is_none());

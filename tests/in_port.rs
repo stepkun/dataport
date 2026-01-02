@@ -12,7 +12,7 @@ static STATIC_NAME: &str = "p3";
 
 macro_rules! test_getter {
 	($tp:ty, $name:expr, $value:expr) => {
-		let ip = InputPort::<$tp>::new($name);
+		let ip = InBoundPort::<$tp>::new($name);
 		assert_eq!(ip.sequence_number(), 0);
 		assert!(ip.read().is_err());
 		assert!(ip.get().is_none());

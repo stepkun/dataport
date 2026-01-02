@@ -6,15 +6,15 @@ use core::any::Any;
 use crate::{
 	ConstString,
 	error::{Error, Result},
-	in_out_port::InputOutputPort,
-	in_port::InputPort,
+	in_out_port::InOutBoundPort,
+	in_port::InBoundPort,
 	port::Port,
 	port_value::{PortValueReadGuard, PortValueWriteGuard},
 };
 
-/// The `AnySendSync` trait allows to send data between threads.
+/// The `AnyPort` trait allows to send ports between threads.
 #[allow(unused)]
-pub(crate) trait AnySendSync: Any + Send + Sync {
+pub(crate) trait AnyPort: Any + Send + Sync + core::fmt::Debug + PortCommons {
 	/// Convert to Any
 	#[must_use]
 	fn as_any(&self) -> &dyn Any;
@@ -24,31 +24,7 @@ pub(crate) trait AnySendSync: Any + Send + Sync {
 	fn as_mut_any(&mut self) -> &mut dyn Any;
 }
 
-/// Blank implementation for any type that has a `static` lifetime and implements
-/// [`Send`] and [`Sync`].
-impl<T: 'static + Send + Sync> AnySendSync for T {
-	fn as_any(&self) -> &dyn Any {
-		self
-	}
-
-	fn as_mut_any(&mut self) -> &mut dyn Any {
-		self
-	}
-}
-
-/// The `AnyPort` trait allows to send port data between threads.
-#[allow(unused)]
-pub(crate) trait AnyPort: AnySendSync + core::fmt::Debug + PortCommons {
-	/// Convert to Any
-	#[must_use]
-	fn as_any(&self) -> &dyn Any;
-
-	/// Convert to mut Any
-	#[must_use]
-	fn as_mut_any(&mut self) -> &mut dyn Any;
-}
-
-/// Blank implementation for any type that has a `static` lifetime and implements
+/// Blanket implementation for any type that has a `static` lifetime and implements
 /// [`core::fmt::Debug`], [`PortCommons`], [`Send`] and [`Sync`].
 impl<T: 'static + core::fmt::Debug + PortCommons + Send + Sync> AnyPort for T {
 	fn as_any(&self) -> &dyn Any {
@@ -72,8 +48,8 @@ pub trait PortCommons {
 	fn sequence_number(&self) -> u32;
 }
 
-/// Trait for incoming port types.
-pub trait InPort<T>: PortCommons {
+/// Trait for bound incoming port types.
+pub trait InBound<T>: PortCommons {
 	/// Returns a clone/copy of the T.
 	#[must_use]
 	fn get(&self) -> Option<T>
@@ -98,15 +74,15 @@ pub trait InPort<T>: PortCommons {
 	fn take(&self) -> Option<T>;
 }
 
-/// Trait for combined in/out port types.
-pub trait InOutPort<T> {
+/// Trait for bound combined in/out port types.
+pub trait InOutBound<T> {
 	/// Sets a new value to the T and returns the old T.
 	#[must_use]
 	fn replace(&self, value: impl Into<T>) -> Option<T>;
 }
 
-/// Trait for outgoing port types.
-pub trait OutPort<T>: PortCommons {
+/// Trait for bound outgoing port types.
+pub trait OutBound<T>: PortCommons {
 	/// Sets a new value to the T.
 	fn set(&self, value: impl Into<T>);
 
@@ -139,7 +115,7 @@ pub trait PortAccessors: PortProvider {
 	/// - [`Error::NotFound`], if one of the ports is not in port list.
 	/// - [`Error::PortAlreadyBound`], if in port is already bound.
 	/// - [`Error::WrongType`], if one of the ports is not the needed port type & type of T.
-	fn bind_to<T: 'static + Send + Sync>(
+	fn bind_to<T: Any + Send + Sync>(
 		&self,
 		in_port: impl Into<ConstString>,
 		out_list: &impl PortAccessors,
@@ -153,13 +129,10 @@ pub trait PortAccessors: PortProvider {
 				let dest_port = in_port.into();
 				if let Some(in_port) = self.find(dest_port.clone()) {
 					// dest must want input value of the wanted type
-					if let Some(input_port) = in_port.port().downcast_ref::<InputPort<T>>() {
+					if let Some(input_port) = in_port.port().downcast_ref::<InBoundPort<T>>() {
 						input_port.set_value(out_value);
 						Ok(())
-					} else if let Some(input_output_port) = in_port
-						.port()
-						.downcast_ref::<InputOutputPort<T>>()
-					{
+					} else if let Some(input_output_port) = in_port.port().downcast_ref::<InOutBoundPort<T>>() {
 						input_output_port.set_value(out_value);
 						Ok(())
 					} else {
@@ -180,7 +153,7 @@ pub trait PortAccessors: PortProvider {
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn get<T: 'static + Clone + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<T> {
+	fn get<T: Any + Clone + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<T> {
 		let port = port.into();
 		if let Some(port_ref) = self.find(port.clone()) {
 			// port must have a value of the wanted type
@@ -202,7 +175,7 @@ pub trait PortAccessors: PortProvider {
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn read<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortValueReadGuard<T>> {
+	fn read<T: Any + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortValueReadGuard<T>> {
 		let port = port.into();
 		if let Some(port_ref) = self.find(port.clone()) {
 			// port must have a value of the wanted type
@@ -221,7 +194,7 @@ pub trait PortAccessors: PortProvider {
 	/// - [`Error::IsLocked`], if port is locked.
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn try_read<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortValueReadGuard<T>> {
+	fn try_read<T: Any + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortValueReadGuard<T>> {
 		let port = port.into();
 		if let Some(port_ref) = self.find(port.clone()) {
 			// port must have a value of the wanted type
@@ -239,7 +212,7 @@ pub trait PortAccessors: PortProvider {
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn replace<T: 'static + Send + Sync>(&self, port: &str, value: impl Into<T>) -> Result<Option<T>> {
+	fn replace<T: Any + Send + Sync>(&self, port: &str, value: impl Into<T>) -> Result<Option<T>> {
 		if let Some(port_ref) = self.find(port) {
 			// port must have a value of the wanted type
 			if let Some(value_ref) = port_ref.as_value::<T>() {
@@ -268,7 +241,7 @@ pub trait PortAccessors: PortProvider {
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn set<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>, value: impl Into<T>) -> Result<()> {
+	fn set<T: Any + Send + Sync>(&self, port: impl Into<ConstString>, value: impl Into<T>) -> Result<()> {
 		let port = port.into();
 		if let Some(port_ref) = self.find(port.clone()) {
 			// port must have a value of the wanted type
@@ -287,7 +260,7 @@ pub trait PortAccessors: PortProvider {
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn take<T: 'static + Clone + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<Option<T>> {
+	fn take<T: Any + Clone + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<Option<T>> {
 		let port = port.into();
 		if let Some(port_ref) = self.find(port.clone()) {
 			// port must have a value of the wanted type
@@ -305,7 +278,7 @@ pub trait PortAccessors: PortProvider {
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn write<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortValueWriteGuard<T>> {
+	fn write<T: Any + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortValueWriteGuard<T>> {
 		let port = port.into();
 		if let Some(port_ref) = self.find(port.clone()) {
 			// port must have a value of the wanted type
@@ -324,7 +297,7 @@ pub trait PortAccessors: PortProvider {
 	/// - [`Error::IsLocked`], if port is locked.
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
-	fn try_write<T: 'static + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortValueWriteGuard<T>> {
+	fn try_write<T: Any + Send + Sync>(&self, port: impl Into<ConstString>) -> Result<PortValueWriteGuard<T>> {
 		let port = port.into();
 		if let Some(port_ref) = self.find(port.clone()) {
 			// port must have a value of the wanted type
@@ -341,34 +314,34 @@ pub trait PortAccessors: PortProvider {
 
 #[cfg(test)]
 mod tests {
-	use crate::{in_port::InputPort, out_port::OutputPort};
+	use crate::{in_port::InBoundPort, out_port::OutBoundPort};
 
 	use super::*;
 
-	fn return_impl_in_port() -> impl InPort<i32> {
-		InputPort::new("port")
+	fn return_impl_in_port() -> impl InBound<i32> {
+		InBoundPort::new("port")
 	}
 
-	fn use_impl_in_port(src: impl InPort<i32>) {
+	fn use_impl_in_port(src: impl InBound<i32>) {
 		assert!(src.read().is_err());
 		assert!(src.get().is_none());
 		assert!(src.take().is_none());
 	}
 
-	fn return_impl_inout_port() -> impl InOutPort<i32> {
-		InputOutputPort::new("port")
+	fn return_impl_inout_port() -> impl InOutBound<i32> {
+		InOutBoundPort::new("port")
 	}
 
-	fn use_impl_inout_port(src: impl InOutPort<i32>) {
+	fn use_impl_inout_port(src: impl InOutBound<i32>) {
 		assert!(src.replace(24).is_none());
 		assert_eq!(src.replace(42).unwrap(), 24);
 	}
 
-	fn return_impl_out_port() -> impl OutPort<i32> {
-		OutputPort::new("port")
+	fn return_impl_out_port() -> impl OutBound<i32> {
+		OutBoundPort::new("port")
 	}
 
-	fn use_impl_out_port(src: impl OutPort<i32>) {
+	fn use_impl_out_port(src: impl OutBound<i32>) {
 		src.set(22);
 		*src.write().unwrap() = 24;
 	}

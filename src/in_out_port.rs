@@ -1,5 +1,5 @@
 // Copyright © 2025 Stephan Kunz
-//! Implementation of a port providing both traits: [`InPort`] and [`OutPort`].
+//! Implementation of a port providing both traits: [`InBound`], [`OutBound`] and [`InOutBound`].
 
 use core::any::Any;
 
@@ -8,14 +8,14 @@ use crate::{
 	error::{Error, Result},
 	port_data::PortData,
 	port_value::{PortValuePtr, PortValueReadGuard, PortValueWriteGuard},
-	traits::{InOutPort, InPort, OutPort, PortCommons},
+	traits::{InBound, InOutBound, OutBound, PortCommons},
 };
 
-/// InputOutputPort
+/// InOutBoundPort
 #[repr(transparent)]
-pub struct InputOutputPort<T>(RwLock<PortData<T>>);
+pub struct InOutBoundPort<T>(RwLock<PortData<T>>);
 
-impl<T> core::fmt::Debug for InputOutputPort<T> {
+impl<T> core::fmt::Debug for InOutBoundPort<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		f.debug_tuple("InputOutputPort")
 			.field(&self.0)
@@ -23,7 +23,7 @@ impl<T> core::fmt::Debug for InputOutputPort<T> {
 	}
 }
 
-impl<T: 'static> PartialEq for InputOutputPort<T> {
+impl<T: 'static> PartialEq for InOutBoundPort<T> {
 	/// Partial equality of an in/out port is, if both have the same name & value type
 	fn eq(&self, other: &Self) -> bool {
 		if self.0.read().name() == other.0.read().name() {
@@ -38,7 +38,7 @@ impl<T: 'static> PartialEq for InputOutputPort<T> {
 	}
 }
 
-impl<T> PortCommons for InputOutputPort<T> {
+impl<T> PortCommons for InOutBoundPort<T> {
 	fn name(&self) -> ConstString {
 		self.0.read().name()
 	}
@@ -48,7 +48,7 @@ impl<T> PortCommons for InputOutputPort<T> {
 	}
 }
 
-impl<T> InPort<T> for InputOutputPort<T> {
+impl<T> InBound<T> for InOutBoundPort<T> {
 	fn get(&self) -> Option<T>
 	where
 		T: Clone,
@@ -91,7 +91,7 @@ impl<T> InPort<T> for InputOutputPort<T> {
 	}
 }
 
-impl<T> InOutPort<T> for InputOutputPort<T> {
+impl<T> InOutBound<T> for InOutBoundPort<T> {
 	fn replace(&self, value: impl Into<T>) -> Option<T> {
 		self.0
 			.read()
@@ -101,7 +101,7 @@ impl<T> InOutPort<T> for InputOutputPort<T> {
 	}
 }
 
-impl<T> OutPort<T> for InputOutputPort<T> {
+impl<T> OutBound<T> for InOutBoundPort<T> {
 	fn set(&self, value: impl Into<T>) {
 		self.0.read().value().write().set(value.into())
 	}
@@ -137,7 +137,7 @@ impl<T> OutPort<T> for InputOutputPort<T> {
 	}
 }
 
-impl<T> InputOutputPort<T> {
+impl<T> InOutBoundPort<T> {
 	#[must_use]
 	pub fn new(name: impl Into<ConstString>) -> Self {
 		Self(RwLock::new(PortData::new(name.into())))
@@ -168,7 +168,7 @@ mod tests {
 	// check, that the auto traits are available.
 	#[test]
 	const fn normal_types() {
-		is_normal::<&InputOutputPort<f32>>();
-		is_normal::<InputOutputPort<String>>();
+		is_normal::<&InOutBoundPort<f32>>();
+		is_normal::<InOutBoundPort<String>>();
 	}
 }

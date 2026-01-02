@@ -1,5 +1,5 @@
 // Copyright © 2025 Stephan Kunz
-//! Implementation of a port providing the trait [`InPort`].
+//! Implementation of a port providing the trait [`InBound`].
 
 use core::any::Any;
 
@@ -8,20 +8,20 @@ use crate::{
 	error::{Error, Result},
 	port_data::PortData,
 	port_value::{PortValuePtr, PortValueReadGuard},
-	traits::{InPort, PortCommons},
+	traits::{InBound, PortCommons},
 };
 
-/// InPort
+/// InBoundPort
 #[repr(transparent)]
-pub struct InputPort<T>(RwLock<PortData<T>>);
+pub struct InBoundPort<T>(RwLock<PortData<T>>);
 
-impl<T> core::fmt::Debug for InputPort<T> {
+impl<T> core::fmt::Debug for InBoundPort<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		f.debug_tuple("InputPort").field(&self.0).finish()
 	}
 }
 
-impl<T: 'static> PartialEq for InputPort<T> {
+impl<T: 'static> PartialEq for InBoundPort<T> {
 	/// Partial equality of an in port is, if both have the same name & value type
 	fn eq(&self, other: &Self) -> bool {
 		if self.0.read().name() == other.0.read().name() {
@@ -36,7 +36,7 @@ impl<T: 'static> PartialEq for InputPort<T> {
 	}
 }
 
-impl<T> PortCommons for InputPort<T> {
+impl<T> PortCommons for InBoundPort<T> {
 	fn name(&self) -> ConstString {
 		self.0.read().name()
 	}
@@ -46,7 +46,7 @@ impl<T> PortCommons for InputPort<T> {
 	}
 }
 
-impl<T> InPort<T> for InputPort<T> {
+impl<T> InBound<T> for InBoundPort<T> {
 	fn get(&self) -> Option<T>
 	where
 		T: Clone,
@@ -89,7 +89,7 @@ impl<T> InPort<T> for InputPort<T> {
 	}
 }
 
-impl<T> InputPort<T> {
+impl<T> InBoundPort<T> {
 	#[must_use]
 	pub fn new(name: impl Into<ConstString>) -> Self {
 		Self(RwLock::new(PortData::new(name.into())))
@@ -115,7 +115,7 @@ mod tests {
 	// check, that the auto traits are available.
 	#[test]
 	const fn normal_types() {
-		is_normal::<&InputPort<i32>>();
-		is_normal::<InputPort<String>>();
+		is_normal::<&InBoundPort<i32>>();
+		is_normal::<InBoundPort<String>>();
 	}
 }

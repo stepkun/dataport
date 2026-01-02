@@ -1,5 +1,5 @@
 // Copyright © 2025 Stephan Kunz
-//! Implementation of a port providing the trait [`OutPort`].
+//! Implementation of a port providing the trait [`OutBound`].
 
 #![allow(unused)]
 
@@ -12,14 +12,14 @@ use crate::{
 	error::{Error, Result},
 	port_data::PortData,
 	port_value::{PortValuePtr, PortValueReadGuard, PortValueWriteGuard},
-	traits::{AnyPort, OutPort, PortCommons},
+	traits::{AnyPort, OutBound, PortCommons},
 };
 
-/// OutputPort
+/// OutBoundPort
 #[repr(transparent)]
-pub struct OutputPort<T>(RwLock<PortData<T>>);
+pub struct OutBoundPort<T>(RwLock<PortData<T>>);
 
-impl<T> core::fmt::Debug for OutputPort<T> {
+impl<T> core::fmt::Debug for OutBoundPort<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		f.debug_tuple("OutputPort")
 			.field(&self.0)
@@ -27,7 +27,7 @@ impl<T> core::fmt::Debug for OutputPort<T> {
 	}
 }
 
-impl<T: 'static> PartialEq for OutputPort<T> {
+impl<T: 'static> PartialEq for OutBoundPort<T> {
 	/// Partial equality of an out port is, if both have the same name & value type
 	fn eq(&self, other: &Self) -> bool {
 		if self.0.read().name() == other.0.read().name() {
@@ -42,7 +42,7 @@ impl<T: 'static> PartialEq for OutputPort<T> {
 	}
 }
 
-impl<T> PortCommons for OutputPort<T> {
+impl<T> PortCommons for OutBoundPort<T> {
 	fn name(&self) -> ConstString {
 		self.0.read().name()
 	}
@@ -52,7 +52,7 @@ impl<T> PortCommons for OutputPort<T> {
 	}
 }
 
-impl<T> OutPort<T> for OutputPort<T> {
+impl<T> OutBound<T> for OutBoundPort<T> {
 	fn set(&self, value: impl Into<T>) {
 		self.0.read().value().write().set(value.into())
 	}
@@ -88,7 +88,7 @@ impl<T> OutPort<T> for OutputPort<T> {
 	}
 }
 
-impl<T> OutputPort<T> {
+impl<T> OutBoundPort<T> {
 	#[must_use]
 	pub fn new(name: impl Into<ConstString>) -> Self {
 		Self(RwLock::new(PortData::new(name.into())))
@@ -169,16 +169,16 @@ mod tests {
 	// check, that the auto traits are available.
 	#[test]
 	const fn normal_types() {
-		is_normal::<&OutputPort<Vec<String>>>();
-		is_normal::<OutputPort<Vec<i32>>>();
+		is_normal::<&OutBoundPort<Vec<String>>>();
+		is_normal::<OutBoundPort<Vec<i32>>>();
 	}
 
 	#[test]
 	fn non_public_accessors() {
-		let o1 = OutputPort::<i32>::new("p1");
-		let o2 = OutputPort::<f64>::new(CONST_NAME);
-		let o3 = OutputPort::<String>::new(STATIC_NAME);
-		let o4 = OutputPort::<&str>::with_value("p4", "hello world");
+		let o1 = OutBoundPort::<i32>::new("p1");
+		let o2 = OutBoundPort::<f64>::new(CONST_NAME);
+		let o3 = OutBoundPort::<String>::new(STATIC_NAME);
+		let o4 = OutBoundPort::<&str>::with_value("p4", "hello world");
 		assert_eq!(o1.sequence_number(), 0);
 		assert_eq!(o2.sequence_number(), 0);
 		assert_eq!(o3.sequence_number(), 0);

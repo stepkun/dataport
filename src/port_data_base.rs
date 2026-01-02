@@ -1,14 +1,16 @@
 // Copyright © 2025 Stephan Kunz
 //! Implementation of a [`PortDataBase`].
 
+use core::any::Any;
+
 use alloc::collections::btree_map::BTreeMap;
 
 use crate::{
 	ConstString, PortAccessors, PortProvider,
 	error::{Error, Result},
-	in_out_port::InputOutputPort,
+	in_out_port::InOutBoundPort,
 	port::Port,
-	traits::{InOutPort, InPort, PortCommons},
+	traits::{InBound, InOutBound, PortCommons},
 };
 
 /// A database like container for [`Port`]s.
@@ -47,7 +49,7 @@ impl PortDataBase {
 	/// Returns  a result of `true` if a [`Port`] under`key` of type `T` is available, otherwise a result of `false`.
 	/// # Errors
 	/// - [`Error::WrongType`] if the [`Port`] has not the expected type `T`.
-	pub fn contains<T: 'static + Send + Sync>(&self, key: &str) -> Result<bool> {
+	pub fn contains<T: Any + Send + Sync>(&self, key: &str) -> Result<bool> {
 		self.0.get(key).map_or(Ok(false), |port| {
 			port.as_in_out_port::<T>().map_or_else(
 				|| Err(Error::WrongType { port: key.into() }),
@@ -59,12 +61,12 @@ impl PortDataBase {
 	/// Creates a [`Port`] with value of type `T` under `key`.
 	/// # Errors
 	/// - [`Error::AlreadyExists`] if `key` already exists.
-	pub fn create<T: 'static + Send + Sync>(&mut self, key: impl Into<ConstString>, value: impl Into<T>) -> Result<()> {
+	pub fn create<T: Any + Send + Sync>(&mut self, key: impl Into<ConstString>, value: impl Into<T>) -> Result<()> {
 		let key = key.into();
 		if self.0.contains_key(&key) {
 			return Err(Error::AlreadyExists { port: key });
 		}
-		let iop = InputOutputPort::<T>::with_value(key.clone(), value);
+		let iop = InOutBoundPort::<T>::with_value(key.clone(), value);
 		let port = Port::from(iop);
 		self.0.insert(key, port);
 		Ok(())
@@ -74,7 +76,7 @@ impl PortDataBase {
 	/// # Errors
 	/// - [`Error::NotFound`]  if `key` is not contained.
 	/// - [`Error::WrongType`] if the entry has not the expected type `T`.
-	pub fn delete<T: 'static + Send + Sync>(&mut self, key: &str) -> Result<T> {
+	pub fn delete<T: Any + Send + Sync>(&mut self, key: &str) -> Result<T> {
 		match self.contains::<T>(key) {
 			Ok(_) => self.0.remove(key).map_or_else(
 				|| Err(Error::NotFound { port: key.into() }),
@@ -105,7 +107,7 @@ impl PortDataBase {
 	/// # Errors
 	/// - [`Error::NotFound`]  if `key` is not contained.
 	/// - [`Error::WrongType`] if the [`Port`] has not the expected type `T`.
-	pub fn update<T: 'static + Send + Sync>(&self, key: &str, value: impl Into<T>) -> Result<Option<T>> {
+	pub fn update<T: Any + Send + Sync>(&self, key: &str, value: impl Into<T>) -> Result<Option<T>> {
 		self.0.get(key).map_or_else(
 			|| Err(Error::NotFound { port: key.into() }),
 			|port| {

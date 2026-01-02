@@ -9,7 +9,7 @@ use crate::{
 	ConstString, RwLock,
 	error::{Error, Result},
 	port_value::{PortValue, PortValuePtr, PortValueReadGuard, PortValueWriteGuard},
-	traits::{InOutPort, InPort, OutPort, PortCommons},
+	traits::{InBound, InOutBound, OutBound, PortCommons},
 };
 
 /// PortData.
@@ -60,7 +60,7 @@ impl<T> PortCommons for PortData<T> {
 	}
 }
 
-impl<T> InPort<T> for PortData<T> {
+impl<T> InBound<T> for PortData<T> {
 	fn get(&self) -> Option<T>
 	where
 		T: Clone,
@@ -97,13 +97,13 @@ impl<T> InPort<T> for PortData<T> {
 	}
 }
 
-impl<T> InOutPort<T> for PortData<T> {
+impl<T> InOutBound<T> for PortData<T> {
 	fn replace(&self, value: impl Into<T>) -> Option<T> {
 		self.value.write().replace(value.into())
 	}
 }
 
-impl<T> OutPort<T> for PortData<T> {
+impl<T> OutBound<T> for PortData<T> {
 	fn set(&self, value: impl Into<T>) {
 		self.value.write().set(value.into())
 	}

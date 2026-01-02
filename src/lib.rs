@@ -32,14 +32,14 @@ type ConstString = Arc<str>;
 
 // flatten
 pub use error::Error;
-pub use in_out_port::InputOutputPort;
-pub use in_port::InputPort;
-pub use out_port::OutputPort;
+pub use in_out_port::InOutBoundPort;
+pub use in_port::InBoundPort;
+pub use out_port::OutBoundPort;
 pub use port::Port;
 pub use port_array::PortArray;
 pub use port_data_base::PortDataBase;
 pub use port_list::PortList;
 pub use port_value::{PortValueReadGuard, PortValueWriteGuard};
-pub use traits::{InOutPort, InPort, OutPort, PortAccessors, PortCommons, PortProvider};
+pub use traits::{InBound, InOutBound, OutBound, PortAccessors, PortCommons, PortProvider};
 // re-exports:
 //pub use dataport_macros::???;
