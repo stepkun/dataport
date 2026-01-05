@@ -61,26 +61,30 @@ fn bind_get_and_set() {
 	let res = portlist2.bind_to::<i32>("p2a", &portlist1, "p1a");
 	assert!(res.is_ok());
 
-	//let res = portlist2.bind_to::<String>("p2b", &portlist1, "p1b");
-	//assert!(res.is_ok());
+	let res = portlist2.bind_to::<String>("p2b", &portlist1, "p1b");
+	assert!(res.is_ok());
 
-	//let res = portlist2.bind_to::<f64>("p2c", &portlist1, "p1c");
-	//assert!(res.is_ok());
+	// create p1c -> p2c -> p1d -> p2d
+	let res = portlist2.bind_to::<f64>("p2c", &portlist1, "p1c");
+	assert!(res.is_ok());
+	let res = portlist1.bind_to::<f64>("p1d", &portlist2, "p2c");
+	assert!(res.is_ok());
+	let res = portlist2.bind_to::<f64>("p2d", &portlist1, "p1d");
+	assert!(res.is_ok());
 
+	// test value binding
 	assert!(portlist1.set::<i32>("p1a", 42).is_ok());
-	//assert_eq!(portlist2.get::<i32>("p2a").unwrap(), 42);
+	assert_eq!(portlist2.get::<i32>("p2a").unwrap(), 42);
 
 	assert!(
 		portlist1
 			.set::<String>("p1b", String::from("hello world"))
 			.is_ok()
 	);
-	//assert_eq!(portlist2.get::<String>("p2b").unwrap(), String::from("hello world"));
+	assert_eq!(portlist2.get::<String>("p2b").unwrap(), String::from("hello world"));
 
 	assert!(portlist1.set::<f64>("p1c", PI).is_ok());
-	//assert_eq!(portlist2.get::<f64>("p2c").unwrap(), PI);
-	assert!(portlist2.get::<f64>("p2c").is_err());
-	//assert_eq!(portlist1.get::<f64>("p1d").unwrap(), PI);
-	assert!(portlist1.get::<f64>("p1d").is_err());
-	//assert_eq!(portlist2.get::<f64>("p2d").unwrap(), PI);
+	assert_eq!(portlist2.get::<f64>("p2c").unwrap(), PI);
+	assert_eq!(portlist1.get::<f64>("p1d").unwrap(), PI);
+	assert_eq!(portlist2.get::<f64>("p2d").unwrap(), PI);
 }

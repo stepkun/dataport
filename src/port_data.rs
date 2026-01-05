@@ -20,9 +20,18 @@ pub(crate) struct PortData<T> {
 	value: PortValuePtr<T>,
 }
 
+impl<T> Clone for PortData<T> {
+	fn clone(&self) -> Self {
+		Self {
+			name: self.name.clone(),
+			value: self.value.clone(),
+		}
+	}
+}
+
 impl<T> core::fmt::Debug for PortData<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-		f.debug_struct("InputOutputPort")
+		f.debug_struct("PortData")
 			.field("name", &self.name)
 			//.field("value", &self.value)
 			.finish_non_exhaustive()
@@ -91,15 +100,15 @@ impl<T> InBound<T> for PortData<T> {
 			Err(Error::NoValueSet { port: self.name.clone() })
 		}
 	}
-
-	fn take(&self) -> Option<T> {
-		self.value.write().take()
-	}
 }
 
 impl<T> InOutBound<T> for PortData<T> {
 	fn replace(&self, value: impl Into<T>) -> Option<T> {
 		self.value.write().replace(value.into())
+	}
+
+	fn take(&self) -> Option<T> {
+		self.value.write().take()
 	}
 }
 

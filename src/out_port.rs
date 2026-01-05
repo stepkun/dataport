@@ -19,9 +19,15 @@ use crate::{
 #[repr(transparent)]
 pub struct OutBoundPort<T>(RwLock<PortData<T>>);
 
+impl<T> Clone for OutBoundPort<T> {
+	fn clone(&self) -> Self {
+		Self(RwLock::new((*self.0.read()).clone()))
+	}
+}
+
 impl<T> core::fmt::Debug for OutBoundPort<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-		f.debug_tuple("OutputPort")
+		f.debug_tuple("OutBoundPort")
 			.field(&self.0)
 			.finish()
 	}
@@ -95,7 +101,7 @@ impl<T> OutBoundPort<T> {
 	}
 
 	#[must_use]
-	pub(crate) fn with_value(name: impl Into<ConstString>, value: impl Into<T>) -> Self {
+	pub fn with_value(name: impl Into<ConstString>, value: impl Into<T>) -> Self {
 		Self(RwLock::new(PortData::with_value(name.into(), value.into())))
 	}
 

@@ -10,7 +10,7 @@ use crate::{
 	error::{Error, Result},
 	in_out_port::InOutBoundPort,
 	port::Port,
-	traits::{InBound, InOutBound, PortCommons},
+	traits::{InOutBound, PortCommons},
 };
 
 /// A database like container for [`Port`]s.

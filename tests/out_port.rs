@@ -13,27 +13,17 @@ static STATIC_NAME: &str = "p3";
 macro_rules! test_setter {
 	($tp:ty, $name:expr, $value:expr, $value2:expr) => {
 		// separate creation and value setting
-		let op = OutputPort::<$tp>::new($name);
+		let op = OutBoundPort::<$tp>::new($name);
 		assert!(op.write().is_err());
 		op.set($value);
-		assert_eq!(op.replace($value).unwrap(), $value);
 		*op.write().unwrap() = $value2;
-		assert_eq!(op.replace($value).unwrap(), $value2);
-		// separate creation and value replacing
-		let op = OutputPort::<$tp>::new($name);
-		assert!(op.write().is_err());
-		assert!(op.replace($value).is_none());
-		assert_eq!(op.replace($value2).unwrap(), $value);
-		*op.write().unwrap() = $value;
-		assert_eq!(op.replace($value2).unwrap(), $value);
 		// creation with value
-		let op = OutputPort::<$tp>::with_value($name, $value);
+		let op = OutBoundPort::<$tp>::with_value($name, $value);
 		let mut guard = op.write().unwrap();
 		assert_eq!(*guard, $value);
 		*guard = $value2;
 		assert_eq!(*guard, $value2);
 		drop(guard);
-		assert_eq!(op.replace($value).unwrap(), $value2);
 	};
 }
 
@@ -47,18 +37,18 @@ fn setter() {
 		_f4: Vec<f64>,
 	}
 
-	//let p4_name = String::from("{p4}");
-	//test_setter!(i32, "p1", 42, 24);
-	//test_setter!(f64, CONST_NAME, PI, 3.0);
-	//test_setter!(String, STATIC_NAME, String::from("the answer"), String::from("hello world"));
-	//test_setter!(
-	//	MyStruct,
-	//	p4_name.as_str(),
-	//	MyStruct::default(),
-	//	MyStruct {
-	//		_f1: 1,
-	//		..Default::default()
-	//	}
-	//);
-	//test_setter!(Vec<i32>, p4_name.as_str(), vec![1, 2, 3], vec![4, 5, 6]);
+	let p4_name = String::from("{p4}");
+	test_setter!(i32, "p1", 42, 24);
+	test_setter!(f64, CONST_NAME, PI, 3.0);
+	test_setter!(String, STATIC_NAME, String::from("the answer"), String::from("hello world"));
+	test_setter!(
+		MyStruct,
+		p4_name.as_str(),
+		MyStruct::default(),
+		MyStruct {
+			_f1: 1,
+			..Default::default()
+		}
+	);
+	test_setter!(Vec<i32>, p4_name.as_str(), vec![1, 2, 3], vec![4, 5, 6]);
 }

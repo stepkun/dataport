@@ -68,17 +68,17 @@ pub trait InBound<T>: PortCommons {
 	/// - [`Error::NotFound`], if port is not in port list.
 	/// - [`Error::WrongType`], if port is not the expected port type & type of T.
 	fn try_read(&self) -> Result<PortValueReadGuard<T>>;
+}
+
+/// Trait for bound in/out port types.
+pub trait InOutBound<T>: InBound<T> + OutBound<T> {
+	/// Sets a new value to the T and returns the old T.
+	#[must_use]
+	fn replace(&self, value: impl Into<T>) -> Option<T>;
 
 	/// Returns the T, removing it from the port.
 	#[must_use]
 	fn take(&self) -> Option<T>;
-}
-
-/// Trait for bound combined in/out port types.
-pub trait InOutBound<T> {
-	/// Sets a new value to the T and returns the old T.
-	#[must_use]
-	fn replace(&self, value: impl Into<T>) -> Option<T>;
 }
 
 /// Trait for bound outgoing port types.
@@ -325,7 +325,6 @@ mod tests {
 	fn use_impl_in_port(src: impl InBound<i32>) {
 		assert!(src.read().is_err());
 		assert!(src.get().is_none());
-		assert!(src.take().is_none());
 	}
 
 	fn return_impl_inout_port() -> impl InOutBound<i32> {

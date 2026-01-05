@@ -6,6 +6,7 @@ use core::any::Any;
 use crate::{
 	ConstString, RwLock,
 	error::{Error, Result},
+	out_port::OutBoundPort,
 	port_data::PortData,
 	port_value::{PortValuePtr, PortValueReadGuard, PortValueWriteGuard},
 	traits::{InBound, InOutBound, OutBound, PortCommons},
@@ -15,9 +16,15 @@ use crate::{
 #[repr(transparent)]
 pub struct InOutBoundPort<T>(RwLock<PortData<T>>);
 
+impl<T> Clone for InOutBoundPort<T> {
+	fn clone(&self) -> Self {
+		Self(RwLock::new((*self.0.read()).clone()))
+	}
+}
+
 impl<T> core::fmt::Debug for InOutBoundPort<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-		f.debug_tuple("InputOutputPort")
+		f.debug_tuple("InOutBoundPort")
 			.field(&self.0)
 			.finish()
 	}
@@ -85,10 +92,6 @@ impl<T> InBound<T> for InOutBoundPort<T> {
 			})
 		}
 	}
-
-	fn take(&self) -> Option<T> {
-		self.0.read().value().write().take()
-	}
 }
 
 impl<T> InOutBound<T> for InOutBoundPort<T> {
@@ -98,6 +101,10 @@ impl<T> InOutBound<T> for InOutBoundPort<T> {
 			.value()
 			.write()
 			.replace(value.into())
+	}
+
+	fn take(&self) -> Option<T> {
+		self.0.read().value().write().take()
 	}
 }
 
@@ -154,6 +161,22 @@ impl<T> InOutBoundPort<T> {
 
 	pub(crate) fn set_value(&self, value: PortValuePtr<T>) {
 		self.0.write().set_value(value);
+	}
+
+	pub fn bind_to_out_port(&mut self, port: &OutBoundPort<T>) -> Result<()> {
+		if self.value().read().is_some() {
+			return Err(Error::AlreadyBound { port: self.name() });
+		}
+		self.set_value(port.value());
+		Ok(())
+	}
+
+	pub fn bind_to_in_out_port(&mut self, port: &InOutBoundPort<T>) -> Result<()> {
+		if self.value().read().is_some() {
+			return Err(Error::AlreadyBound { port: self.name() });
+		}
+		self.set_value(port.value());
+		Ok(())
 	}
 }
 

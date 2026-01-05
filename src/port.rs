@@ -69,19 +69,17 @@ impl PortCommons for Port {
 }
 
 // helper function to downcast the `Arc<dyn Any>` to `Arc<InPort<T>>`
-fn cast_arc_any_to_in_port<T: Any + Send + Sync>(any_value: Arc<dyn Any + Send + Sync>) -> Option<Arc<InBoundPort<T>>> {
+fn cast_to_in_port<T: Any + Send + Sync>(any_value: Arc<dyn Any + Send + Sync>) -> Option<Arc<InBoundPort<T>>> {
 	any_value.downcast::<InBoundPort<T>>().ok()
 }
 
 // helper function to downcast the `Arc<dyn Any>` to `Arc<InOutPort<T>>`
-fn cast_arc_any_to_in_out_port<T: Any + Send + Sync>(
-	any_value: Arc<dyn Any + Send + Sync>,
-) -> Option<Arc<InOutBoundPort<T>>> {
+fn cast_to_in_out_port<T: Any + Send + Sync>(any_value: Arc<dyn Any + Send + Sync>) -> Option<Arc<InOutBoundPort<T>>> {
 	any_value.downcast::<InOutBoundPort<T>>().ok()
 }
 
 // helper function to downcast the `Arc<dyn Any>` to `Arc<OutPort<T>>`
-fn cast_arc_any_to_out_port<T: Any + Send + Sync>(any_value: Arc<dyn Any + Send + Sync>) -> Option<Arc<OutBoundPort<T>>> {
+fn cast_to_out_port<T: Any + Send + Sync>(any_value: Arc<dyn Any + Send + Sync>) -> Option<Arc<OutBoundPort<T>>> {
 	any_value.downcast::<OutBoundPort<T>>().ok()
 }
 
@@ -103,12 +101,12 @@ impl Port {
 	}
 
 	pub(crate) fn as_in_value<T: Any + Send + Sync>(&self) -> Option<PortValuePtr<T>> {
-		let in_port = cast_arc_any_to_in_port::<T>(self.0.clone());
+		let in_port = cast_to_in_port::<T>(self.0.clone());
 		if let Some(port) = in_port {
 			return Some(port.value());
 		}
 
-		let in_out_port = cast_arc_any_to_in_out_port::<T>(self.0.clone());
+		let in_out_port = cast_to_in_out_port::<T>(self.0.clone());
 		if let Some(port) = in_out_port {
 			return Some(port.value());
 		}
@@ -117,16 +115,16 @@ impl Port {
 	}
 
 	pub(crate) fn as_in_out_port<T: Any + Send + Sync>(&self) -> Option<Arc<InOutBoundPort<T>>> {
-		cast_arc_any_to_in_out_port::<T>(self.0.clone())
+		cast_to_in_out_port::<T>(self.0.clone())
 	}
 
 	pub(crate) fn as_out_value<T: Any + Send + Sync>(&self) -> Option<PortValuePtr<T>> {
-		let out_port = cast_arc_any_to_out_port::<T>(self.0.clone());
+		let out_port = cast_to_out_port::<T>(self.0.clone());
 		if let Some(port) = out_port {
 			return Some(port.value());
 		}
 
-		let in_out_port = cast_arc_any_to_in_out_port::<T>(self.0.clone());
+		let in_out_port = cast_to_in_out_port::<T>(self.0.clone());
 		if let Some(port) = in_out_port {
 			return Some(port.value());
 		}

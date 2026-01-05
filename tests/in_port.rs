@@ -18,9 +18,9 @@ macro_rules! test_getter {
 		assert!(ip.get().is_none());
 		assert_eq!(ip.sequence_number(), 0);
 
-		//let op = OutputPort::<$tp>::with_value("test", $value);
-		//let ip = InputPort::<$tp>::new($name);
-		//ip.connect_with(op);
+		//let op = OutBoundPort::<$tp>::with_value("test", $value);
+		//let ip = InBoundPort::<$tp>::new($name);
+		//ip.bind_to(op);
 		//assert_eq!(ip.sequence_number(), 1);
 		//assert_eq!(*ip.read().unwrap(), $value);
 		//assert_eq!(ip.get().unwrap(), $value);
