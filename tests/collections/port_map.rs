@@ -1,5 +1,5 @@
 // Copyright © 2026 Stephan Kunz
-//! Test [`Portmap`]s public API.
+//! Test [`PortMap`]s public API.
 
 #![allow(missing_docs)]
 #![allow(clippy::unwrap_used)]
@@ -263,6 +263,120 @@ fn map_accessors() {
 		]
 	);
 	test_accessors!(
+		Vec<Vec<f64>>,
+		vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]],
+		vec![vec![6.0, 5.0, 4.0], vec![3.0, 2.0, 1.0]]
+	);
+}
+
+macro_rules! test_connections {
+	($tp:ty, $value1: expr, $value2: expr) => {
+		let mut map = PortMap::new();
+		assert!(
+			map.insert("outbound", PortVariant::create_outbound($value1))
+				.is_ok()
+		);
+		assert!(
+			map.insert("inbound", PortVariant::InBound(BoundInPort::new::<$tp>()))
+				.is_ok()
+		);
+		let mut map2 = PortMap::new();
+		assert!(
+			map2.insert("inoutbound", PortVariant::InOutBound(BoundInOutPort::new::<$tp>()))
+				.is_ok()
+		);
+		let mut invalid = PortMap::new();
+		assert!(
+			invalid
+				.insert("invalid", PortVariant::create_inoutbound(NoType))
+				.is_ok()
+		);
+
+		assert!(
+			map.connect_to("notthere", &invalid, "invalid")
+				.is_err()
+		);
+		assert!(
+			map.connect_to("inbound", &invalid, "notthere")
+				.is_err()
+		);
+		assert!(
+			map.connect_to("inbound", &invalid, "invalid")
+				.is_err()
+		);
+		assert!(
+			map2.connect_to("inoutbound", &invalid, "invalid")
+				.is_err()
+		);
+		assert!(
+			map.connect_to("outbound", &invalid, "invalid")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_to("notthere", &map, "inbound")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_to("invalid", &map2, "notthere")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_to("invalid", &map, "inbound")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_to("invalid", &map2, "inoutbound")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_to("invalid", &map, "outbound")
+				.is_err()
+		);
+
+		assert!(
+			map2.connect_to("inoutbound", &map, "outbound")
+				.is_ok()
+		);
+		assert!(
+			map.connect_to("inbound", &map2, "inoutbound")
+				.is_ok()
+		);
+
+		assert_eq!(map.get("inbound").unwrap(), Some($value1));
+
+		assert!(map.set("outbound", $value2).is_ok());
+		assert_eq!(map.get("inbound").unwrap(), Some($value2));
+	};
+}
+
+#[test]
+fn map_connection() {
+	test_connections!(bool, true, false);
+	test_connections!(i32, 42, 24);
+	test_connections!(f64, PI, 6.0);
+	test_connections!(&str, "str", "other");
+	test_connections!(String, String::from("string"), String::from("other"));
+	test_connections!(Vec<i32>, vec![1, 2, 3], vec![3, 2, 1]);
+	test_connections!(Vec<&str>, vec!["1", "2", "3"], vec!["3", "2", "1"]);
+	test_connections!(
+		Vec<String>,
+		vec![
+			String::from("1"),
+			String::from("2"),
+			String::from("3")
+		],
+		vec![
+			String::from("3"),
+			String::from("2"),
+			String::from("1")
+		]
+	);
+	test_connections!(
 		Vec<Vec<f64>>,
 		vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]],
 		vec![vec![6.0, 5.0, 4.0], vec![3.0, 2.0, 1.0]]

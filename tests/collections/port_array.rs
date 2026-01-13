@@ -3,13 +3,10 @@
 
 #![allow(missing_docs)]
 #![allow(clippy::unwrap_used)]
-#![allow(unused)]
 
 use core::f64::consts::PI;
 
-use dataport::{
-	AnyPortValue, BoundInOutPort, BoundInPort, BoundOutPort, PortAccessors, PortArray, PortProvider, PortVariant,
-};
+use dataport::{BoundInOutPort, BoundInPort, BoundOutPort, PortAccessors, PortArray, PortProvider, PortVariant};
 
 macro_rules! test_creation {
 	($tp:ty, $value: expr) => {
@@ -254,5 +251,112 @@ fn array_accessors() {
 	);
 }
 
+macro_rules! test_connections {
+	($tp:ty, $value1: expr, $value2: expr) => {
+		let mut array = PortArray::new([
+			("outbound".into(), PortVariant::create_outbound($value1)),
+			("inbound".into(), PortVariant::InBound(BoundInPort::new::<$tp>())),
+		]);
+		let mut array2 = PortArray::new([(
+			"inoutbound".into(),
+			PortVariant::InOutBound(BoundInOutPort::new::<$tp>()),
+		)]);
+		let mut invalid = PortArray::new([("invalid".into(), PortVariant::create_inoutbound(NoType))]);
+
+		assert!(
+			array
+				.connect_to("notthere", &invalid, "invalid")
+				.is_err()
+		);
+		assert!(
+			array
+				.connect_to("inbound", &invalid, "notthere")
+				.is_err()
+		);
+		assert!(
+			array
+				.connect_to("inbound", &invalid, "invalid")
+				.is_err()
+		);
+		assert!(
+			array2
+				.connect_to("inoutbound", &invalid, "invalid")
+				.is_err()
+		);
+		assert!(
+			array
+				.connect_to("outbound", &invalid, "invalid")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_to("notthere", &array, "inbound")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_to("invalid", &array2, "notthere")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_to("invalid", &array, "inbound")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_to("invalid", &array2, "inoutbound")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_to("invalid", &array, "outbound")
+				.is_err()
+		);
+
+		assert!(
+			array2
+				.connect_to("inoutbound", &array, "outbound")
+				.is_ok()
+		);
+		assert!(
+			array
+				.connect_to("inbound", &array2, "inoutbound")
+				.is_ok()
+		);
+
+		assert_eq!(array.get("inbound").unwrap(), Some($value1));
+
+		assert!(array.set("outbound", $value2).is_ok());
+		assert_eq!(array.get("inbound").unwrap(), Some($value2));
+	};
+}
+
 #[test]
-fn array_connection() {}
+fn array_connection() {
+	test_connections!(bool, true, false);
+	test_connections!(i32, 42, 24);
+	test_connections!(f64, PI, 6.0);
+	test_connections!(&str, "str", "other");
+	test_connections!(String, String::from("string"), String::from("other"));
+	test_connections!(Vec<i32>, vec![1, 2, 3], vec![3, 2, 1]);
+	test_connections!(Vec<&str>, vec!["1", "2", "3"], vec!["3", "2", "1"]);
+	test_connections!(
+		Vec<String>,
+		vec![
+			String::from("1"),
+			String::from("2"),
+			String::from("3")
+		],
+		vec![
+			String::from("3"),
+			String::from("2"),
+			String::from("1")
+		]
+	);
+	test_connections!(
+		Vec<Vec<f64>>,
+		vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]],
+		vec![vec![6.0, 5.0, 4.0], vec![3.0, 2.0, 1.0]]
+	);
+}

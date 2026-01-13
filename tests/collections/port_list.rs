@@ -3,7 +3,6 @@
 
 #![allow(missing_docs)]
 #![allow(clippy::unwrap_used)]
-#![allow(unused)]
 
 use core::f64::consts::PI;
 
@@ -264,6 +263,123 @@ fn list_accessors() {
 		]
 	);
 	test_accessors!(
+		Vec<Vec<f64>>,
+		vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]],
+		vec![vec![6.0, 5.0, 4.0], vec![3.0, 2.0, 1.0]]
+	);
+}
+
+macro_rules! test_connections {
+	($tp:ty, $value1: expr, $value2: expr) => {
+		let mut list = PortList::new();
+		assert!(
+			list.insert("outbound", PortVariant::create_outbound($value1))
+				.is_ok()
+		);
+		assert!(
+			list.insert("inbound", PortVariant::InBound(BoundInPort::new::<$tp>()))
+				.is_ok()
+		);
+		let mut list2 = PortList::new();
+		assert!(
+			list2
+				.insert("inoutbound", PortVariant::InOutBound(BoundInOutPort::new::<$tp>()))
+				.is_ok()
+		);
+		let mut invalid = PortList::new();
+		assert!(
+			invalid
+				.insert("invalid", PortVariant::create_inoutbound(NoType))
+				.is_ok()
+		);
+
+		assert!(
+			list.connect_to("notthere", &invalid, "invalid")
+				.is_err()
+		);
+		assert!(
+			list.connect_to("inbound", &invalid, "notthere")
+				.is_err()
+		);
+		assert!(
+			list.connect_to("inbound", &invalid, "invalid")
+				.is_err()
+		);
+		assert!(
+			list2
+				.connect_to("inoutbound", &invalid, "invalid")
+				.is_err()
+		);
+		assert!(
+			list.connect_to("outbound", &invalid, "invalid")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_to("notthere", &list, "inbound")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_to("invalid", &list2, "notthere")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_to("invalid", &list, "inbound")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_to("invalid", &list2, "inoutbound")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_to("invalid", &list, "outbound")
+				.is_err()
+		);
+
+		assert!(
+			list2
+				.connect_to("inoutbound", &list, "outbound")
+				.is_ok()
+		);
+		assert!(
+			list.connect_to("inbound", &list2, "inoutbound")
+				.is_ok()
+		);
+
+		assert_eq!(list.get("inbound").unwrap(), Some($value1));
+
+		assert!(list.set("outbound", $value2).is_ok());
+		assert_eq!(list.get("inbound").unwrap(), Some($value2));
+	};
+}
+
+#[test]
+fn list_connection() {
+	test_connections!(bool, true, false);
+	test_connections!(i32, 42, 24);
+	test_connections!(f64, PI, 6.0);
+	test_connections!(&str, "str", "other");
+	test_connections!(String, String::from("string"), String::from("other"));
+	test_connections!(Vec<i32>, vec![1, 2, 3], vec![3, 2, 1]);
+	test_connections!(Vec<&str>, vec!["1", "2", "3"], vec!["3", "2", "1"]);
+	test_connections!(
+		Vec<String>,
+		vec![
+			String::from("1"),
+			String::from("2"),
+			String::from("3")
+		],
+		vec![
+			String::from("3"),
+			String::from("2"),
+			String::from("1")
+		]
+	);
+	test_connections!(
 		Vec<Vec<f64>>,
 		vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]],
 		vec![vec![6.0, 5.0, 4.0], vec![3.0, 2.0, 1.0]]

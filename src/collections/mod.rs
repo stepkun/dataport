@@ -53,7 +53,7 @@ pub trait PortProvider {
 	}
 }
 
-/// Methods for something that provides ports.
+/// Methods for something that is able to provide ports dynamically.
 /// Each port is identified by its name, so the name has to be unique within a certain port provider.
 pub trait DynamicPortProvider: PortProvider {
 	/// Returns the value of type `T` stored under `name` and removes the port from provider.
