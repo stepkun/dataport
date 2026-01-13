@@ -88,6 +88,10 @@ fn map_creation() {
 	test_creation!(Vec<Vec<f64>>, vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]]);
 }
 
+/// Special test struct
+#[derive(Debug)]
+struct NoType;
+
 macro_rules! test_accessors {
 	($tp:ty, $value1: expr, $value2: expr) => {
 		let mut map = PortMap::new();
@@ -118,6 +122,16 @@ macro_rules! test_accessors {
 			)
 			.is_ok()
 		);
+
+		assert!(!map.contains_name("test"));
+		assert!(!map.contains::<$tp>("test").unwrap());
+		assert!(map.contains::<NoType>("inbound0").is_err());
+		assert!(map.contains_name("inbound0"));
+		assert!(map.contains::<$tp>("inbound0").unwrap());
+		assert!(map.contains_name("inoutbound0"));
+		assert!(map.contains::<$tp>("inoutbound0").unwrap());
+		assert!(map.contains_name("outbound0"));
+		assert!(map.contains::<$tp>("outbound0").unwrap());
 
 		assert!(map.get::<$tp>("test").is_err());
 		assert_eq!(map.get::<$tp>("inbound0").unwrap(), None);

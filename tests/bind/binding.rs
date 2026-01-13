@@ -22,9 +22,9 @@ macro_rules! test_binding {
 		assert!(ip.connect_to(&iop).is_ok());
 		assert!(ip.connect_to(&op).is_ok());
 
-		//assert!(op.set($value).is_ok());
-		//assert_eq!(iop.get(), Some($value));
-		//assert_eq!(ip.get(), Some($value));
+		assert!(op.set($value).is_ok());
+		assert_eq!(iop.get().unwrap(), Some($value));
+		assert_eq!(ip.get().unwrap(), Some($value));
 	};
 }
 #[test]

@@ -7,7 +7,9 @@
 
 use core::f64::consts::PI;
 
-use dataport::{BoundInOutPort, BoundInPort, BoundOutPort, PortAccessors, PortArray, PortProvider, PortVariant};
+use dataport::{
+	AnyPortValue, BoundInOutPort, BoundInPort, BoundOutPort, PortAccessors, PortArray, PortProvider, PortVariant,
+};
 
 macro_rules! test_creation {
 	($tp:ty, $value: expr) => {
@@ -78,6 +80,10 @@ fn array_creation() {
 	test_creation!(Vec<Vec<f64>>, vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]]);
 }
 
+/// Special test struct
+#[derive(Debug)]
+struct NoType;
+
 macro_rules! test_accessors {
 	($tp:ty, $value1: expr, $value2: expr) => {
 		let mut array = PortArray::new([
@@ -91,6 +97,16 @@ macro_rules! test_accessors {
 			("outbound1".into(), PortVariant::create_outbound($value1)),
 			("inoutbound1".into(), PortVariant::create_inoutbound($value1)),
 		]);
+
+		assert!(!array.contains_name("test"));
+		assert!(!array.contains::<$tp>("test").unwrap());
+		assert!(array.contains::<NoType>("inbound0").is_err());
+		assert!(array.contains_name("inbound0"));
+		assert!(array.contains::<$tp>("inbound0").unwrap());
+		assert!(array.contains_name("inoutbound0"));
+		assert!(array.contains::<$tp>("inoutbound0").unwrap());
+		assert!(array.contains_name("outbound0"));
+		assert!(array.contains::<$tp>("outbound0").unwrap());
 
 		assert!(array.get::<$tp>("test").is_err());
 		assert_eq!(array.get::<$tp>("inbound0").unwrap(), None);

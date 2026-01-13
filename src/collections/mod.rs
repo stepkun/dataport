@@ -17,16 +17,16 @@ pub mod port_map;
 /// Each port is identified by its name, so the name has to be unique within a certain port provider.
 pub trait PortProvider {
 	/// Returns true if the name is in the port collection.
-	fn contains_key(&self, name: &str) -> bool;
+	fn contains_name(&self, name: &str) -> bool;
 
 	/// Returns a result of `true` if a certain `key` of type `T` is available, otherwise a result of `false`.
 	/// # Errors
 	/// - [`Error::WrongDataType`] if the port exists, but has not the expected type `T`.
 	fn contains<T: AnyPortValue>(&self, name: &str) -> Result<bool> {
 		if let Some(p) = self.find(name) {
-			Ok(p.is::<T>())
+			if p.is::<T>() { Ok(true) } else { Err(Error::WrongDataType) }
 		} else {
-			Err(Error::NotFound { name: name.into() })
+			Ok(false)
 		}
 	}
 
@@ -63,9 +63,13 @@ pub trait DynamicPortProvider: PortProvider {
 	fn delete<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>>;
 
 	/// Adds the port under the given name to the collection;
+	/// # Errors
+	/// - [`Error::AlreadyInCollection`] if `name` is already contained.
 	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<()>;
 
 	/// Removes the port with the given name from the collection;
+	/// # Errors
+	/// - [`Error::NotFound`] if `name` is not contained.
 	fn remove(&mut self, name: impl Into<ConstString>) -> Result<PortVariant>;
 }
 
@@ -117,7 +121,11 @@ pub trait PortAccessors: PortProvider {
 		}
 	}
 
-	/// Returns the change sequence number.
+	/// Returns the change sequence number,
+	/// a number which
+	/// - starts at `0`,
+	/// - can only be incremeted by 1 and
+	/// - wraps around to `1` when exceeding its limits.
 	fn sequence_number(&self, name: &str) -> Result<u32> {
 		if let Some(port) = self.find(name) {
 			Ok(port.sequence_number())

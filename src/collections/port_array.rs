@@ -32,7 +32,7 @@ impl<const S: usize> core::ops::Deref for PortArray<S> {
 }
 
 impl<const S: usize> PortProvider for PortArray<S> {
-	fn contains_key(&self, name: &str) -> bool {
+	fn contains_name(&self, name: &str) -> bool {
 		self.0.iter().any(|port| &*port.0 == name)
 	}
 

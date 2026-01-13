@@ -6,7 +6,6 @@ use alloc::collections::btree_map::BTreeMap;
 use crate::{
 	ConstString,
 	any_port_value::AnyPortValue,
-	bind::port_value::PortValue,
 	collections::{DynamicPortProvider, PortAccessors, PortProvider},
 	error::{Error, Result},
 	port_variant::PortVariant,
@@ -24,61 +23,8 @@ impl PortMap {
 }
 
 impl PortProvider for PortMap {
-	fn contains_key(&self, name: &str) -> bool {
+	fn contains_name(&self, name: &str) -> bool {
 		self.0.contains_key(name)
-	}
-
-	fn contains<T: AnyPortValue>(&self, name: &str) -> Result<bool> {
-		match self.0.get(name) {
-			Some(port) => match port {
-				PortVariant::InBound(port) => {
-					let value = port.value();
-					let guard = value.read();
-					let x = &*guard;
-					if x.0
-						.as_ref()
-						.as_any()
-						.downcast_ref::<PortValue<T>>()
-						.is_some()
-					{
-						Ok(true)
-					} else {
-						Err(Error::WrongDataType)
-					}
-				}
-				PortVariant::InOutBound(port) => {
-					let value = port.value();
-					let guard = value.read();
-					let x = &*guard;
-					if x.0
-						.as_ref()
-						.as_any()
-						.downcast_ref::<PortValue<T>>()
-						.is_some()
-					{
-						Ok(true)
-					} else {
-						Err(Error::WrongDataType)
-					}
-				}
-				PortVariant::OutBound(port) => {
-					let value = port.value();
-					let guard = value.read();
-					let x = &*guard;
-					if x.0
-						.as_ref()
-						.as_any()
-						.downcast_ref::<PortValue<T>>()
-						.is_some()
-					{
-						Ok(true)
-					} else {
-						Err(Error::WrongDataType)
-					}
-				}
-			},
-			None => Ok(false),
-		}
 	}
 
 	fn find(&self, name: &str) -> Option<&PortVariant> {

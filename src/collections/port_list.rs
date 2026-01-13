@@ -23,7 +23,7 @@ impl PortList {
 }
 
 impl PortProvider for PortList {
-	fn contains_key(&self, name: &str) -> bool {
+	fn contains_name(&self, name: &str) -> bool {
 		self.0.iter().any(|port| &*port.0 == name)
 	}
 

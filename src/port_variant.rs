@@ -95,7 +95,11 @@ impl PortVariant {
 		}
 	}
 
-	/// Returns the change sequence number.
+	/// Returns the change sequence number,
+	/// a number which
+	/// - starts at `0`,
+	/// - can only be incremeted by 1 and
+	/// - wraps around to `1` when exceeding its limits.
 	pub fn sequence_number(&self) -> u32 {
 		match self {
 			Self::InBound(port) => port.sequence_number(),
