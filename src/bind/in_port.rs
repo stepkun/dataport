@@ -5,9 +5,9 @@ use alloc::{boxed::Box, sync::Arc};
 use spin::RwLock;
 
 use crate::{
+	any_port_value::AnyPortValue,
 	bind::{
 		BindCommons, BindIn,
-		any_port_value::AnyPortValueType,
 		port_value::{PortValue, PortValuePtr, PortValueReadGuard},
 		sequence_number::SequenceNumber,
 	},
@@ -20,20 +20,20 @@ use crate::{
 pub struct BoundInPort(PortValuePtr);
 
 impl BoundInPort {
-	pub fn new<T: AnyPortValueType>() -> Self {
+	pub fn new<T: AnyPortValue>() -> Self {
 		Self(Arc::new(RwLock::new((
 			Box::new(PortValue::<T>::empty()),
 			SequenceNumber::default(),
 		))))
 	}
 
-	pub fn with_value<T: AnyPortValueType>(value: T) -> Self {
+	pub fn with_value<T: AnyPortValue>(value: T) -> Self {
 		let mut sq = SequenceNumber::default();
 		sq.increment();
 		Self(Arc::new(RwLock::new((Box::new(PortValue::new(value)), sq))))
 	}
 
-	pub(crate) fn is<T: AnyPortValueType>(&self) -> bool {
+	pub(crate) fn is<T: AnyPortValue>(&self) -> bool {
 		self.0
 			.read()
 			.0
@@ -73,7 +73,7 @@ impl BindCommons for BoundInPort {
 	}
 }
 
-impl<T: AnyPortValueType> BindIn<T> for BoundInPort {
+impl<T: AnyPortValue> BindIn<T> for BoundInPort {
 	fn get(&self) -> Result<Option<T>>
 	where
 		T: Clone,

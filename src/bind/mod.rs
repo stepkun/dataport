@@ -1,7 +1,6 @@
 // Copyright © 2026 Stephan Kunz
 //! Module containing 'bind' type ports.
 
-pub mod any_port_value;
 pub mod in_out_port;
 pub mod in_port;
 pub mod out_port;
@@ -9,10 +8,8 @@ pub mod port_value;
 mod sequence_number;
 
 use crate::{
-	bind::{
-		any_port_value::AnyPortValueType,
-		port_value::{PortValueReadGuard, PortValueWriteGuard},
-	},
+	any_port_value::AnyPortValue,
+	bind::port_value::{PortValueReadGuard, PortValueWriteGuard},
 	error::Result,
 	port_variant::PortVariant,
 };
@@ -27,7 +24,7 @@ pub trait BindCommons {
 }
 
 /// Trait for incoming bind port types.
-pub trait BindIn<T: AnyPortValueType>: BindCommons {
+pub trait BindIn<T: AnyPortValue>: BindCommons {
 	/// Returns a clone/copy of the T.
 	/// Therefore T must implement [`Clone`].
 	fn get(&self) -> Result<Option<T>>
@@ -49,7 +46,7 @@ pub trait BindIn<T: AnyPortValueType>: BindCommons {
 }
 
 /// Trait for incoming and outgoing bind port types.
-pub trait BindInOut<T: AnyPortValueType>: BindIn<T> + BindOut<T> {
+pub trait BindInOut<T: AnyPortValue>: BindIn<T> + BindOut<T> {
 	/// Sets a new value to the T and returns the old T.
 	fn replace(&mut self, value: T) -> Result<Option<T>>;
 
@@ -58,7 +55,7 @@ pub trait BindInOut<T: AnyPortValueType>: BindIn<T> + BindOut<T> {
 }
 
 /// Trait for outgoing bind port types.
-pub trait BindOut<T: AnyPortValueType>: BindCommons {
+pub trait BindOut<T: AnyPortValue>: BindCommons {
 	/// Sets a new value to the T.
 	fn set(&mut self, value: T) -> Result<()>;
 

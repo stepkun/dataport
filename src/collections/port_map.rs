@@ -5,7 +5,8 @@ use alloc::collections::btree_map::BTreeMap;
 
 use crate::{
 	ConstString,
-	bind::{any_port_value::AnyPortValueType, port_value::PortValue},
+	any_port_value::AnyPortValue,
+	bind::port_value::PortValue,
 	collections::{DynamicPortProvider, PortAccessors, PortProvider},
 	error::{Error, Result},
 	port_variant::PortVariant,
@@ -27,7 +28,7 @@ impl PortProvider for PortMap {
 		self.0.contains_key(name)
 	}
 
-	fn contains<T: AnyPortValueType>(&self, name: &str) -> Result<bool> {
+	fn contains<T: AnyPortValue>(&self, name: &str) -> Result<bool> {
 		match self.0.get(name) {
 			Some(port) => match port {
 				PortVariant::InBound(port) => {
@@ -90,7 +91,7 @@ impl PortProvider for PortMap {
 }
 
 impl DynamicPortProvider for PortMap {
-	fn delete<T: AnyPortValueType>(&mut self, name: &str) -> Result<Option<T>> {
+	fn delete<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>> {
 		match self.contains::<T>(name) {
 			Ok(found) => {
 				if found {

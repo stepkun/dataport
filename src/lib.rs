@@ -14,9 +14,9 @@ use alloc::sync::Arc;
 use spin::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 // flatten
+pub use any_port_value::AnyPortValue;
 pub use bind::{
 	BindCommons, BindIn, BindInOut, BindOut,
-	any_port_value::AnyPortValueType,
 	in_out_port::BoundInOutPort,
 	in_port::BoundInPort,
 	out_port::BoundOutPort,
@@ -30,6 +30,7 @@ pub use error::Error;
 pub use port_variant::PortVariant;
 
 // internal module structure
+mod any_port_value;
 mod bind;
 mod collections;
 mod error;

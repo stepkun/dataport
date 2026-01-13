@@ -7,12 +7,13 @@ use alloc::{boxed::Box, sync::Arc};
 
 use crate::{
 	RwLock, RwLockReadGuard, RwLockWriteGuard,
-	bind::{any_port_value::AnyPortValueType, sequence_number::SequenceNumber},
+	any_port_value::AnyPortValue,
+	bind::sequence_number::SequenceNumber,
 	error::{Error, Result},
 };
 
 /// Type definition for a pointer to a [`PortValue`]
-pub type PortValuePtr = Arc<RwLock<(Box<dyn AnyPortValueType>, SequenceNumber)>>;
+pub type PortValuePtr = Arc<RwLock<(Box<dyn AnyPortValue>, SequenceNumber)>>;
 
 /// Internal representation of a ports value.
 /// The `PortValue` is shared between the bound ports.

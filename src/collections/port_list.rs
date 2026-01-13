@@ -5,7 +5,7 @@ use alloc::vec::Vec;
 
 use crate::{
 	ConstString, DynamicPortProvider,
-	bind::any_port_value::AnyPortValueType,
+	any_port_value::AnyPortValue,
 	collections::{PortAccessors, PortProvider},
 	error::{Error, Result},
 	port_variant::PortVariant,
@@ -43,7 +43,7 @@ impl PortProvider for PortList {
 }
 
 impl DynamicPortProvider for PortList {
-	fn delete<T: AnyPortValueType>(&mut self, name: &str) -> Result<Option<T>> {
+	fn delete<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>> {
 		match self.contains::<T>(name) {
 			Ok(found) => {
 				if found {
