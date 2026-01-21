@@ -10,7 +10,7 @@ use crate::{
 		out_port::BoundOutPort,
 		port_value::{PortValueReadGuard, PortValueWriteGuard},
 	},
-	error::{Error, Result},
+	error::Error,
 };
 
 /// Implemented set of port variants.
@@ -38,7 +38,7 @@ impl PortVariant {
 		Self::OutBound(BoundOutPort::with_value(value))
 	}
 
-	pub fn connect_to(&mut self, other: &PortVariant) -> Result<()> {
+	pub fn connect_to(&mut self, other: &PortVariant) -> Result<(), Error> {
 		match self {
 			Self::InBound(port) => port.bind_to(other),
 			Self::InOutBound(port) => port.bind_to(other),
@@ -48,7 +48,7 @@ impl PortVariant {
 
 	/// Returns a clone/copy of the T.
 	/// Therefore T must implement [`Clone`].
-	pub fn get<T: AnyPortValue + Clone>(&self) -> Result<Option<T>> {
+	pub fn get<T: AnyPortValue + Clone>(&self) -> Result<Option<T>, Error> {
 		match self {
 			Self::InBound(port) => port.get(),
 			Self::InOutBound(port) => port.get(),
@@ -67,7 +67,7 @@ impl PortVariant {
 	/// Returns an immutable guard to the ports value T.
 	/// # Errors
 	/// - [`Error::WrongDataType`](crate::error::Error), if port is not the expected port type & type of T.
-	pub fn read<T: AnyPortValue>(&self) -> Result<PortValueReadGuard<T>> {
+	pub fn read<T: AnyPortValue>(&self) -> Result<PortValueReadGuard<T>, Error> {
 		match self {
 			Self::InBound(port) => port.read(),
 			Self::InOutBound(port) => port.read(),
@@ -79,7 +79,7 @@ impl PortVariant {
 	/// # Errors
 	/// - [`Error::IsLocked`](crate::error::Error), if port is locked.
 	/// - [`Error::WrongDataType`](crate::error::Error), if port is not the expected port type & type of T.
-	pub fn try_read<T: AnyPortValue>(&self) -> Result<PortValueReadGuard<T>> {
+	pub fn try_read<T: AnyPortValue>(&self) -> Result<PortValueReadGuard<T>, Error> {
 		match self {
 			Self::InBound(port) => port.try_read(),
 			Self::InOutBound(port) => port.try_read(),
@@ -88,7 +88,7 @@ impl PortVariant {
 	}
 
 	/// Sets a new value to the T and returns the old T.
-	pub fn replace<T: AnyPortValue>(&mut self, value: T) -> Result<Option<T>> {
+	pub fn replace<T: AnyPortValue>(&mut self, value: T) -> Result<Option<T>, Error> {
 		match self {
 			Self::InOutBound(port) => port.replace(value),
 			Self::InBound(_) | Self::OutBound(_) => Err(Error::WrongPortType),
@@ -109,7 +109,7 @@ impl PortVariant {
 	}
 
 	/// Returns the T, removing it from the port.
-	pub fn take<T: AnyPortValue>(&mut self) -> Result<Option<T>> {
+	pub fn take<T: AnyPortValue>(&mut self) -> Result<Option<T>, Error> {
 		match self {
 			Self::InOutBound(port) => port.take(),
 			Self::InBound(_) | Self::OutBound(_) => Err(Error::WrongPortType),
@@ -117,7 +117,7 @@ impl PortVariant {
 	}
 
 	/// Sets a new value to the T.
-	pub fn set<T: AnyPortValue>(&mut self, value: T) -> Result<()> {
+	pub fn set<T: AnyPortValue>(&mut self, value: T) -> Result<(), Error> {
 		match self {
 			Self::OutBound(port) => port.set(value),
 			Self::InOutBound(port) => port.set(value),
@@ -125,7 +125,7 @@ impl PortVariant {
 		}
 	}
 
-	pub fn write<T: AnyPortValue>(&mut self) -> Result<PortValueWriteGuard<T>> {
+	pub fn write<T: AnyPortValue>(&mut self) -> Result<PortValueWriteGuard<T>, Error> {
 		match self {
 			Self::OutBound(port) => port.write(),
 			Self::InOutBound(port) => port.write(),
@@ -133,7 +133,7 @@ impl PortVariant {
 		}
 	}
 
-	pub fn try_write<T: AnyPortValue>(&mut self) -> Result<PortValueWriteGuard<T>> {
+	pub fn try_write<T: AnyPortValue>(&mut self) -> Result<PortValueWriteGuard<T>, Error> {
 		match self {
 			Self::OutBound(port) => port.try_write(),
 			Self::InOutBound(port) => port.try_write(),

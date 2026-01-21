@@ -11,7 +11,7 @@ use crate::{
 		port_value::{PortValue, PortValuePtr, PortValueWriteGuard},
 		sequence_number::SequenceNumber,
 	},
-	error::{Error, Result},
+	error::Error,
 	port_variant::PortVariant,
 };
 
@@ -43,7 +43,7 @@ impl BoundOutPort {
 			.is_some()
 	}
 
-	pub(crate) fn set_value(&mut self, value: PortValuePtr) -> Result<()> {
+	pub(crate) fn set_value(&mut self, value: PortValuePtr) -> Result<(), Error> {
 		let x = self.0.read().0.type_id();
 		let y = value.read().0.type_id();
 		if x == y {
@@ -60,7 +60,7 @@ impl BoundOutPort {
 }
 
 impl BindCommons for BoundOutPort {
-	fn bind_to(&mut self, other: &PortVariant) -> Result<()> {
+	fn bind_to(&mut self, other: &PortVariant) -> Result<(), Error> {
 		match other {
 			PortVariant::InBound(port) => self.set_value(port.value()),
 			PortVariant::InOutBound(port) => self.set_value(port.value()),
@@ -74,7 +74,7 @@ impl BindCommons for BoundOutPort {
 }
 
 impl<T: AnyPortValue> BindOut<T> for BoundOutPort {
-	fn set(&mut self, value: T) -> Result<()> {
+	fn set(&mut self, value: T) -> Result<(), Error> {
 		let any_value = &mut *self.0.write();
 		let p = &mut any_value.0;
 		let p_mut = p.as_mut();
@@ -87,11 +87,11 @@ impl<T: AnyPortValue> BindOut<T> for BoundOutPort {
 		}
 	}
 
-	fn write(&mut self) -> Result<PortValueWriteGuard<T>> {
+	fn write(&mut self) -> Result<PortValueWriteGuard<T>, Error> {
 		PortValueWriteGuard::new(self.0.clone())
 	}
 
-	fn try_write(&mut self) -> Result<PortValueWriteGuard<T>> {
+	fn try_write(&mut self) -> Result<PortValueWriteGuard<T>, Error> {
 		PortValueWriteGuard::try_new(self.0.clone())
 	}
 }

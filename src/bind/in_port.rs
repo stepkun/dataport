@@ -11,7 +11,7 @@ use crate::{
 		port_value::{PortValue, PortValuePtr, PortValueReadGuard},
 		sequence_number::SequenceNumber,
 	},
-	error::{Error, Result},
+	error::Error,
 	port_variant::PortVariant,
 };
 
@@ -43,7 +43,7 @@ impl BoundInPort {
 			.is_some()
 	}
 
-	pub(crate) fn set_value(&mut self, value: PortValuePtr) -> Result<()> {
+	pub(crate) fn set_value(&mut self, value: PortValuePtr) -> Result<(), Error> {
 		let x = self.0.read().0.type_id();
 		let y = value.read().0.type_id();
 		if x == y {
@@ -60,7 +60,7 @@ impl BoundInPort {
 }
 
 impl BindCommons for BoundInPort {
-	fn bind_to(&mut self, other: &PortVariant) -> Result<()> {
+	fn bind_to(&mut self, other: &PortVariant) -> Result<(), Error> {
 		match other {
 			PortVariant::InBound(port) => self.set_value(port.value()),
 			PortVariant::InOutBound(port) => self.set_value(port.value()),
@@ -74,7 +74,7 @@ impl BindCommons for BoundInPort {
 }
 
 impl<T: AnyPortValue> BindIn<T> for BoundInPort {
-	fn get(&self) -> Result<Option<T>>
+	fn get(&self) -> Result<Option<T>, Error>
 	where
 		T: Clone,
 	{
@@ -91,11 +91,11 @@ impl<T: AnyPortValue> BindIn<T> for BoundInPort {
 		}
 	}
 
-	fn read(&self) -> Result<PortValueReadGuard<T>> {
+	fn read(&self) -> Result<PortValueReadGuard<T>, Error> {
 		PortValueReadGuard::new(self.0.clone())
 	}
 
-	fn try_read(&self) -> Result<PortValueReadGuard<T>> {
+	fn try_read(&self) -> Result<PortValueReadGuard<T>, Error> {
 		PortValueReadGuard::try_new(self.0.clone())
 	}
 }

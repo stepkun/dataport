@@ -5,7 +5,7 @@ use crate::{
 	ConstString,
 	any_port_value::AnyPortValue,
 	bind::port_value::{PortValueReadGuard, PortValueWriteGuard},
-	error::{Error, Result},
+	error::Error,
 	port_variant::PortVariant,
 };
 
@@ -22,7 +22,7 @@ pub trait PortProvider {
 	/// Returns a result of `true` if a certain `key` of type `T` is available, otherwise a result of `false`.
 	/// # Errors
 	/// - [`Error::WrongDataType`] if the port exists, but has not the expected type `T`.
-	fn contains<T: AnyPortValue>(&self, name: &str) -> Result<bool> {
+	fn contains<T: AnyPortValue>(&self, name: &str) -> Result<bool, Error> {
 		if let Some(p) = self.find(name) {
 			if p.is::<T>() { Ok(true) } else { Err(Error::WrongDataType) }
 		} else {
@@ -40,7 +40,7 @@ pub trait PortProvider {
 
 	/// Connects a port from this provider to a port from another provider.
 	/// Type of connection depends on types of both ports.
-	fn connect_to(&mut self, name: &str, other_provider: &impl PortProvider, other_name: &str) -> Result<()> {
+	fn connect_to(&mut self, name: &str, other_provider: &impl PortProvider, other_name: &str) -> Result<(), Error> {
 		if let Some(port) = self.find_mut(name) {
 			if let Some(other) = other_provider.find(other_name) {
 				port.connect_to(other)
@@ -60,23 +60,23 @@ pub trait DynamicPortProvider: PortProvider {
 	/// # Errors
 	/// - [`Error::NotFound`] if `name` is not contained.
 	/// - [`Error::WrongDataType`] if the port has not the expected type `T`.
-	fn delete<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>>;
+	fn delete<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>, Error>;
 
 	/// Adds the port under the given name to the collection;
 	/// # Errors
 	/// - [`Error::AlreadyInCollection`] if `name` is already contained.
-	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<()>;
+	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<(), Error>;
 
 	/// Removes the port with the given name from the collection;
 	/// # Errors
 	/// - [`Error::NotFound`] if `name` is not contained.
-	fn remove(&mut self, name: impl Into<ConstString>) -> Result<PortVariant>;
+	fn remove(&mut self, name: impl Into<ConstString>) -> Result<PortVariant, Error>;
 }
 
 pub trait PortAccessors: PortProvider {
 	/// Returns a clone/copy of the T.
 	/// Therefore T must implement [`Clone`].
-	fn get<T>(&self, name: &str) -> Result<Option<T>>
+	fn get<T>(&self, name: &str) -> Result<Option<T>, Error>
 	where
 		T: AnyPortValue + Clone,
 	{
@@ -91,7 +91,7 @@ pub trait PortAccessors: PortProvider {
 	/// # Errors
 	/// - [`Error::NotFound`](crate::error::Error), if port is not in port list.
 	/// - [`Error::WrongDataType`](crate::error::Error), if port is not the expected port type & type of T.
-	fn read<T: AnyPortValue>(&self, name: &str) -> Result<PortValueReadGuard<T>> {
+	fn read<T: AnyPortValue>(&self, name: &str) -> Result<PortValueReadGuard<T>, Error> {
 		if let Some(port) = self.find(name) {
 			port.read()
 		} else {
@@ -104,7 +104,7 @@ pub trait PortAccessors: PortProvider {
 	/// - [`Error::IsLocked`](crate::error::Error), if port is locked.
 	/// - [`Error::NotFound`](crate::error::Error), if port is not in port list.
 	/// - [`Error::WrongDataType`](crate::error::Error), if port is not the expected port type & type of T.
-	fn try_read<T: AnyPortValue>(&self, name: &str) -> Result<PortValueReadGuard<T>> {
+	fn try_read<T: AnyPortValue>(&self, name: &str) -> Result<PortValueReadGuard<T>, Error> {
 		if let Some(port) = self.find(name) {
 			port.try_read()
 		} else {
@@ -113,7 +113,7 @@ pub trait PortAccessors: PortProvider {
 	}
 
 	/// Sets a new value to the T and returns the old T.
-	fn replace<T: AnyPortValue>(&mut self, name: &str, value: T) -> Result<Option<T>> {
+	fn replace<T: AnyPortValue>(&mut self, name: &str, value: T) -> Result<Option<T>, Error> {
 		if let Some(port) = self.find_mut(name) {
 			port.replace(value)
 		} else {
@@ -126,7 +126,7 @@ pub trait PortAccessors: PortProvider {
 	/// - starts at `0`,
 	/// - can only be incremeted by 1 and
 	/// - wraps around to `1` when exceeding its limits.
-	fn sequence_number(&self, name: &str) -> Result<u32> {
+	fn sequence_number(&self, name: &str) -> Result<u32, Error> {
 		if let Some(port) = self.find(name) {
 			Ok(port.sequence_number())
 		} else {
@@ -135,7 +135,7 @@ pub trait PortAccessors: PortProvider {
 	}
 
 	/// Sets a new value to the T.
-	fn set<T: AnyPortValue>(&mut self, name: &str, value: T) -> Result<()> {
+	fn set<T: AnyPortValue>(&mut self, name: &str, value: T) -> Result<(), Error> {
 		if let Some(port) = self.find_mut(name) {
 			port.set(value)
 		} else {
@@ -144,7 +144,7 @@ pub trait PortAccessors: PortProvider {
 	}
 
 	/// Returns the T, removing it from the port.
-	fn take<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>> {
+	fn take<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>, Error> {
 		if let Some(port) = self.find_mut(name) {
 			port.take()
 		} else {
@@ -156,7 +156,7 @@ pub trait PortAccessors: PortProvider {
 	/// # Errors
 	/// - [`Error::NotFound`](crate::error::Error), if port is not in port list.
 	/// - [`Error::WrongDataType`](crate::error::Error), if port is not the expected port type & type of T.
-	fn write<T: AnyPortValue>(&mut self, name: &str) -> Result<PortValueWriteGuard<T>> {
+	fn write<T: AnyPortValue>(&mut self, name: &str) -> Result<PortValueWriteGuard<T>, Error> {
 		if let Some(port) = self.find_mut(name) {
 			port.write()
 		} else {
@@ -169,7 +169,7 @@ pub trait PortAccessors: PortProvider {
 	/// - [`Error::IsLocked`](crate::error::Error), if port is locked.
 	/// - [`Error::NotFound`](crate::error::Error), if port is not in port list.
 	/// - [`Error::WrongDataType`](crate::error::Error), if port is not the expected port type & type of T.
-	fn try_write<T: AnyPortValue>(&mut self, name: &str) -> Result<PortValueWriteGuard<T>> {
+	fn try_write<T: AnyPortValue>(&mut self, name: &str) -> Result<PortValueWriteGuard<T>, Error> {
 		if let Some(port) = self.find_mut(name) {
 			port.try_write()
 		} else {

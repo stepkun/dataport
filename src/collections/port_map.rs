@@ -7,7 +7,7 @@ use crate::{
 	ConstString,
 	any_port_value::AnyPortValue,
 	collections::{DynamicPortProvider, PortAccessors, PortProvider},
-	error::{Error, Result},
+	error::Error,
 	port_variant::PortVariant,
 };
 
@@ -37,7 +37,7 @@ impl PortProvider for PortMap {
 }
 
 impl DynamicPortProvider for PortMap {
-	fn delete<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>> {
+	fn delete<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>, Error> {
 		match self.contains::<T>(name) {
 			Ok(found) => {
 				if found {
@@ -52,7 +52,7 @@ impl DynamicPortProvider for PortMap {
 		}
 	}
 
-	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<()> {
+	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<(), Error> {
 		let name = name.into();
 		if self.find(&name).is_some() {
 			Err(Error::AlreadyInCollection { name })
@@ -62,7 +62,7 @@ impl DynamicPortProvider for PortMap {
 		}
 	}
 
-	fn remove(&mut self, name: impl Into<ConstString>) -> Result<PortVariant> {
+	fn remove(&mut self, name: impl Into<ConstString>) -> Result<PortVariant, Error> {
 		let name = name.into();
 		if let Some(port) = self.0.remove(&name) {
 			Ok(port)

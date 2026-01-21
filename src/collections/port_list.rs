@@ -7,7 +7,7 @@ use crate::{
 	ConstString, DynamicPortProvider,
 	any_port_value::AnyPortValue,
 	collections::{PortAccessors, PortProvider},
-	error::{Error, Result},
+	error::Error,
 	port_variant::PortVariant,
 };
 
@@ -43,7 +43,7 @@ impl PortProvider for PortList {
 }
 
 impl DynamicPortProvider for PortList {
-	fn delete<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>> {
+	fn delete<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>, Error> {
 		match self.contains::<T>(name) {
 			Ok(found) => {
 				if found {
@@ -58,7 +58,7 @@ impl DynamicPortProvider for PortList {
 		}
 	}
 
-	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<()> {
+	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<(), Error> {
 		let name = name.into();
 		// @TODO: improve performance by doing a better search for name
 		if self.find(&name).is_some() {
@@ -69,7 +69,7 @@ impl DynamicPortProvider for PortList {
 		}
 	}
 
-	fn remove(&mut self, name: impl Into<ConstString>) -> Result<PortVariant> {
+	fn remove(&mut self, name: impl Into<ConstString>) -> Result<PortVariant, Error> {
 		let name = name.into();
 		let index = self.0.iter().position(|r| r.0 == name);
 		if let Some(index) = index {

@@ -3,9 +3,6 @@
 
 use crate::ConstString;
 
-/// Shortcut for [`dataport`](crate)'s Result<T, E> type
-pub(crate) type Result<T> = core::result::Result<T, Error>;
-
 /// Port errors.
 #[non_exhaustive]
 pub enum Error {

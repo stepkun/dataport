@@ -6,10 +6,8 @@ use core::ops::{Deref, DerefMut};
 use alloc::{boxed::Box, sync::Arc};
 
 use crate::{
-	RwLock, RwLockReadGuard, RwLockWriteGuard,
-	any_port_value::AnyPortValue,
-	bind::sequence_number::SequenceNumber,
-	error::{Error, Result},
+	RwLock, RwLockReadGuard, RwLockWriteGuard, any_port_value::AnyPortValue, bind::sequence_number::SequenceNumber,
+	error::Error,
 };
 
 /// Type definition for a pointer to a [`PortValue`]
@@ -96,7 +94,7 @@ impl<T: 'static> PortValueReadGuard<T> {
 	/// Returns a read guard to the T.
 	/// # Errors
 	/// - [`Error::NoValueSet`] if the port does not yet contain a value.
-	pub(crate) fn new(value: PortValuePtr) -> Result<Self> {
+	pub(crate) fn new(value: PortValuePtr) -> Result<Self, Error> {
 		// we know this pointer is valid since the guard owns the value
 		let ptr_t = {
 			let guard = value.read();
@@ -134,7 +132,7 @@ impl<T: 'static> PortValueReadGuard<T> {
 	/// # Errors
 	/// - [`Error::IsLocked`]  if the entry is locked by someone else.
 	/// - [`Error::NoValueSet`] if the port does not yet contain a value.
-	pub(crate) fn try_new(value: PortValuePtr) -> Result<Self> {
+	pub(crate) fn try_new(value: PortValuePtr) -> Result<Self, Error> {
 		// we know this pointer is valid since the guard owns the value
 		let ptr_t = {
 			if let Some(guard) = value.try_read() {
@@ -227,7 +225,7 @@ impl<T: 'static> PortValueWriteGuard<T> {
 	/// Returns a write guard to the T.
 	/// # Errors
 	/// - [`Error::NoValueSet`] if the port does not yet contain a value.
-	pub(crate) fn new(value: PortValuePtr) -> Result<Self> {
+	pub(crate) fn new(value: PortValuePtr) -> Result<Self, Error> {
 		// we know this pointer is valid since the guard owns the value
 		let (ptr_t, ptr_seq_id) = {
 			let guard = value.write();
@@ -271,7 +269,7 @@ impl<T: 'static> PortValueWriteGuard<T> {
 	/// # Errors
 	/// - [`Error::IsLocked`]  if the entry is locked by someone else.
 	/// - [`Error::NoValueSet`] if the port does not yet contain a value.
-	pub(crate) fn try_new(value: PortValuePtr) -> Result<Self> {
+	pub(crate) fn try_new(value: PortValuePtr) -> Result<Self, Error> {
 		// we know this pointer is valid since the guard owns the value
 		let (ptr_t, ptr_seq_id) = {
 			if let Some(guard) = value.try_write() {
