@@ -1,6 +1,8 @@
 // Copyright © 2026 Stephan Kunz
 //! An extendable unsorted collection of ports.
 
+use core::ops::{Deref, DerefMut};
+
 use alloc::vec::Vec;
 
 use crate::{
@@ -17,8 +19,22 @@ use crate::{
 pub struct PortList(Vec<(ConstString, PortVariant)>);
 
 impl PortList {
-	pub fn new() -> Self {
-		Self(Vec::new())
+	pub fn from<const N: usize>(array: [(ConstString, PortVariant); N]) -> Self {
+		Self(Vec::from(array))
+	}
+}
+
+impl Deref for PortList {
+	type Target = Vec<(ConstString, PortVariant)>;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
+}
+
+impl DerefMut for PortList {
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.0
 	}
 }
 

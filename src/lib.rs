@@ -23,7 +23,8 @@ pub use bind::{
 	port_value::{PortValuePtr, PortValueReadGuard, PortValueWriteGuard},
 };
 pub use collections::{
-	DynamicPortCollection, PortCollectionAccessors, PortCollection, port_array::PortArray, port_list::PortList, port_map::PortMap,
+	DynamicPortCollection, PortCollection, PortCollectionAccessors, PortProvider, PortProviderMut,
+	port_array::EMPTY_PORT_ARRAY, port_array::PortArray, port_list::PortList, port_map::PortMap,
 };
 //pub use flow::{in_out_port::FlowingInOutPort, in_port::FlowingInPort, out_port::FlowingOutPort};
 pub use error::Error;

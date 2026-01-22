@@ -13,6 +13,16 @@ pub mod port_array;
 pub mod port_list;
 pub mod port_map;
 
+pub trait PortProvider: PortCollection + PortCollectionAccessors {}
+
+/// Blanket implementation
+impl<S: PortCollection + PortCollectionAccessors> PortProvider for S {}
+
+pub trait PortProviderMut: PortCollection + DynamicPortCollection + PortCollectionAccessors {}
+
+/// Blanket implementation
+impl<S: PortCollection + DynamicPortCollection + PortCollectionAccessors> PortProviderMut for S {}
+
 /// Methods for something that provides a collection of ports.
 /// Each port is identified by its name, so the name has to be unique within a certain port collection.
 pub trait PortCollection {

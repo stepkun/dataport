@@ -10,7 +10,7 @@ use dataport::{BoundInOutPort, BoundInPort, BoundOutPort, PortArray, PortCollect
 
 macro_rules! test_creation {
 	($tp:ty, $value: expr) => {
-		let mut array = PortArray::new([
+		let mut array = PortArray::from([
 			("inbound0".into(), PortVariant::InBound(BoundInPort::new::<$tp>())),
 			("outbound0".into(), PortVariant::OutBound(BoundOutPort::new::<$tp>())),
 			(
@@ -83,7 +83,7 @@ struct NoType;
 
 macro_rules! test_accessors {
 	($tp:ty, $value1: expr, $value2: expr) => {
-		let mut array = PortArray::new([
+		let mut array = PortArray::from([
 			("inbound0".into(), PortVariant::InBound(BoundInPort::new::<$tp>())),
 			("outbound0".into(), PortVariant::OutBound(BoundOutPort::new::<$tp>())),
 			(
@@ -253,15 +253,15 @@ fn array_accessors() {
 
 macro_rules! test_connections {
 	($tp:ty, $value1: expr, $value2: expr) => {
-		let mut array = PortArray::new([
+		let mut array = PortArray::from([
 			("outbound".into(), PortVariant::create_outbound($value1)),
 			("inbound".into(), PortVariant::InBound(BoundInPort::new::<$tp>())),
 		]);
-		let mut array2 = PortArray::new([(
+		let mut array2 = PortArray::from([(
 			"inoutbound".into(),
 			PortVariant::InOutBound(BoundInOutPort::new::<$tp>()),
 		)]);
-		let mut invalid = PortArray::new([("invalid".into(), PortVariant::create_inoutbound(NoType))]);
+		let mut invalid = PortArray::from([("invalid".into(), PortVariant::create_inoutbound(NoType))]);
 
 		assert!(
 			array

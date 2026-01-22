@@ -1,15 +1,25 @@
 // Copyright © 2026 Stephan Kunz
 //! A fixed unsorted collection of ports.
 
+use core::ops::Deref;
+
 use crate::{ConstString, collections::PortCollection, port_variant::PortVariant};
+
+pub static EMPTY_PORT_ARRAY: PortArray<0> = PortArray([]);
 
 /// A fixed unsorted array of [`PortVariant`]s.
 #[repr(transparent)]
 pub struct PortArray<const S: usize>([(ConstString, PortVariant); S]);
 
 impl<const S: usize> PortArray<S> {
-	pub fn new(ports: [(ConstString, PortVariant); S]) -> Self {
+	pub fn from(ports: [(ConstString, PortVariant); S]) -> Self {
 		Self(ports)
+	}
+}
+
+impl PortArray<0> {
+	pub fn empty() -> Self {
+		Self::from([])
 	}
 }
 
@@ -19,7 +29,7 @@ impl<const S: usize> core::fmt::Debug for PortArray<S> {
 	}
 }
 
-impl<const S: usize> core::ops::Deref for PortArray<S> {
+impl<const S: usize> Deref for PortArray<S> {
 	type Target = [(ConstString, PortVariant)];
 
 	fn deref(&self) -> &Self::Target {

@@ -13,7 +13,7 @@ use dataport::{
 
 macro_rules! test_creation {
 	($tp:ty, $value: expr) => {{
-		let mut map = PortMap::new();
+		let mut map = PortMap::default();
 		assert!(
 			map.insert("inbound0", PortVariant::InBound(BoundInPort::new::<$tp>()))
 				.is_ok()
@@ -95,7 +95,7 @@ struct NoType;
 
 macro_rules! test_accessors {
 	($tp:ty, $value1: expr, $value2: expr) => {
-		let mut map = PortMap::new();
+		let mut map = PortMap::default();
 		assert!(
 			map.insert("inbound0", PortVariant::InBound(BoundInPort::new::<$tp>()))
 				.is_ok()
@@ -272,7 +272,7 @@ fn map_accessors() {
 
 macro_rules! test_connections {
 	($tp:ty, $value1: expr, $value2: expr) => {
-		let mut map = PortMap::new();
+		let mut map = PortMap::default();
 		assert!(
 			map.insert("outbound", PortVariant::create_outbound($value1))
 				.is_ok()
@@ -281,12 +281,12 @@ macro_rules! test_connections {
 			map.insert("inbound", PortVariant::InBound(BoundInPort::new::<$tp>()))
 				.is_ok()
 		);
-		let mut map2 = PortMap::new();
+		let mut map2 = PortMap::default();
 		assert!(
 			map2.insert("inoutbound", PortVariant::InOutBound(BoundInOutPort::new::<$tp>()))
 				.is_ok()
 		);
-		let mut invalid = PortMap::new();
+		let mut invalid = PortMap::default();
 		assert!(
 			invalid
 				.insert("invalid", PortVariant::create_inoutbound(NoType))

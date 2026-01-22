@@ -13,7 +13,7 @@ use dataport::{
 
 macro_rules! test_creation {
 	($tp:ty, $value: expr) => {{
-		let mut list = PortList::new();
+		let mut list = PortList::default();
 		assert!(
 			list.insert("inbound0", PortVariant::InBound(BoundInPort::new::<$tp>()))
 				.is_ok()
@@ -95,7 +95,7 @@ struct NoType;
 
 macro_rules! test_accessors {
 	($tp:ty, $value1: expr, $value2: expr) => {
-		let mut list = PortList::new();
+		let mut list = PortList::default();
 		assert!(
 			list.insert("inbound0", PortVariant::InBound(BoundInPort::new::<$tp>()))
 				.is_ok()
@@ -272,7 +272,7 @@ fn list_accessors() {
 
 macro_rules! test_connections {
 	($tp:ty, $value1: expr, $value2: expr) => {
-		let mut list = PortList::new();
+		let mut list = PortList::default();
 		assert!(
 			list.insert("outbound", PortVariant::create_outbound($value1))
 				.is_ok()
@@ -281,13 +281,13 @@ macro_rules! test_connections {
 			list.insert("inbound", PortVariant::InBound(BoundInPort::new::<$tp>()))
 				.is_ok()
 		);
-		let mut list2 = PortList::new();
+		let mut list2 = PortList::default();
 		assert!(
 			list2
 				.insert("inoutbound", PortVariant::InOutBound(BoundInOutPort::new::<$tp>()))
 				.is_ok()
 		);
-		let mut invalid = PortList::new();
+		let mut invalid = PortList::default();
 		assert!(
 			invalid
 				.insert("invalid", PortVariant::create_inoutbound(NoType))

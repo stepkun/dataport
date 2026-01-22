@@ -1,6 +1,8 @@
 // Copyright © 2026 Stephan Kunz
 //! An extendable sorted collection of ports.
 
+use core::ops::{Deref, DerefMut};
+
 use alloc::collections::btree_map::BTreeMap;
 
 use crate::{
@@ -17,8 +19,22 @@ use crate::{
 pub struct PortMap(BTreeMap<ConstString, PortVariant>);
 
 impl PortMap {
-	pub fn new() -> Self {
-		Self(BTreeMap::new())
+	pub fn from<const N: usize>(array: [(ConstString, PortVariant); N]) -> Self {
+		Self(BTreeMap::from(array))
+	}
+}
+
+impl Deref for PortMap {
+	type Target = BTreeMap<ConstString, PortVariant>;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
+	}
+}
+
+impl DerefMut for PortMap {
+	fn deref_mut(&mut self) -> &mut Self::Target {
+		&mut self.0
 	}
 }
 
