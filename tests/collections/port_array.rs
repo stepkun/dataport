@@ -6,7 +6,7 @@
 
 use core::f64::consts::PI;
 
-use dataport::{BoundInOutPort, BoundInPort, BoundOutPort, PortAccessors, PortArray, PortProvider, PortVariant};
+use dataport::{BoundInOutPort, BoundInPort, BoundOutPort, PortArray, PortCollection, PortCollectionAccessors, PortVariant};
 
 macro_rules! test_creation {
 	($tp:ty, $value: expr) => {

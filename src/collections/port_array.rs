@@ -1,11 +1,7 @@
 // Copyright © 2026 Stephan Kunz
 //! A fixed unsorted collection of ports.
 
-use crate::{
-	ConstString,
-	collections::{PortAccessors, PortProvider},
-	port_variant::PortVariant,
-};
+use crate::{ConstString, collections::PortCollection, port_variant::PortVariant};
 
 /// A fixed unsorted array of [`PortVariant`]s.
 #[repr(transparent)]
@@ -31,11 +27,7 @@ impl<const S: usize> core::ops::Deref for PortArray<S> {
 	}
 }
 
-impl<const S: usize> PortProvider for PortArray<S> {
-	fn contains_name(&self, name: &str) -> bool {
-		self.0.iter().any(|port| &*port.0 == name)
-	}
-
+impl<const S: usize> PortCollection for PortArray<S> {
 	fn find(&self, name: &str) -> Option<&PortVariant> {
 		self.0
 			.iter()
@@ -50,8 +42,6 @@ impl<const S: usize> PortProvider for PortArray<S> {
 			.map(|v| &mut v.1 as _)
 	}
 }
-
-impl<const S: usize> PortAccessors for PortArray<S> {}
 
 #[cfg(test)]
 mod tests {

@@ -7,7 +7,8 @@
 use core::f64::consts::PI;
 
 use dataport::{
-	BoundInOutPort, BoundInPort, BoundOutPort, DynamicPortProvider, PortAccessors, PortMap, PortProvider, PortVariant,
+	BoundInOutPort, BoundInPort, BoundOutPort, DynamicPortCollection, PortCollection, PortCollectionAccessors, PortMap,
+	PortVariant,
 };
 
 macro_rules! test_creation {
