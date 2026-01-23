@@ -5,7 +5,10 @@
 #![allow(clippy::unwrap_used)]
 #![allow(unused)]
 
-use dataport::{BoundInOutPort, BoundInPort, BoundOutPort, PortArray, PortCollectionAccessors, PortProvider, PortVariant};
+use dataport::{
+	BoundInOutPort, BoundInPort, BoundOutPort, PortArray, PortCollectionAccessors, PortProvider, PortVariant, inbound,
+	inoutbound, outbound, port_array,
+};
 
 struct WithPortArray<const C: usize> {
 	size: usize,
@@ -67,16 +70,15 @@ fn array_const_function() {
 }
 
 #[test]
-#[ignore = "todo!"]
 fn array_const_macro() {
 	let mut st = WithPortArray::<3> {
 		size: 3,
 		field: 42,
-		portlist: todo!(), /*port_array![
-							   inbound!("in", i32),
-							   inoutbound!("inout", i32>),
-							   outbound!("out", i32),
-						   ],*/
+		portlist: port_array![
+			inbound!("in", i32),
+			inoutbound!("inout", i32),
+			outbound!("out", i32),
+		],
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());

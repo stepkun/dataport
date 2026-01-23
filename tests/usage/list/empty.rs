@@ -6,8 +6,8 @@
 #![allow(unused)]
 
 use dataport::{
-	BoundInOutPort, BoundInPort, BoundOutPort, PortMap, PortCollection, PortCollectionAccessors, PortList, PortProvider,
-	PortVariant,
+	BoundInOutPort, BoundInPort, BoundOutPort, PortCollection, PortCollectionAccessors, PortList, PortMap, PortProvider,
+	PortVariant, port_list,
 };
 
 struct WithPortList {
@@ -42,11 +42,10 @@ fn list_empty_function() {
 }
 
 #[test]
-#[ignore = "todo!"]
 fn list_empty_macro() {
 	let st = WithPortList {
 		field: 42,
-		portlist: todo!(), //port_list!(),
+		portlist: port_list!(),
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());

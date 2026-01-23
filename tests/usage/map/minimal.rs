@@ -5,7 +5,10 @@
 #![allow(clippy::unwrap_used)]
 #![allow(unused)]
 
-use dataport::{BoundInOutPort, BoundInPort, BoundOutPort, PortCollectionAccessors, PortMap, PortProvider, PortVariant};
+use dataport::{
+	BoundInOutPort, BoundInPort, BoundOutPort, PortCollectionAccessors, PortMap, PortProvider, PortVariant, inbound,
+	inoutbound, outbound, port_map,
+};
 
 struct WithPortMap {
 	field: i32,
@@ -45,15 +48,14 @@ fn map_minimal_manual() {
 }
 
 #[test]
-#[ignore = "todo!"]
 fn map_minimal_macro() {
 	let mut st = WithPortMap {
 		field: 42,
-		portlist: todo!(), /*port_map![
-							   inbound!("in", i32),
-							   inoutbound!("inout", i32>),
-							   outbound!("out", i32),
-						   ],*/
+		portlist: port_map![
+			inbound!("in", i32),
+			inoutbound!("inout", i32),
+			outbound!("out", i32),
+		],
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());

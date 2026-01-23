@@ -5,7 +5,10 @@
 #![allow(clippy::unwrap_used)]
 #![allow(unused)]
 
-use dataport::{BoundInOutPort, BoundInPort, BoundOutPort, PortCollectionAccessors, PortMap, PortProvider, PortVariant};
+use dataport::{
+	BoundInOutPort, BoundInPort, BoundOutPort, PortCollectionAccessors, PortMap, PortProvider, PortVariant, inbound,
+	inoutbound, outbound, port_map,
+};
 
 struct WithPortMap<const C: usize> {
 	size: usize,
@@ -69,16 +72,15 @@ fn map_const_function() {
 }
 
 #[test]
-#[ignore = "todo!"]
 fn map_const_macro() {
 	let mut st = WithPortMap::<3> {
 		size: 3,
 		field: 42,
-		portlist: todo!(), /*port_map![
-							   inbound!("in", i32),
-							   inoutbound!("inout", i32>),
-							   outbound!("out", i32),
-						   ],*/
+		portlist: port_map![
+			inbound!("in", i32),
+			inoutbound!("inout", i32),
+			outbound!("out", i32),
+		],
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());

@@ -7,6 +7,7 @@
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, PortCollection, PortCollectionAccessors, PortMap, PortProvider, PortVariant,
+	port_map,
 };
 
 struct WithPortMap {
@@ -41,11 +42,10 @@ fn map_empty_function() {
 }
 
 #[test]
-#[ignore = "todo!"]
 fn map_empty_macro() {
 	let st = WithPortMap {
 		field: 42,
-		portlist: todo!(), //port_map!(),
+		portlist: port_map!(),
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());

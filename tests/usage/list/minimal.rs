@@ -5,7 +5,10 @@
 #![allow(clippy::unwrap_used)]
 #![allow(unused)]
 
-use dataport::{BoundInOutPort, BoundInPort, BoundOutPort, PortCollectionAccessors, PortList, PortProvider, PortVariant};
+use dataport::{
+	BoundInOutPort, BoundInPort, BoundOutPort, PortCollectionAccessors, PortList, PortProvider, PortVariant, inbound,
+	inoutbound, outbound, port_list,
+};
 
 struct WithPortList {
 	field: i32,
@@ -45,15 +48,14 @@ fn list_minimal_manual() {
 }
 
 #[test]
-#[ignore = "todo!"]
 fn list_minimal_macro() {
 	let mut st = WithPortList {
 		field: 42,
-		portlist: todo!(), /*port_list![
-							   inbound!("in", i32),
-							   inoutbound!("inout", i32>),
-							   outbound!("out", i32),
-						   ],*/
+		portlist: port_list![
+			inbound!("in", i32),
+			inoutbound!("inout", i32),
+			outbound!("out", i32),
+		],
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());

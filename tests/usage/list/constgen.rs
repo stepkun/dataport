@@ -7,6 +7,7 @@
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, PortCollectionAccessors, PortList, PortMap, PortProvider, PortVariant,
+	inbound, inoutbound, outbound, port_list,
 };
 
 struct WithPortList<const C: usize> {
@@ -71,16 +72,15 @@ fn list_const_function() {
 }
 
 #[test]
-#[ignore = "todo!"]
 fn list_const_macro() {
 	let mut st = WithPortList::<3> {
 		size: 3,
 		field: 42,
-		portlist: todo!(), /*port_list![
-							   inbound!("in", i32),
-							   inoutbound!("inout", i32>),
-							   outbound!("out", i32),
-						   ],*/
+		portlist: port_list![
+			inbound!("in", i32),
+			inoutbound!("inout", i32),
+			outbound!("out", i32),
+		],
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());

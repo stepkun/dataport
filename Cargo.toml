@@ -14,7 +14,7 @@ documentation = "https://docs.rs/dataport"
 readme = "README.md"
 
 [dependencies]
-#dataport-macros = { path = "macros", version = "0.0.1" }
+dataport-macros = { path = "macros", version = "0.1.0" }
 spin = { version = "0.10.0", default-features = false, features = [
     #"fair_mutex",
     "portable-atomic",
