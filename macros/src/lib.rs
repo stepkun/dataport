@@ -3,7 +3,7 @@
 
 #![allow(unused, dead_code)]
 
-use darling::FromMeta;
+//use darling::FromMeta; // needed for Debug!
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
@@ -15,7 +15,16 @@ use syn::{
 #[doc(hidden)]
 extern crate proc_macro;
 
-/// @TODO:
+/// Creates an array of ports.
+/// # Usage:
+/// port_array!(<comma_separated_list_of_name/port_pairs>)
+///
+/// Best to use with port generation macros:
+/// port_array!(
+///     inbound!(<name>, <type>, <value>),
+///     outbound!(<name>, <type>),
+///     inoutbound!(<name>. <value>)
+/// )
 #[proc_macro]
 pub fn port_array(input: TokenStream) -> TokenStream {
 	let output: proc_macro2::TokenStream = input.into();
@@ -25,7 +34,16 @@ pub fn port_array(input: TokenStream) -> TokenStream {
 	.into()
 }
 
-/// @TODO:
+/// Creates a list of ports.
+/// # Usage:
+/// port_list!(<comma_separated_list_of_name/port_pairs>)
+///
+/// Best to use with port generation macros:
+/// port_list!(
+///     inoutbound!(<name>, <type>, <value>),
+///     inbound!(<name>, <type>),
+///     outbound!(<name>. <value>)
+/// )
 #[proc_macro]
 pub fn port_list(input: TokenStream) -> TokenStream {
 	let output: proc_macro2::TokenStream = input.into();
@@ -35,7 +53,16 @@ pub fn port_list(input: TokenStream) -> TokenStream {
 	.into()
 }
 
-/// @TODO:
+/// Creates a map of ports.
+/// # Usage:
+/// port_map!(<comma_separated_list_of_name/port_pairs>)
+///
+/// Best to use with port generation macros:
+/// port_map!(
+///     outbound!(<name>, <type>, <value>),
+///     inoutbound!(<name>, <type>),
+///     inbound!(<name>. <value>)
+/// )
 #[proc_macro]
 pub fn port_map(input: TokenStream) -> TokenStream {
 	let output: proc_macro2::TokenStream = input.into();
@@ -45,9 +72,8 @@ pub fn port_map(input: TokenStream) -> TokenStream {
 	.into()
 }
 
-#[derive(Debug)]
 struct Params {
-	port_name: LitStr,
+	port_name: proc_macro2::TokenStream,
 	port_type: Option<Type>,
 	port_value: Option<Expr>,
 }
@@ -58,8 +84,14 @@ impl Parse for Params {
 			panic!("macro needs at least two comma separated parameters");
 		}
 
-		let port_name = input.parse::<LitStr>()?;
-		input.parse::<Token![,]>()?; // ignore separator
+		let old = input;
+		let port_name = if let Ok(name) = input.parse::<LitStr>() {
+			quote! {#name}
+		} else {
+			let value = old.parse::<Ident>()?;
+			quote! {#value}
+		};
+		input.parse::<Token![,]>()?; // consume separator
 
 		let mut port_type = None;
 		let mut port_value = None;
@@ -68,7 +100,7 @@ impl Parse for Params {
 		if let Ok(ty) = input.parse::<Type>() {
 			port_type = Some(ty);
 			if !input.is_empty() {
-				input.parse::<Token![,]>()?; // ignore separator
+				input.parse::<Token![,]>()?; // consume separator
 				port_value = Some(old.parse::<Expr>()?);
 			}
 		} else {
@@ -83,7 +115,11 @@ impl Parse for Params {
 	}
 }
 
-/// @TODO:
+/// Creates a name/inbound_port pair.
+/// # Usages:
+/// inbound!(name, type)
+/// inbound!(name, value)
+/// inbound!(name, type, value)
 #[proc_macro]
 pub fn inbound(input: TokenStream) -> TokenStream {
 	let params = parse_macro_input!(input as Params);
@@ -111,7 +147,11 @@ pub fn inbound(input: TokenStream) -> TokenStream {
 	}
 }
 
-/// @TODO:
+/// Creates a name/inoutbound_port pair.
+/// # Usages:
+/// inoutbound!(name, type)
+/// inoutbound!(name, value)
+/// inoutbound!(name, type, value)
 #[proc_macro]
 pub fn inoutbound(input: TokenStream) -> TokenStream {
 	let params = parse_macro_input!(input as Params);
@@ -139,7 +179,11 @@ pub fn inoutbound(input: TokenStream) -> TokenStream {
 	}
 }
 
-/// @TODO:
+/// Creates a name/outbound_port pair.
+/// # Usages:
+/// outbound!(name, type)
+/// outbound!(name, value)
+/// outbound!(name, type, value)
 #[proc_macro]
 pub fn outbound(input: TokenStream) -> TokenStream {
 	let params = parse_macro_input!(input as Params);

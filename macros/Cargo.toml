@@ -42,7 +42,7 @@ unwrap_used = "deny"
 #path = "tests/all.rs"
 
 [dependencies]
-darling = "0.23"
+#darling = "0.23" # for Debug!!
 proc-macro2 = "1"
 quote = "1"
 syn = { version = "2", features = [] }

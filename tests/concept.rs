@@ -6,4 +6,9 @@
 #![allow(unused)]
 
 #[test]
-fn concept() {}
+fn concept() {
+	// add a concept here and test it with
+	// cargo test --test concept
+	// or
+	// cargo expand --test concept
+}
