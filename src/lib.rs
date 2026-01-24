@@ -14,7 +14,10 @@ use alloc::sync::Arc;
 use spin::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 // re-export macros
-pub use dataport_macros::{inbound, inoutbound, outbound, port_array, port_list, port_map};
+pub use dataport_macros::{
+	create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_array, create_port_list,
+	create_port_map,
+};
 
 // flatten
 pub use any_port_value::AnyPortValue;

@@ -6,8 +6,8 @@
 #![allow(unused)]
 
 use dataport::{
-	BoundInOutPort, BoundInPort, BoundOutPort, PortArray, PortCollectionAccessors, PortProvider, PortVariant, inbound,
-	inoutbound, outbound, port_array,
+	BoundInOutPort, BoundInPort, BoundOutPort, PortArray, PortCollectionAccessors, PortProvider, PortVariant,
+	create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_array,
 };
 
 struct WithPortArray {
@@ -51,7 +51,11 @@ fn array_minimal_manual() {
 fn array_minimal_macro() {
 	let mut st = WithPortArray {
 		field: 42,
-		portlist: port_array!(inbound!("in", i32), inoutbound!("inout", i32), outbound!("out", i32),),
+		portlist: create_port_array!(
+			create_inbound_entry!("in", i32),
+			create_inoutbound_entry!("inout", i32),
+			create_outbound_entry!("out", i32),
+		),
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());

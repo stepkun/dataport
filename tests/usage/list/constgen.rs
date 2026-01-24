@@ -7,7 +7,7 @@
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, PortCollectionAccessors, PortList, PortMap, PortProvider, PortVariant,
-	inbound, inoutbound, outbound, port_list,
+	create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_list,
 };
 
 struct WithPortList<const C: usize> {
@@ -76,10 +76,10 @@ fn list_const_macro() {
 	let mut st = WithPortList::<3> {
 		size: 3,
 		field: 42,
-		portlist: port_list![
-			inbound!("in", i32),
-			inoutbound!("inout", i32),
-			outbound!("out", i32),
+		portlist: create_port_list![
+			create_inbound_entry!("in", i32),
+			create_inoutbound_entry!("inout", i32),
+			create_outbound_entry!("out", i32),
 		],
 	};
 

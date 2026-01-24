@@ -5,7 +5,9 @@
 #![allow(clippy::unwrap_used)]
 #![allow(unused)]
 
-use dataport::{AnyPortValue, PortCollection, inbound, inoutbound, outbound, port_array};
+use dataport::{
+	AnyPortValue, PortCollection, create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_array,
+};
 
 const NAME1: &str = "TEST1";
 static NAME2: &str = "TEST2";
@@ -27,7 +29,11 @@ impl Test {
 }
 #[test]
 fn macro_usage() {
-	let portlist = port_array!(inbound!("in", i32), inoutbound!("inout", i32), outbound!("out", i32));
+	let portlist = create_port_array!(
+		create_inbound_entry!("in", i32),
+		create_inoutbound_entry!("inout", i32),
+		create_outbound_entry!("out", i32)
+	);
 	let x = portlist.find("in").unwrap();
 	let x = portlist.find("inout").unwrap();
 	let x = portlist.find("out").unwrap();
@@ -35,42 +41,58 @@ fn macro_usage() {
 	let name1 = "test1";
 	let name2 = String::from("test2");
 
-	let portlist = port_array!(inbound!(name1, i32), inoutbound!(name2, i32), outbound!("test3", i32));
+	let portlist = create_port_array!(
+		create_inbound_entry!(name1, i32),
+		create_inoutbound_entry!(name2, i32),
+		create_outbound_entry!("test3", i32)
+	);
 	let x = portlist.find("test1").unwrap();
 	let x = portlist.find("test2").unwrap();
 	let x = portlist.find("test3").unwrap();
 
-	let portlist = port_array!(inbound!(NAME1, i32), inoutbound!(NAME2, i32), outbound!("TEST3", i32));
+	let portlist = create_port_array!(
+		create_inbound_entry!(NAME1, i32),
+		create_inoutbound_entry!(NAME2, i32),
+		create_outbound_entry!("TEST3", i32)
+	);
 	let x = portlist.find("TEST1").unwrap();
 	let x = portlist.find("TEST2").unwrap();
 	let x = portlist.find("TEST3").unwrap();
 
-	let portlist = port_array!(
-		inbound!("in", i32, 42),
-		inoutbound!("inout", i32, 42),
-		outbound!("out", i32, 42)
+	let portlist = create_port_array!(
+		create_inbound_entry!("in", i32, 42),
+		create_inoutbound_entry!("inout", i32, 42),
+		create_outbound_entry!("out", i32, 42)
 	);
 	let x = portlist.find("in").unwrap();
 	assert_eq!(x.get().unwrap(), Some(42));
 	let x = portlist.find("inout").unwrap();
 	assert_eq!(x.get().unwrap(), Some(42));
 
-	let portlist = port_array!(inbound!("in", 42), inoutbound!("inout", 42), outbound!("out", 42));
+	let portlist = create_port_array!(
+		create_inbound_entry!("in", 42),
+		create_inoutbound_entry!("inout", 42),
+		create_outbound_entry!("out", 42)
+	);
 	let x = portlist.find("in").unwrap();
 	assert_eq!(x.get().unwrap(), Some(42));
 	let x = portlist.find("inout").unwrap();
 	assert_eq!(x.get().unwrap(), Some(42));
 
-	let portlist = port_array!(inbound!("in", 2 * 42), inoutbound!("inout", 2 * 42), outbound!("out", 2 * 42));
+	let portlist = create_port_array!(
+		create_inbound_entry!("in", 2 * 42),
+		create_inoutbound_entry!("inout", 2 * 42),
+		create_outbound_entry!("out", 2 * 42)
+	);
 	let x = portlist.find("in").unwrap();
 	assert_eq!(x.get().unwrap(), Some(84));
 	let x = portlist.find("inout").unwrap();
 	assert_eq!(x.get().unwrap(), Some(84));
 
-	let portlist = port_array!(
-		inbound!("in", i32, 2 * 42),
-		inoutbound!("inout", i32, 2 * 42),
-		outbound!("out", i32, 2 * 42)
+	let portlist = create_port_array!(
+		create_inbound_entry!("in", i32, 2 * 42),
+		create_inoutbound_entry!("inout", i32, 2 * 42),
+		create_outbound_entry!("out", i32, 2 * 42)
 	);
 
 	let x = portlist.find("in").unwrap();
@@ -78,16 +100,20 @@ fn macro_usage() {
 	let x = portlist.find("inout").unwrap();
 	assert_eq!(x.get().unwrap(), Some(84));
 
-	let _portlist = port_array!(inbound!("in", Test), inoutbound!("inout", Test), outbound!("out", Test));
+	let _portlist = create_port_array!(
+		create_inbound_entry!("in", Test),
+		create_inoutbound_entry!("inout", Test),
+		create_outbound_entry!("out", Test)
+	);
 
 	//let val1 = Test::new();
 	//let val2 = Test::new();
 	//let val3 = Test::new();
-	//let _portlist = port_array!(inbound!("in", val1), inoutbound!("inout", val2), outbound!("out", val3));
+	//let _portlist = create_port_array!(create_inbound_entry!("in", val1), create_inoutbound_entry!("inout", val2), create_outbound_entry!("out", val3));
 
-	let portlist = port_array!(
-		inbound!("in", Test, Test::new()),
-		inoutbound!(
+	let portlist = create_port_array!(
+		create_inbound_entry!("in", Test, Test::new()),
+		create_inoutbound_entry!(
 			"inout",
 			Test,
 			Test {
@@ -96,7 +122,7 @@ fn macro_usage() {
 				f3: vec![String::from("test")]
 			}
 		),
-		outbound!(
+		create_outbound_entry!(
 			"out",
 			Test,
 			Test {

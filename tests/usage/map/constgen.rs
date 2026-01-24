@@ -6,8 +6,8 @@
 #![allow(unused)]
 
 use dataport::{
-	BoundInOutPort, BoundInPort, BoundOutPort, PortCollectionAccessors, PortMap, PortProvider, PortVariant, inbound,
-	inoutbound, outbound, port_map,
+	BoundInOutPort, BoundInPort, BoundOutPort, PortCollectionAccessors, PortMap, PortProvider, PortVariant,
+	create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_map,
 };
 
 struct WithPortMap<const C: usize> {
@@ -76,10 +76,10 @@ fn map_const_macro() {
 	let mut st = WithPortMap::<3> {
 		size: 3,
 		field: 42,
-		portlist: port_map![
-			inbound!("in", i32),
-			inoutbound!("inout", i32),
-			outbound!("out", i32),
+		portlist: create_port_map![
+			create_inbound_entry!("in", i32),
+			create_inoutbound_entry!("inout", i32),
+			create_outbound_entry!("out", i32),
 		],
 	};
 

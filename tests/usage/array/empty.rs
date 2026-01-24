@@ -7,7 +7,7 @@
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, PortArray, PortCollection, PortCollectionAccessors, PortProvider,
-	PortVariant, port_array,
+	PortVariant, create_port_array,
 };
 
 struct WithPortArray {
@@ -59,7 +59,7 @@ fn array_empty_function() {
 fn array_empty_macro() {
 	let st = WithPortArray {
 		field: 42,
-		portlist: port_array!(),
+		portlist: create_port_array!(),
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());

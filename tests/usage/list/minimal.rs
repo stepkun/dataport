@@ -6,8 +6,8 @@
 #![allow(unused)]
 
 use dataport::{
-	BoundInOutPort, BoundInPort, BoundOutPort, PortCollectionAccessors, PortList, PortProvider, PortVariant, inbound,
-	inoutbound, outbound, port_list,
+	BoundInOutPort, BoundInPort, BoundOutPort, PortCollectionAccessors, PortList, PortProvider, PortVariant,
+	create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_list,
 };
 
 struct WithPortList {
@@ -51,10 +51,10 @@ fn list_minimal_manual() {
 fn list_minimal_macro() {
 	let mut st = WithPortList {
 		field: 42,
-		portlist: port_list![
-			inbound!("in", i32),
-			inoutbound!("inout", i32),
-			outbound!("out", i32),
+		portlist: create_port_list![
+			create_inbound_entry!("in", i32),
+			create_inoutbound_entry!("inout", i32),
+			create_outbound_entry!("out", i32),
 		],
 	};
 

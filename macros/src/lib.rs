@@ -26,7 +26,7 @@ extern crate proc_macro;
 ///     inoutbound!(<name>. <value>)
 /// )
 #[proc_macro]
-pub fn port_array(input: TokenStream) -> TokenStream {
+pub fn create_port_array(input: TokenStream) -> TokenStream {
 	let output: proc_macro2::TokenStream = input.into();
 	quote! {
 		dataport::PortArray::from([#output])
@@ -45,7 +45,7 @@ pub fn port_array(input: TokenStream) -> TokenStream {
 ///     outbound!(<name>. <value>)
 /// )
 #[proc_macro]
-pub fn port_list(input: TokenStream) -> TokenStream {
+pub fn create_port_list(input: TokenStream) -> TokenStream {
 	let output: proc_macro2::TokenStream = input.into();
 	quote! {
 		dataport::PortList::from([#output])
@@ -64,7 +64,7 @@ pub fn port_list(input: TokenStream) -> TokenStream {
 ///     inbound!(<name>. <value>)
 /// )
 #[proc_macro]
-pub fn port_map(input: TokenStream) -> TokenStream {
+pub fn create_port_map(input: TokenStream) -> TokenStream {
 	let output: proc_macro2::TokenStream = input.into();
 	quote! {
 		dataport::PortMap::from([#output])
@@ -121,7 +121,7 @@ impl Parse for Params {
 /// inbound!(name, value)
 /// inbound!(name, type, value)
 #[proc_macro]
-pub fn inbound(input: TokenStream) -> TokenStream {
+pub fn create_inbound_entry(input: TokenStream) -> TokenStream {
 	let params = parse_macro_input!(input as Params);
 
 	let name = params.port_name;
@@ -153,7 +153,7 @@ pub fn inbound(input: TokenStream) -> TokenStream {
 /// inoutbound!(name, value)
 /// inoutbound!(name, type, value)
 #[proc_macro]
-pub fn inoutbound(input: TokenStream) -> TokenStream {
+pub fn create_inoutbound_entry(input: TokenStream) -> TokenStream {
 	let params = parse_macro_input!(input as Params);
 
 	let name = params.port_name;
@@ -185,7 +185,7 @@ pub fn inoutbound(input: TokenStream) -> TokenStream {
 /// outbound!(name, value)
 /// outbound!(name, type, value)
 #[proc_macro]
-pub fn outbound(input: TokenStream) -> TokenStream {
+pub fn create_outbound_entry(input: TokenStream) -> TokenStream {
 	let params = parse_macro_input!(input as Params);
 
 	let name = params.port_name;

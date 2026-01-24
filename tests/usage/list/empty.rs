@@ -7,7 +7,7 @@
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, PortCollection, PortCollectionAccessors, PortList, PortMap, PortProvider,
-	PortVariant, port_list,
+	PortVariant, create_port_list,
 };
 
 struct WithPortList {
@@ -45,7 +45,7 @@ fn list_empty_function() {
 fn list_empty_macro() {
 	let st = WithPortList {
 		field: 42,
-		portlist: port_list!(),
+		portlist: create_port_list!(),
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());
