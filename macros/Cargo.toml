@@ -45,7 +45,9 @@ unwrap_used = "deny"
 #darling = "0.23" # for Debug!!
 proc-macro2 = "1"
 quote = "1"
-syn = { version = "2", features = [] }
+syn = "2"
+#syn = { version = "2", features = ["full", "parsing", "visit-mut"] }
+
 
 [build-dependencies]
 
