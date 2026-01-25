@@ -4,5 +4,6 @@
 mod bind;
 mod collections;
 //mod flow;
+mod error;
 mod port_variant;
 mod usage;

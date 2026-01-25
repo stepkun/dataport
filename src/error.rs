@@ -4,6 +4,7 @@
 use crate::ConstString;
 
 /// Port errors.
+#[derive(PartialEq)]
 #[non_exhaustive]
 pub enum Error {
 	/// A port with the given name is already in the collection.
@@ -27,8 +28,8 @@ impl core::fmt::Debug for Error {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		match self {
 			Self::AlreadyInCollection { name } => write!(f, "AlreadyInCollection('{name}')"),
-			Self::NotFound { name } => write!(f, "NotFound('{name}')"),
 			Self::IsLocked => write!(f, "IsLocked"),
+			Self::NotFound { name } => write!(f, "NotFound('{name}')"),
 			Self::NoValueSet => write!(f, "NoValueSet"),
 			Self::WrongDataType => write!(f, "WrongDataType"),
 			Self::WrongPortType => write!(f, "WrongPortType"),
@@ -40,8 +41,8 @@ impl core::fmt::Display for Error {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		match self {
 			Self::AlreadyInCollection { name } => write!(f, "a port with the name '{name}' is already in the collection"),
-			Self::NotFound { name } => write!(f, "port '{name}' could not be found in the collection"),
 			Self::IsLocked => write!(f, "port is currently locked"),
+			Self::NotFound { name } => write!(f, "port '{name}' could not be found in the collection"),
 			Self::NoValueSet => write!(f, "no value set for port"),
 			Self::WrongDataType => write!(f, "port has a different data type then expected"),
 			Self::WrongPortType => write!(f, "port has an incompatible type"),

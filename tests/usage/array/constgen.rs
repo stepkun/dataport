@@ -6,8 +6,8 @@
 #![allow(unused)]
 
 use dataport::{
-	BoundInOutPort, BoundInPort, BoundOutPort, PortArray, PortCollectionAccessors, PortProvider, PortVariant,
-	create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_array,
+	BoundInOutPort, BoundInPort, BoundOutPort, Error, PortArray, PortCollectionAccessors, PortProvider, PortProviderMut,
+	PortVariant, create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_array,
 };
 
 struct WithPortArray<const C: usize> {
@@ -87,7 +87,18 @@ fn array_const_macro() {
 	assert!(st.provided_ports().get::<i32>("out").is_err());
 	assert!(
 		st.provided_ports_mut()
-			.set::<i32>("out", 42)
+			.set::<i32>("out", 41)
 			.is_ok()
 	);
+	assert!(st.provided_ports_mut().set("out", 42).is_ok());
+
+	assert!(
+		st.provided_ports_mut()
+			.set::<i32>("inout", 41)
+			.is_ok()
+	);
+	assert!(st.provided_ports_mut().set("inout", 42).is_ok());
+
+	assert_eq!(st.provided_ports_mut().set::<i32>("in", 41), Err(Error::WrongPortType));
+	assert_eq!(st.provided_ports_mut().set("in", 42), Err(Error::WrongPortType));
 }
