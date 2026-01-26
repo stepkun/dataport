@@ -13,15 +13,17 @@ pub mod port_array;
 pub mod port_list;
 pub mod port_map;
 
+/// Trait for port provider methods.
 pub trait PortProvider: PortCollection + PortCollectionAccessors {}
 
 /// Blanket implementation
 impl<S: PortCollection + PortCollectionAccessors> PortProvider for S {}
 
-pub trait PortProviderMut: PortCollection + DynamicPortCollection + PortCollectionAccessors {}
+/// Trait for mutable port provider methods.
+pub trait PortProviderMut: PortProvider {}
 
 /// Blanket implementation
-impl<S: PortCollection + DynamicPortCollection + PortCollectionAccessors> PortProviderMut for S {}
+impl<S: PortCollection + PortCollectionAccessors> PortProviderMut for S {}
 
 /// Methods for something that provides a collection of ports.
 /// Each port is identified by its name, so the name has to be unique within a certain port collection.
@@ -35,35 +37,22 @@ pub trait PortCollection {
 
 /// Methods for something that is able to provide ports as dynamic collection.
 /// Each port is identified by its name, so the name has to be unique within a certain port collection.
-pub trait DynamicPortCollection {
-	/// Returns the value of type `T` stored under `name` and removes the port from collection.
-	/// # Errors
-	/// - [`Error::NotFound`] if `name` is not contained.
-	/// - [`Error::WrongDataType`] if the port has not the expected type `T`.
-	fn delete<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>, Error>;
-
+pub trait PortCollectionMut {
 	/// Adds the port under the given name to the collection;
 	/// # Errors
 	/// - [`Error::AlreadyInCollection`] if `name` is already contained.
 	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<(), Error>;
 
-	/// Removes the port with the given name from the collection;
+	/// Removes the port with `name` from thecollection and returns its value of type `T`.
 	/// # Errors
 	/// - [`Error::NotFound`] if `name` is not contained.
-	fn remove(&mut self, name: impl Into<ConstString>) -> Result<PortVariant, Error>;
+	/// - [`Error::WrongDataType`] if the port has not the expected type `T`.
+	fn remove<T: AnyPortValue>(&mut self, name: impl Into<ConstString>) -> Result<Option<T>, Error>;
 }
 
 /// Access methods for port collections.
 /// Each port is identified by its name, so the name has to be unique within a certain port collection.
 pub trait PortCollectionAccessors {
-	/// Connects a port from this collection to a port from another collection.
-	/// Type of connection depends on types of both ports.
-	/// # Errors
-	/// - [`Error::NotFound`], if one of the ports is not in the given port list.
-	/// - [`Error::WrongDataType`], if a port has not the expected type of T.
-	/// - [`Error::WrongPortType`], if a port is not the expected port type.
-	fn connect_to(&mut self, name: &str, other_collection: &impl PortCollection, other_name: &str) -> Result<(), Error>;
-
 	/// Returns true if the name is in the port collection.
 	fn contains_name(&self, name: &str) -> bool;
 
@@ -98,13 +87,6 @@ pub trait PortCollectionAccessors {
 	/// - [`Error::WrongPortType`], if port is not the expected port type.
 	fn try_read<T: AnyPortValue>(&self, name: &str) -> Result<PortValueReadGuard<T>, Error>;
 
-	/// Sets a new value to the T and returns the old T.
-	/// # Errors
-	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongDataType`], if port has not the expected type of T.
-	/// - [`Error::WrongPortType`], if port is not the expected port type.
-	fn replace<T: AnyPortValue>(&mut self, name: &str, value: T) -> Result<Option<T>, Error>;
-
 	/// Returns the change sequence number,
 	/// a number which
 	/// - starts at `0`,
@@ -113,50 +95,10 @@ pub trait PortCollectionAccessors {
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
 	fn sequence_number(&self, name: &str) -> Result<u32, Error>;
-
-	/// Sets a new value to the T.
-	/// # Errors
-	/// - [`Error::WrongDataType`], if port has not the expected type of T.
-	/// - [`Error::WrongPortType`], if port is not the expected port type.
-	fn set<T: AnyPortValue>(&mut self, name: &str, value: T) -> Result<(), Error>;
-
-	/// Returns the T, removing it from the port.
-	/// # Errors
-	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongDataType`], if port has not the expected type of T.
-	/// - [`Error::WrongPortType`], if port is not the expected port type.
-	fn take<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>, Error>;
-
-	/// Returns a mutable guard to the ports value T.
-	/// # Errors
-	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongDataType`], if port has not the expected type of T.
-	/// - [`Error::WrongPortType`], if port is not the expected port type.
-	fn write<T: AnyPortValue>(&mut self, name: &str) -> Result<PortValueWriteGuard<T>, Error>;
-
-	/// Returns a mutable guard to the ports value T.
-	/// # Errors
-	/// - [`Error::IsLocked`], if port is locked.
-	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongDataType`], if port has not the expected type of T.
-	/// - [`Error::WrongPortType`], if port is not the expected port type.
-	fn try_write<T: AnyPortValue>(&mut self, name: &str) -> Result<PortValueWriteGuard<T>, Error>;
 }
 
 /// Blanket implementation for [`PortCollection`]s.
 impl<S: PortCollection> PortCollectionAccessors for S {
-	fn connect_to(&mut self, name: &str, other_collection: &impl PortCollection, other_name: &str) -> Result<(), Error> {
-		if let Some(port) = self.find_mut(name) {
-			if let Some(other) = other_collection.find(other_name) {
-				port.connect_to(other)
-			} else {
-				Err(Error::NotFound { name: other_name.into() })
-			}
-		} else {
-			Err(Error::NotFound { name: name.into() })
-		}
-	}
-
 	fn contains_name(&self, name: &str) -> bool {
 		self.find(name).is_some()
 	}
@@ -196,17 +138,77 @@ impl<S: PortCollection> PortCollectionAccessors for S {
 		}
 	}
 
-	fn replace<T: AnyPortValue>(&mut self, name: &str, value: T) -> Result<Option<T>, Error> {
+	fn sequence_number(&self, name: &str) -> Result<u32, Error> {
+		if let Some(port) = self.find(name) {
+			Ok(port.sequence_number())
+		} else {
+			Err(Error::NotFound { name: name.into() })
+		}
+	}
+}
+
+pub trait PortCollectionAccessorsMut {
+	/// Connects a port from this collection to a port from another collection.
+	/// Type of connection depends on types of both ports.
+	/// # Errors
+	/// - [`Error::NotFound`], if one of the ports is not in the given port list.
+	/// - [`Error::WrongDataType`], if a port has not the expected type of T.
+	/// - [`Error::WrongPortType`], if a port is not the expected port type.
+	fn connect_to(&mut self, name: &str, other_collection: &impl PortCollection, other_name: &str) -> Result<(), Error>;
+
+	/// Sets a new value to the T and returns the old T.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongDataType`], if port has not the expected type of T.
+	/// - [`Error::WrongPortType`], if port is not the expected port type.
+	fn replace<T: AnyPortValue>(&mut self, name: &str, value: T) -> Result<Option<T>, Error>;
+
+	/// Sets a new value to the T.
+	/// # Errors
+	/// - [`Error::WrongDataType`], if port has not the expected type of T.
+	/// - [`Error::WrongPortType`], if port is not the expected port type.
+	fn set<T: AnyPortValue>(&mut self, name: &str, value: T) -> Result<(), Error>;
+
+	/// Returns the T, removing it from the port.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongDataType`], if port has not the expected type of T.
+	/// - [`Error::WrongPortType`], if port is not the expected port type.
+	fn take<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>, Error>;
+
+	/// Returns a mutable guard to the ports value T.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongDataType`], if port has not the expected type of T.
+	/// - [`Error::WrongPortType`], if port is not the expected port type.
+	fn write<T: AnyPortValue>(&mut self, name: &str) -> Result<PortValueWriteGuard<T>, Error>;
+
+	/// Returns a mutable guard to the ports value T.
+	/// # Errors
+	/// - [`Error::IsLocked`], if port is locked.
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::WrongDataType`], if port has not the expected type of T.
+	/// - [`Error::WrongPortType`], if port is not the expected port type.
+	fn try_write<T: AnyPortValue>(&mut self, name: &str) -> Result<PortValueWriteGuard<T>, Error>;
+}
+
+/// Blanket implementation for [`PortCollection`]s.
+impl<S: PortCollection> PortCollectionAccessorsMut for S {
+	fn connect_to(&mut self, name: &str, other_collection: &impl PortCollection, other_name: &str) -> Result<(), Error> {
 		if let Some(port) = self.find_mut(name) {
-			port.replace(value)
+			if let Some(other) = other_collection.find(other_name) {
+				port.connect_to(other)
+			} else {
+				Err(Error::NotFound { name: other_name.into() })
+			}
 		} else {
 			Err(Error::NotFound { name: name.into() })
 		}
 	}
 
-	fn sequence_number(&self, name: &str) -> Result<u32, Error> {
-		if let Some(port) = self.find(name) {
-			Ok(port.sequence_number())
+	fn replace<T: AnyPortValue>(&mut self, name: &str, value: T) -> Result<Option<T>, Error> {
+		if let Some(port) = self.find_mut(name) {
+			port.replace(value)
 		} else {
 			Err(Error::NotFound { name: name.into() })
 		}

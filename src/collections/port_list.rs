@@ -6,9 +6,9 @@ use core::ops::{Deref, DerefMut};
 use alloc::vec::Vec;
 
 use crate::{
-	ConstString, DynamicPortCollection,
+	ConstString,
 	any_port_value::AnyPortValue,
-	collections::{PortCollection, PortCollectionAccessors},
+	collections::{PortCollection, PortCollectionAccessors, PortCollectionMut},
 	error::Error,
 	port_variant::PortVariant,
 };
@@ -54,16 +54,21 @@ impl PortCollection for PortList {
 	}
 }
 
-impl DynamicPortCollection for PortList {
-	fn delete<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>, Error> {
-		match self.contains::<T>(name) {
+impl PortCollectionMut for PortList {
+	fn remove<T: AnyPortValue>(&mut self, name: impl Into<ConstString>) -> Result<Option<T>, Error> {
+		let name = name.into();
+		match self.contains::<T>(&name) {
 			Ok(found) => {
 				if found {
-					let value = self.take::<T>(name);
-					self.remove(name)?; // this should not fail due to contains check above
-					value
+					// remove should not fail duetto `contains` test above
+					let index = self
+						.0
+						.iter()
+						.position(|r| r.0 == name)
+						.expect("unreachable");
+					self.0.remove(index).1.into_inner::<T>()
 				} else {
-					Err(Error::NotFound { name: name.into() })
+					Err(Error::NotFound { name })
 				}
 			}
 			Err(err) => Err(err),
@@ -78,17 +83,6 @@ impl DynamicPortCollection for PortList {
 		} else {
 			self.0.push((name, port));
 			Ok(())
-		}
-	}
-
-	fn remove(&mut self, name: impl Into<ConstString>) -> Result<PortVariant, Error> {
-		let name = name.into();
-		let index = self.0.iter().position(|r| r.0 == name);
-		if let Some(index) = index {
-			let res = self.0.remove(index);
-			Ok(res.1)
-		} else {
-			Err(Error::NotFound { name })
 		}
 	}
 }

@@ -140,6 +140,15 @@ impl PortVariant {
 			Self::InBound(_) => Err(Error::WrongPortType),
 		}
 	}
+
+	/// Returns the T, removing it from the port.
+	pub fn into_inner<T: AnyPortValue>(self) -> Result<Option<T>, Error> {
+		match self {
+			Self::InBound(port) => port.into_inner(),
+			Self::InOutBound(port) => port.into_inner(),
+			Self::OutBound(port) => port.into_inner(),
+		}
+	}
 }
 
 #[cfg(test)]

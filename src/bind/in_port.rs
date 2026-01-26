@@ -16,7 +16,7 @@ use crate::{
 };
 
 /// @TODO:
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BoundInPort(PortValuePtr);
 
 impl BoundInPort {
@@ -56,6 +56,18 @@ impl BoundInPort {
 
 	pub(crate) fn value(&self) -> PortValuePtr {
 		self.0.clone()
+	}
+
+	pub(crate) fn into_inner<T: AnyPortValue>(self) -> Result<Option<T>, Error> {
+		let any_value = &mut *self.0.write();
+		let p = &mut any_value.0;
+		let p_mut = p.as_mut();
+		if let Some(t_ref) = p_mut.as_mut_any().downcast_mut::<PortValue<T>>() {
+			any_value.1.increment();
+			Ok(t_ref.take())
+		} else {
+			Err(Error::WrongDataType)
+		}
 	}
 }
 
@@ -100,12 +112,6 @@ impl<T: AnyPortValue> BindIn<T> for BoundInPort {
 	}
 }
 
-impl Clone for BoundInPort {
-	fn clone(&self) -> Self {
-		BoundInPort(self.0.clone())
-	}
-}
-
 #[cfg(test)]
 mod tests {
 	use super::*;
@@ -117,5 +123,11 @@ mod tests {
 	const fn normal_types() {
 		is_normal::<&BoundInPort>();
 		is_normal::<BoundInPort>();
+	}
+
+	#[test]
+	fn into_inner() {
+		let port = BoundInPort::new::<i32>();
+		assert_eq!(port.into_inner::<f64>(), Err(Error::WrongDataType));
 	}
 }

@@ -11,10 +11,11 @@ use crate::{
 };
 
 /// Type definition for a pointer to a [`PortValue`]
-pub type PortValuePtr = Arc<RwLock<(Box<dyn AnyPortValue>, SequenceNumber)>>;
+pub(crate) type PortValuePtr = Arc<RwLock<(Box<dyn AnyPortValue>, SequenceNumber)>>;
 
 /// Internal representation of a ports value.
 /// The `PortValue` is shared between the bound ports.
+#[derive(Default)]
 #[repr(transparent)]
 pub(crate) struct PortValue<T>(Option<T>);
 
@@ -49,12 +50,6 @@ impl<T: Clone> PortValue<T> {
 impl<T: core::fmt::Debug> core::fmt::Debug for PortValue<T> {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		f.debug_tuple("PortValue").field(&self.0).finish()
-	}
-}
-
-impl<T: Default> Default for PortValue<T> {
-	fn default() -> Self {
-		Self(Some(T::default()))
 	}
 }
 

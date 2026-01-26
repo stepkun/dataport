@@ -106,6 +106,7 @@ fn macro_usage() {
 		create_outbound_entry!("out", Test)
 	);
 
+	// This does not work due to parameter ambiguity
 	//let val1 = Test::new();
 	//let val2 = Test::new();
 	//let val3 = Test::new();

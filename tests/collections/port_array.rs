@@ -6,7 +6,13 @@
 
 use core::f64::consts::PI;
 
-use dataport::{BoundInOutPort, BoundInPort, BoundOutPort, PortArray, PortCollection, PortCollectionAccessors, PortVariant};
+use std::fmt::{Debug, Write};
+
+use dataport::{
+	BoundInOutPort, BoundInPort, BoundOutPort, Error, PortArray, PortCollection, PortCollectionAccessors,
+	PortCollectionAccessorsMut, PortVariant, create_inbound_entry, create_inoutbound_entry, create_outbound_entry,
+	create_port_array,
+};
 
 macro_rules! test_creation {
 	($tp:ty, $value: expr) => {
@@ -40,20 +46,45 @@ macro_rules! test_creation {
 		]);
 
 		assert!(array.find("inbound").is_none());
+		assert_eq!(
+			array.sequence_number("inbound"),
+			Err(Error::NotFound { name: "inbound".into() })
+		);
 		assert!(array.find("outbound").is_none());
+		assert_eq!(
+			array.sequence_number("outbound"),
+			Err(Error::NotFound {
+				name: "outbound".into()
+			})
+		);
 		assert!(array.find_mut("inoutbound").is_none());
+		assert_eq!(
+			array.sequence_number("inoutbound"),
+			Err(Error::NotFound {
+				name: "inoutbound".into()
+			})
+		);
 
 		assert!(array.find("inbound0").is_some());
+		assert_eq!(array.sequence_number("inbound0"), Ok(0));
 		assert!(array.find("inbound1").is_some());
+		assert_eq!(array.sequence_number("inbound1"), Ok(1));
 		assert!(array.find("inbound2").is_some());
+		assert_eq!(array.sequence_number("inbound2"), Ok(1));
 
 		assert!(array.find("outbound0").is_some());
+		assert_eq!(array.sequence_number("outbound0"), Ok(0));
 		assert!(array.find("outbound1").is_some());
+		assert_eq!(array.sequence_number("outbound1"), Ok(1));
 		assert!(array.find("outbound2").is_some());
+		assert_eq!(array.sequence_number("outbound1"), Ok(1));
 
 		assert!(array.find_mut("inoutbound0").is_some());
+		assert_eq!(array.sequence_number("inoutbound0"), Ok(0));
 		assert!(array.find_mut("inoutbound1").is_some());
+		assert_eq!(array.sequence_number("inoutbound1"), Ok(1));
 		assert!(array.find_mut("inoutbound2").is_some());
+		assert_eq!(array.sequence_number("inoutbound2"), Ok(1));
 	};
 }
 
@@ -257,10 +288,14 @@ macro_rules! test_connections {
 			("outbound".into(), PortVariant::create_outbound($value1)),
 			("inbound".into(), PortVariant::InBound(BoundInPort::new::<$tp>())),
 		]);
-		let mut array2 = PortArray::from([(
-			"inoutbound".into(),
-			PortVariant::InOutBound(BoundInOutPort::new::<$tp>()),
-		)]);
+		let mut array2 = PortArray::from([
+			(
+				"inoutbound".into(),
+				PortVariant::InOutBound(BoundInOutPort::new::<$tp>()),
+			),
+			("outbound".into(), PortVariant::create_outbound($value1)),
+			("inbound".into(), PortVariant::InBound(BoundInPort::new::<$tp>())),
+		]);
 		let mut invalid = PortArray::from([("invalid".into(), PortVariant::create_inoutbound(NoType))]);
 
 		assert!(
@@ -329,6 +364,19 @@ macro_rules! test_connections {
 
 		assert!(array.set("outbound", $value2).is_ok());
 		assert_eq!(array.get("inbound").unwrap(), Some($value2));
+
+		// @TODO: is that really ok?
+		assert!(
+			array
+				.connect_to("inbound", &array2, "inbound")
+				.is_ok()
+		);
+		// @TODO: is that really ok?
+		assert!(
+			array
+				.connect_to("outbound", &array2, "outbound")
+				.is_ok()
+		);
 	};
 }
 
@@ -359,4 +407,106 @@ fn array_connection() {
 		vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]],
 		vec![vec![6.0, 5.0, 4.0], vec![3.0, 2.0, 1.0]]
 	);
+}
+
+macro_rules! test_deref_debug {
+	($tp:ty, $value: expr) => {
+		let array = create_port_array!(create_inbound_entry!("test", $tp, $value));
+		assert_eq!(array.len(), 1);
+		let mut expected = String::new();
+		assert!(
+			write!(
+				expected,
+				"PortArray([(\"test\", InBound(BoundInPort(RwLock {{ data: (PortValue(Some({:?})), SequenceNumber(1)) }})))])",
+				$value
+			)
+			.is_ok()
+		);
+
+		let mut res = String::new();
+		assert!(write!(res, "{:?}", array).is_ok());
+		assert_eq!(res, expected,);
+	};
+}
+
+#[test]
+fn array_deref_debug() {
+	test_deref_debug!(bool, true);
+	test_deref_debug!(i32, 42);
+	test_deref_debug!(f64, PI);
+	test_deref_debug!(&str, "str");
+	test_deref_debug!(String, String::from("string"));
+	test_deref_debug!(Vec<i32>, vec![1, 2, 3]);
+	test_deref_debug!(Vec<&str>, vec!["1", "2", "3"]);
+	test_deref_debug!(
+		Vec<String>,
+		vec![
+			String::from("1"),
+			String::from("2"),
+			String::from("3")
+		]
+	);
+	test_deref_debug!(Vec<Vec<f64>>, vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]]);
+}
+
+macro_rules! test_port_collection {
+	($tp:ty, $value: expr, $tp2:ty, $value2: expr) => {
+		let mut array = create_port_array!(
+			create_inbound_entry!("in", $tp, $value),
+			create_inoutbound_entry!("inout", $tp, $value),
+			create_outbound_entry!("out", $tp, $value),
+			create_inoutbound_entry!("empty", $tp),
+		);
+
+		assert_eq!(
+			array.get::<$tp2>("not_there"),
+			Err(Error::NotFound {
+				name: "not_there".into()
+			})
+		);
+		assert_eq!(array.get::<$tp2>("in"), Err(Error::WrongDataType));
+		assert!(array.read::<$tp2>("in").is_err());
+		assert!(array.try_read::<$tp2>("in").is_err());
+		assert_eq!(array.get::<$tp2>("inout"), Err(Error::WrongDataType));
+		assert!(array.read::<$tp2>("inout").is_err());
+		assert!(array.try_read::<$tp2>("inout").is_err());
+		assert_eq!(array.replace::<$tp2>("inout", $value2), Err(Error::WrongDataType));
+		assert_eq!(array.take::<$tp2>("inout"), Err(Error::WrongDataType));
+		assert_eq!(array.set::<$tp2>("inout", $value2), Err(Error::WrongDataType));
+		assert!(array.write::<$tp2>("inout").is_err());
+		assert!(array.try_write::<$tp2>("inout").is_err());
+		assert_eq!(array.set::<$tp2>("out", $value2), Err(Error::WrongDataType));
+		assert!(array.write::<$tp2>("out").is_err());
+		assert!(array.try_write::<$tp2>("out").is_err());
+
+		let inout_guard = array.write::<$tp>("inout").unwrap();
+		assert!(array.try_read::<$tp>("inout").is_err());
+		assert!(array.try_write::<$tp>("inout").is_err());
+		assert_eq!(*inout_guard, $value);
+
+		assert!(array.write::<$tp>("empty").is_err());
+		assert!(array.try_write::<$tp>("empty").is_err());
+	};
+}
+
+#[test]
+fn array_port_collection_mut() {
+	test_port_collection!(bool, true, i32, 42);
+	test_port_collection!(i32, 42, f64, PI);
+	test_port_collection!(f64, PI, &str, "str");
+	test_port_collection!(&str, "str", String, String::from("string"));
+	test_port_collection!(String, String::from("string"), Vec<i32>, vec![1, 2, 3]);
+	test_port_collection!(Vec<i32>, vec![1, 2, 3], Vec<&str>, vec!["1", "2", "3"]);
+	test_port_collection!(Vec<&str>, vec!["1", "2", "3"], bool, true);
+	test_port_collection!(
+		Vec<String>,
+		vec![
+			String::from("1"),
+			String::from("2"),
+			String::from("3")
+		],
+		bool,
+		true
+	);
+	test_port_collection!(Vec<Vec<f64>>, vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]], bool, true);
 }

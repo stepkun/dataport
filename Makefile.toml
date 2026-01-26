@@ -11,11 +11,14 @@ args = [
     "llvm-cov",
     "test",
     "--html",
+    "--output-dir",
+    "mcdc",
     "--all-features",
     "--color=always",
     "--doctests",     # currently unstable
     "--branch",       # currently unstable, superceeded by --mcdc, not usable together
     #"--mcdc", # currently erronous
-    "--show-missing-lines", # to show which lines are not tested
-    #"--show-instantiations", # to show how functions are instantiated
+    "--show-missing-lines",  # to show which lines are not tested
+    "--show-instantiations", # to show how functions are instantiated
+    #"--open",                # open result in default Browser
 ]

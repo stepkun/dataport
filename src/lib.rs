@@ -26,10 +26,10 @@ pub use bind::{
 	in_out_port::BoundInOutPort,
 	in_port::BoundInPort,
 	out_port::BoundOutPort,
-	port_value::{PortValuePtr, PortValueReadGuard, PortValueWriteGuard},
+	port_value::{PortValueReadGuard, PortValueWriteGuard},
 };
 pub use collections::{
-	DynamicPortCollection, PortCollection, PortCollectionAccessors, PortProvider, PortProviderMut,
+	PortCollection, PortCollectionAccessors, PortCollectionAccessorsMut, PortCollectionMut, PortProvider, PortProviderMut,
 	port_array::EMPTY_PORT_ARRAY, port_array::PortArray, port_list::PortList, port_map::PortMap,
 };
 //pub use flow::{in_out_port::FlowingInOutPort, in_port::FlowingInPort, out_port::FlowingOutPort};

@@ -6,8 +6,9 @@
 #![allow(unused)]
 
 use dataport::{
-	BoundInOutPort, BoundInPort, BoundOutPort, DynamicPortCollection, Error, PortCollectionAccessors, PortMap, PortProvider,
-	PortProviderMut, PortVariant, create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_map,
+	BoundInOutPort, BoundInPort, BoundOutPort, Error, PortCollection, PortCollectionAccessors, PortCollectionAccessorsMut,
+	PortCollectionMut, PortMap, PortProvider, PortProviderMut, PortVariant, create_inbound_entry, create_inoutbound_entry,
+	create_outbound_entry, create_port_map,
 };
 
 struct WithPortMap<const C: usize> {
@@ -34,6 +35,14 @@ impl<const C: usize> WithPortMap<C> {
 	pub fn provided_ports_mut(&mut self) -> &mut impl PortProviderMut {
 		&mut self.portlist
 	}
+
+	pub fn port_provider(&self) -> &impl PortCollection {
+		&self.portlist
+	}
+
+	pub fn port_provider_mut(&mut self) -> &mut impl PortCollectionMut {
+		&mut self.portlist
+	}
 }
 
 #[test]
@@ -48,15 +57,14 @@ fn map_const_manual() {
 		]),
 	};
 
-	assert!(st.provided_ports().get::<i32>("test").is_err());
-	assert!(st.provided_ports().get::<i32>("in").is_ok());
-	assert!(st.provided_ports().get::<i32>("inout").is_ok());
-	assert!(st.provided_ports().get::<i32>("out").is_err());
-	assert!(
-		st.provided_ports_mut()
-			.set::<i32>("out", 42)
-			.is_ok()
+	assert_eq!(
+		st.provided_ports().get::<i32>("test"),
+		Err(Error::NotFound { name: "test".into() })
 	);
+	assert_eq!(st.provided_ports().get::<i32>("in"), Ok(None));
+	assert_eq!(st.provided_ports().get::<i32>("inout"), Ok(None));
+	assert_eq!(st.provided_ports().get::<i32>("out"), Err(Error::WrongPortType));
+	assert_eq!(st.provided_ports_mut().set::<i32>("out", 42), Ok(()));
 }
 
 #[test]
@@ -83,18 +91,16 @@ fn map_const_macro() {
 		],
 	};
 
-	assert!(st.provided_ports().get::<i32>("test").is_err());
-	assert!(st.provided_ports().get::<i32>("in").is_ok());
-	assert!(st.provided_ports().get::<i32>("inout").is_ok());
-	assert!(st.provided_ports().get::<i32>("out").is_err());
-	assert!(
-		st.provided_ports_mut()
-			.set::<i32>("out", 41)
-			.is_ok()
+	assert_eq!(
+		st.provided_ports().get::<i32>("test"),
+		Err(Error::NotFound { name: "test".into() })
 	);
-	assert!(st.provided_ports_mut().set("out", 42).is_ok());
+	assert_eq!(st.provided_ports().get::<i32>("in"), Ok(None));
+	assert_eq!(st.provided_ports().get::<i32>("inout"), Ok(None));
+	assert_eq!(st.provided_ports().get::<i32>("out"), Err(Error::WrongPortType));
+	assert_eq!(st.provided_ports_mut().set::<i32>("out", 42), Ok(()));
 
-	st.provided_ports_mut().delete::<i32>("out");
+	//TODO:!assert_eq!(st.provided_ports_mut().remove::<i32>("out"), Ok(Some(42)));
 
 	assert!(
 		st.provided_ports_mut()
@@ -102,13 +108,14 @@ fn map_const_macro() {
 			.is_ok()
 	);
 	assert!(st.provided_ports_mut().set("inout", 42).is_ok());
-	st.provided_ports_mut().delete::<i32>("inout");
+	st.port_provider_mut().remove::<i32>("inout");
 
 	assert_eq!(st.provided_ports_mut().set::<i32>("in", 41), Err(Error::WrongPortType));
 	assert_eq!(st.provided_ports_mut().set("in", 42), Err(Error::WrongPortType));
-	assert_eq!(st.provided_ports_mut().delete::<i32>("in"), Err(Error::WrongPortType));
+	assert_eq!(st.port_provider_mut().remove::<f64>("in"), Err(Error::WrongDataType));
+	assert_eq!(st.port_provider_mut().remove::<i32>("in"), Ok(None));
 	assert_eq!(
-		st.provided_ports_mut().delete::<i32>("test"),
+		st.port_provider_mut().remove::<i32>("test"),
 		Err(Error::NotFound { name: "test".into() })
 	);
 }

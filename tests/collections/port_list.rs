@@ -7,9 +7,12 @@
 use core::f64::consts::PI;
 
 use dataport::{
-	BoundInOutPort, BoundInPort, BoundOutPort, DynamicPortCollection, PortCollection, PortCollectionAccessors, PortList,
-	PortVariant,
+	BoundInOutPort, BoundInPort, BoundOutPort, Error, PortCollection, PortCollectionAccessors, PortCollectionAccessorsMut,
+	PortCollectionMut, PortList, PortVariant, create_inbound_entry, create_inoutbound_entry, create_outbound_entry,
+	create_port_list,
 };
+
+use std::sync::Arc;
 
 macro_rules! test_creation {
 	($tp:ty, $value: expr) => {{
@@ -281,12 +284,24 @@ macro_rules! test_connections {
 			list.insert("inbound", PortVariant::InBound(BoundInPort::new::<$tp>()))
 				.is_ok()
 		);
+
 		let mut list2 = PortList::default();
 		assert!(
 			list2
 				.insert("inoutbound", PortVariant::InOutBound(BoundInOutPort::new::<$tp>()))
 				.is_ok()
 		);
+		assert!(
+			list2
+				.insert("outbound", PortVariant::create_outbound($value1))
+				.is_ok()
+		);
+		assert!(
+			list2
+				.insert("inbound", PortVariant::InBound(BoundInPort::new::<$tp>()))
+				.is_ok()
+		);
+
 		let mut invalid = PortList::default();
 		assert!(
 			invalid
@@ -352,9 +367,22 @@ macro_rules! test_connections {
 		);
 
 		assert_eq!(list.get("inbound").unwrap(), Some($value1));
+		assert_eq!(list.sequence_number("inbound"), Ok(1));
 
 		assert!(list.set("outbound", $value2).is_ok());
 		assert_eq!(list.get("inbound").unwrap(), Some($value2));
+		assert_eq!(list.sequence_number("outbound"), Ok(2));
+
+		// @TODO: is that really ok?
+		assert!(
+			list.connect_to("inbound", &list2, "inbound")
+				.is_ok()
+		);
+		// @TODO: is that really ok?
+		assert!(
+			list.connect_to("outbound", &list2, "outbound")
+				.is_ok()
+		);
 	};
 }
 
@@ -385,4 +413,117 @@ fn list_connection() {
 		vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]],
 		vec![vec![6.0, 5.0, 4.0], vec![3.0, 2.0, 1.0]]
 	);
+}
+
+macro_rules! test_deref {
+	($tp:ty, $value: expr) => {
+		let mut list = PortList::default();
+		let mut list2 = create_port_list!(create_inbound_entry!("test", $tp, $value));
+		list.append(&mut list2);
+	};
+}
+
+#[test]
+fn list_deref() {
+	test_deref!(bool, true);
+	test_deref!(i32, 42);
+	test_deref!(f64, PI);
+	test_deref!(&str, "str");
+	test_deref!(String, String::from("string"));
+	test_deref!(Vec<i32>, vec![1, 2, 3]);
+	test_deref!(Vec<&str>, vec!["1", "2", "3"]);
+	test_deref!(
+		Vec<String>,
+		vec![
+			String::from("1"),
+			String::from("2"),
+			String::from("3")
+		]
+	);
+	test_deref!(Vec<Vec<f64>>, vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]]);
+}
+
+macro_rules! test_port_collection_mut {
+	($tp:ty, $value: expr, $tp2:ty, $value2: expr) => {
+		let mut list = create_port_list!(
+			create_inbound_entry!("in", $tp, $value),
+			create_inoutbound_entry!("inout", $tp, $value),
+			create_outbound_entry!("out", $tp, $value),
+			create_inoutbound_entry!("empty", $tp),
+			create_inbound_entry!("delete1", $tp),
+			create_inoutbound_entry!("delete2", $tp, $value),
+			create_outbound_entry!("delete3", $tp, $value),
+		);
+
+		let entry: (Arc<str>, PortVariant) = create_inbound_entry!("delete1", $tp2, $value2);
+		assert_eq!(
+			list.insert(entry.0, entry.1),
+			Err(Error::AlreadyInCollection { name: "delete1".into() })
+		);
+
+		assert_eq!(
+			list.remove::<$tp>("not_there"),
+			Err(Error::NotFound {
+				name: "not_there".into()
+			})
+		);
+
+		assert_eq!(
+			list.get::<$tp2>("not_there"),
+			Err(Error::NotFound {
+				name: "not_there".into()
+			})
+		);
+		assert_eq!(list.get::<$tp2>("in"), Err(Error::WrongDataType));
+		assert!(list.read::<$tp2>("in").is_err());
+		assert!(list.try_read::<$tp2>("in").is_err());
+		assert_eq!(list.get::<$tp2>("inout"), Err(Error::WrongDataType));
+		assert!(list.read::<$tp2>("inout").is_err());
+		assert!(list.try_read::<$tp2>("inout").is_err());
+		assert_eq!(list.replace::<$tp2>("inout", $value2), Err(Error::WrongDataType));
+		assert_eq!(list.take::<$tp2>("inout"), Err(Error::WrongDataType));
+		assert_eq!(list.set::<$tp2>("inout", $value2), Err(Error::WrongDataType));
+		assert!(list.write::<$tp2>("inout").is_err());
+		assert!(list.try_write::<$tp2>("inout").is_err());
+		assert_eq!(list.set::<$tp2>("out", $value2), Err(Error::WrongDataType));
+		assert!(list.write::<$tp2>("out").is_err());
+		assert!(list.try_write::<$tp2>("out").is_err());
+
+		assert_eq!(list.remove::<$tp2>("delete1"), Err(Error::WrongDataType));
+		assert_eq!(list.remove::<$tp>("delete1"), Ok(None));
+		assert_eq!(list.remove::<$tp2>("delete2"), Err(Error::WrongDataType));
+		assert_eq!(list.remove::<$tp>("delete2"), Ok(Some($value)));
+		assert_eq!(list.remove::<$tp2>("delete3"), Err(Error::WrongDataType));
+		assert_eq!(list.remove::<$tp>("delete3"), Ok(Some($value)));
+
+		let inout_guard = list.write::<$tp>("inout").unwrap();
+		assert!(list.try_read::<$tp>("inout").is_err());
+		assert!(list.try_write::<$tp>("inout").is_err());
+		assert_eq!(*inout_guard, $value);
+
+		assert!(list.write::<$tp>("empty").is_err());
+		assert!(list.try_write::<$tp>("empty").is_err());
+	};
+}
+
+#[test]
+fn list_port_collection_mut() {
+	test_port_collection_mut!(bool, true, i32, 42);
+	test_port_collection_mut!(i32, 42, f64, PI);
+	test_port_collection_mut!(f64, PI, &str, "str");
+	test_port_collection_mut!(&str, "str", String, String::from("string"));
+	test_port_collection_mut!(String, String::from("string"), Vec<i32>, vec![1, 2, 3]);
+	test_port_collection_mut!(Vec<i32>, vec![1, 2, 3], Vec<&str>, vec!["1", "2", "3"]);
+	test_port_collection_mut!(Vec<&str>, vec!["1", "2", "3"], bool, true);
+	test_port_collection_mut!(
+		Vec<String>,
+		vec![
+			String::from("1"),
+			String::from("2"),
+			String::from("3")
+		],
+		bool,
+		true
+	);
+	test_port_collection_mut!(Vec<Vec<f64>>, vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]], bool, true);
 }

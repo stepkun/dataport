@@ -8,7 +8,7 @@ use alloc::collections::btree_map::BTreeMap;
 use crate::{
 	ConstString,
 	any_port_value::AnyPortValue,
-	collections::{DynamicPortCollection, PortCollection, PortCollectionAccessors},
+	collections::{PortCollection, PortCollectionAccessors, PortCollectionMut},
 	error::Error,
 	port_variant::PortVariant,
 };
@@ -48,22 +48,7 @@ impl PortCollection for PortMap {
 	}
 }
 
-impl DynamicPortCollection for PortMap {
-	fn delete<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>, Error> {
-		match self.contains::<T>(name) {
-			Ok(found) => {
-				if found {
-					let value = self.take::<T>(name);
-					self.remove(name)?; // this should not fail due to contains check above
-					value
-				} else {
-					Err(Error::NotFound { name: name.into() })
-				}
-			}
-			Err(err) => Err(err),
-		}
-	}
-
+impl PortCollectionMut for PortMap {
 	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<(), Error> {
 		let name = name.into();
 		if self.find(&name).is_some() {
@@ -74,12 +59,20 @@ impl DynamicPortCollection for PortMap {
 		}
 	}
 
-	fn remove(&mut self, name: impl Into<ConstString>) -> Result<PortVariant, Error> {
+	fn remove<T: AnyPortValue>(&mut self, name: impl Into<ConstString>) -> Result<Option<T>, Error> {
 		let name = name.into();
-		if let Some(port) = self.0.remove(&name) {
-			Ok(port)
-		} else {
-			Err(Error::NotFound { name })
+		match self.contains::<T>(&name) {
+			Ok(found) => {
+				if found {
+					self.0
+						.remove(&name)
+						.expect("unreachable")
+						.into_inner::<T>()
+				} else {
+					Err(Error::NotFound { name })
+				}
+			}
+			Err(err) => Err(err),
 		}
 	}
 }

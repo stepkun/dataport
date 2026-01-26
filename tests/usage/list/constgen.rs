@@ -6,9 +6,9 @@
 #![allow(unused)]
 
 use dataport::{
-	BoundInOutPort, BoundInPort, BoundOutPort, DynamicPortCollection, Error, PortCollectionAccessors, PortList, PortMap,
-	PortProvider, PortProviderMut, PortVariant, create_inbound_entry, create_inoutbound_entry, create_outbound_entry,
-	create_port_list,
+	BoundInOutPort, BoundInPort, BoundOutPort, Error, PortCollection, PortCollectionAccessors, PortCollectionAccessorsMut,
+	PortCollectionMut, PortList, PortMap, PortProvider, PortProviderMut, PortVariant, create_inbound_entry,
+	create_inoutbound_entry, create_outbound_entry, create_port_list,
 };
 
 struct WithPortList<const C: usize> {
@@ -33,6 +33,14 @@ impl<const C: usize> WithPortList<C> {
 	}
 
 	pub fn provided_ports_mut(&mut self) -> &mut impl PortProviderMut {
+		&mut self.portlist
+	}
+
+	pub fn port_provider(&self) -> &impl PortCollection {
+		&self.portlist
+	}
+
+	pub fn port_provider_mut(&mut self) -> &mut impl PortCollectionMut {
 		&mut self.portlist
 	}
 }
@@ -104,9 +112,10 @@ fn list_const_macro() {
 
 	assert_eq!(st.provided_ports_mut().set::<i32>("in", 41), Err(Error::WrongPortType));
 	assert_eq!(st.provided_ports_mut().set("in", 42), Err(Error::WrongPortType));
-	assert_eq!(st.provided_ports_mut().delete::<i32>("in"), Err(Error::WrongPortType));
+	assert_eq!(st.port_provider_mut().remove::<f64>("in"), Err(Error::WrongDataType));
+	assert_eq!(st.port_provider_mut().remove::<i32>("in"), Ok(None));
 	assert_eq!(
-		st.provided_ports_mut().delete::<i32>("test"),
+		st.port_provider_mut().remove::<i32>("test"),
 		Err(Error::NotFound { name: "test".into() })
 	);
 }
