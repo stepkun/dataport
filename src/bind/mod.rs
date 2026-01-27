@@ -33,15 +33,15 @@ pub trait BindIn<T: AnyPortValue>: BindCommons {
 
 	/// Returns an immutable guard to the ports value T.
 	/// # Errors
-	/// - [`Error::NotFound`](crate::error::Error), if port is not in port list.
-	/// - [`Error::WrongDataType`](crate::error::Error), if port is not the expected port type & type of T.
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::DataType`], if port is not the expected port type & type of T.
 	fn read(&self) -> Result<PortValueReadGuard<T>, Error>;
 
 	/// Returns an immutable guard to the ports value T.
 	/// # Errors
-	/// - [`Error::IsLocked`](crate::error::Error), if port is locked.
-	/// - [`Error::NotFound`](crate::error::Error), if port is not in port list.
-	/// - [`Error::WrongDataType`](crate::error::Error), if port is not the expected port type & type of T.
+	/// - [`Error::IsLocked`], if port is locked.
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::DataType`], if port is not the expected port type & type of T.
 	fn try_read(&self) -> Result<PortValueReadGuard<T>, Error>;
 }
 
@@ -61,14 +61,14 @@ pub trait BindOut<T: AnyPortValue>: BindCommons {
 
 	/// Returns a mutable guard to the ports value T.
 	/// # Errors
-	/// - [`Error::NotFound`](crate::error::Error), if port is not in port list.
-	/// - [`Error::WrongDataType`](crate::error::Error), if port is not the expected port type & type of T.
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::DataType`], if port is not the expected port type & type of T.
 	fn write(&mut self) -> Result<PortValueWriteGuard<T>, Error>;
 
 	/// Returns a mutable guard to the ports value T.
 	/// # Errors
-	/// - [`Error::IsLocked`](crate::error::Error), if port is locked.
-	/// - [`Error::NotFound`](crate::error::Error), if port is not in port list.
-	/// - [`Error::WrongDataType`](crate::error::Error), if port is not the expected port type & type of T.
+	/// - [`Error::IsLocked`], if port is locked.
+	/// - [`Error::NotFound`], if port is not in port list.
+	/// - [`Error::DataType`], if port is not the expected port type & type of T.
 	fn try_write(&mut self) -> Result<PortValueWriteGuard<T>, Error>;
 }

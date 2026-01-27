@@ -66,7 +66,7 @@ impl PortVariant {
 
 	/// Returns an immutable guard to the ports value T.
 	/// # Errors
-	/// - [`Error::WrongDataType`](crate::error::Error), if port is not the expected port type & type of T.
+	/// - [`Error::DataType`](crate::error::Error), if port is not the expected port type & type of T.
 	pub fn read<T: AnyPortValue>(&self) -> Result<PortValueReadGuard<T>, Error> {
 		match self {
 			Self::InBound(port) => port.read(),
@@ -78,7 +78,7 @@ impl PortVariant {
 	/// Returns an immutable guard to the ports value T.
 	/// # Errors
 	/// - [`Error::IsLocked`](crate::error::Error), if port is locked.
-	/// - [`Error::WrongDataType`](crate::error::Error), if port is not the expected port type & type of T.
+	/// - [`Error::DataType`](crate::error::Error), if port is not the expected port type & type of T.
 	pub fn try_read<T: AnyPortValue>(&self) -> Result<PortValueReadGuard<T>, Error> {
 		match self {
 			Self::InBound(port) => port.try_read(),

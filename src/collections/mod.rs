@@ -31,10 +31,10 @@ pub trait PortCollectionMut {
 	/// - [`Error::AlreadyInCollection`] if `name` is already contained.
 	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<(), Error>;
 
-	/// Removes the port with `name` from thecollection and returns its value of type `T`.
+	/// Removes the port with `name` from the collection and returns its value of type `T`.
 	/// # Errors
 	/// - [`Error::NotFound`] if `name` is not contained.
-	/// - [`Error::WrongDataType`] if the port has not the expected type `T`.
+	/// - [`Error::DataType`] if the port has not the expected type `T`.
 	fn remove<T: AnyPortValue>(&mut self, name: impl Into<ConstString>) -> Result<Option<T>, Error>;
 }
 
