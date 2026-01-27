@@ -456,45 +456,32 @@ macro_rules! test_port_collection_mut {
 		);
 
 		let entry: (Arc<str>, PortVariant) = create_inbound_entry!("delete1", $tp2, $value2);
-		assert_eq!(
-			list.insert(entry.0, entry.1),
-			Err(Error::AlreadyInCollection { name: "delete1".into() })
-		);
+		assert_eq!(list.insert(entry.0, entry.1), Err(Error::AlreadyInCollection));
 		assert_eq!(list.get::<$tp>("delete1"), Ok(None));
 
-		assert_eq!(
-			list.remove::<$tp>("not_there"),
-			Err(Error::NotFound {
-				name: "not_there".into()
-			})
-		);
+		assert_eq!(list.remove::<$tp>("not_there"), Err(Error::NotFound));
 
-		assert_eq!(
-			list.get::<$tp2>("not_there"),
-			Err(Error::NotFound {
-				name: "not_there".into()
-			})
-		);
-		assert_eq!(list.get::<$tp2>("in"), Err(Error::WrongDataType));
+		assert_eq!(list.get::<$tp2>("not_there"), Err(Error::NotFound));
+		assert_eq!(list.get::<$tp2>("in"), Err(Error::DataType));
 		assert!(list.read::<$tp2>("in").is_err());
 		assert!(list.try_read::<$tp2>("in").is_err());
-		assert_eq!(list.get::<$tp2>("inout"), Err(Error::WrongDataType));
+		assert_eq!(list.get::<$tp2>("inout"), Err(Error::DataType));
 		assert!(list.read::<$tp2>("inout").is_err());
 		assert!(list.try_read::<$tp2>("inout").is_err());
-		assert_eq!(list.replace::<$tp2>("inout", $value2), Err(Error::WrongDataType));
-		assert_eq!(list.take::<$tp2>("inout"), Err(Error::WrongDataType));
-		assert_eq!(list.set::<$tp2>("inout", $value2), Err(Error::WrongDataType));
+		assert_eq!(list.replace::<$tp2>("inout", $value2), Err(Error::DataType));
+		assert_eq!(list.take::<$tp2>("inout"), Err(Error::DataType));
+		assert_eq!(list.set::<$tp2>("inout", $value2), Err(Error::DataType));
 		assert!(list.write::<$tp2>("inout").is_err());
 		assert!(list.try_write::<$tp2>("inout").is_err());
-		assert_eq!(list.set::<$tp2>("out", $value2), Err(Error::WrongDataType));
+		assert_eq!(list.set::<$tp2>("out", $value2), Err(Error::DataType));
 		assert!(list.write::<$tp2>("out").is_err());
 		assert!(list.try_write::<$tp2>("out").is_err());
 
-		assert_eq!(list.remove::<$tp2>("delete1"), Err(Error::WrongDataType));
+		assert_eq!(list.remove::<$tp2>("delete1"), Err(Error::DataType));
 		assert_eq!(list.remove::<$tp>("delete1"), Ok(None));
-		assert_eq!(list.remove::<$tp2>("delete2"), Err(Error::WrongDataType));
+		assert_eq!(list.remove::<$tp2>("delete2"), Err(Error::DataType));
 		assert_eq!(list.remove::<$tp>("delete2"), Ok(Some($value)));
-		assert_eq!(list.remove::<$tp2>("delete3"), Err(Error::WrongDataType));
+		assert_eq!(list.remove::<$tp2>("delete3"), Err(Error::DataType));
 		assert_eq!(list.remove::<$tp>("delete3"), Ok(Some($value)));
 
 		let inout_guard = list.write::<$tp>("inout").unwrap();

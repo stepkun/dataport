@@ -46,24 +46,11 @@ macro_rules! test_creation {
 		]);
 
 		assert!(array.find("inbound").is_none());
-		assert_eq!(
-			array.sequence_number("inbound"),
-			Err(Error::NotFound { name: "inbound".into() })
-		);
+		assert_eq!(array.sequence_number("inbound"), Err(Error::NotFound));
 		assert!(array.find("outbound").is_none());
-		assert_eq!(
-			array.sequence_number("outbound"),
-			Err(Error::NotFound {
-				name: "outbound".into()
-			})
-		);
+		assert_eq!(array.sequence_number("outbound"), Err(Error::NotFound));
 		assert!(array.find_mut("inoutbound").is_none());
-		assert_eq!(
-			array.sequence_number("inoutbound"),
-			Err(Error::NotFound {
-				name: "inoutbound".into()
-			})
-		);
+		assert_eq!(array.sequence_number("inoutbound"), Err(Error::NotFound));
 
 		assert!(array.find("inbound0").is_some());
 		assert_eq!(array.sequence_number("inbound0"), Ok(0));
@@ -458,24 +445,19 @@ macro_rules! test_port_collection {
 			create_inoutbound_entry!("empty", $tp),
 		);
 
-		assert_eq!(
-			array.get::<$tp2>("not_there"),
-			Err(Error::NotFound {
-				name: "not_there".into()
-			})
-		);
-		assert_eq!(array.get::<$tp2>("in"), Err(Error::WrongDataType));
+		assert_eq!(array.get::<$tp2>("not_there"), Err(Error::NotFound));
+		assert_eq!(array.get::<$tp2>("in"), Err(Error::DataType));
 		assert!(array.read::<$tp2>("in").is_err());
 		assert!(array.try_read::<$tp2>("in").is_err());
-		assert_eq!(array.get::<$tp2>("inout"), Err(Error::WrongDataType));
+		assert_eq!(array.get::<$tp2>("inout"), Err(Error::DataType));
 		assert!(array.read::<$tp2>("inout").is_err());
 		assert!(array.try_read::<$tp2>("inout").is_err());
-		assert_eq!(array.replace::<$tp2>("inout", $value2), Err(Error::WrongDataType));
-		assert_eq!(array.take::<$tp2>("inout"), Err(Error::WrongDataType));
-		assert_eq!(array.set::<$tp2>("inout", $value2), Err(Error::WrongDataType));
+		assert_eq!(array.replace::<$tp2>("inout", $value2), Err(Error::DataType));
+		assert_eq!(array.take::<$tp2>("inout"), Err(Error::DataType));
+		assert_eq!(array.set::<$tp2>("inout", $value2), Err(Error::DataType));
 		assert!(array.write::<$tp2>("inout").is_err());
 		assert!(array.try_write::<$tp2>("inout").is_err());
-		assert_eq!(array.set::<$tp2>("out", $value2), Err(Error::WrongDataType));
+		assert_eq!(array.set::<$tp2>("out", $value2), Err(Error::DataType));
 		assert!(array.write::<$tp2>("out").is_err());
 		assert!(array.try_write::<$tp2>("out").is_err());
 

@@ -57,9 +57,8 @@ impl PortCollection for PortList {
 impl PortCollectionMut for PortList {
 	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<(), Error> {
 		let name = name.into();
-		// @TODO: improve performance by doing a better search for name
 		if self.find(&name).is_some() {
-			Err(Error::AlreadyInCollection { name })
+			Err(Error::AlreadyInCollection)
 		} else {
 			self.0.push((name, port));
 			Ok(())
@@ -79,7 +78,7 @@ impl PortCollectionMut for PortList {
 						.expect("unreachable");
 					self.0.remove(index).1.into_inner::<T>()
 				} else {
-					Err(Error::NotFound { name })
+					Err(Error::NotFound)
 				}
 			}
 			Err(err) => Err(err),

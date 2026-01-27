@@ -50,7 +50,7 @@ impl BoundOutPort {
 			self.0 = value;
 			Ok(())
 		} else {
-			Err(Error::WrongDataType)
+			Err(Error::DataType)
 		}
 	}
 
@@ -66,7 +66,7 @@ impl BoundOutPort {
 			any_value.1.increment();
 			Ok(t_ref.take())
 		} else {
-			Err(Error::WrongDataType)
+			Err(Error::DataType)
 		}
 	}
 }
@@ -95,7 +95,7 @@ impl<T: AnyPortValue> BindOut<T> for BoundOutPort {
 			any_value.1.increment();
 			Ok(())
 		} else {
-			Err(Error::WrongDataType)
+			Err(Error::DataType)
 		}
 	}
 
@@ -124,6 +124,6 @@ mod tests {
 	#[test]
 	fn into_inner() {
 		let port = BoundOutPort::new::<i32>();
-		assert_eq!(port.into_inner::<f64>(), Err(Error::WrongDataType));
+		assert_eq!(port.into_inner::<f64>(), Err(Error::DataType));
 	}
 }

@@ -52,7 +52,7 @@ impl PortVariant {
 		match self {
 			Self::InBound(port) => port.get(),
 			Self::InOutBound(port) => port.get(),
-			Self::OutBound(_) => Err(Error::WrongPortType),
+			Self::OutBound(_) => Err(Error::PortType),
 		}
 	}
 
@@ -71,7 +71,7 @@ impl PortVariant {
 		match self {
 			Self::InBound(port) => port.read(),
 			Self::InOutBound(port) => port.read(),
-			Self::OutBound(_) => Err(Error::WrongPortType),
+			Self::OutBound(_) => Err(Error::PortType),
 		}
 	}
 
@@ -83,7 +83,7 @@ impl PortVariant {
 		match self {
 			Self::InBound(port) => port.try_read(),
 			Self::InOutBound(port) => port.try_read(),
-			Self::OutBound(_) => Err(Error::WrongPortType),
+			Self::OutBound(_) => Err(Error::PortType),
 		}
 	}
 
@@ -91,7 +91,7 @@ impl PortVariant {
 	pub fn replace<T: AnyPortValue>(&mut self, value: T) -> Result<Option<T>, Error> {
 		match self {
 			Self::InOutBound(port) => port.replace(value),
-			Self::InBound(_) | Self::OutBound(_) => Err(Error::WrongPortType),
+			Self::InBound(_) | Self::OutBound(_) => Err(Error::PortType),
 		}
 	}
 
@@ -112,7 +112,7 @@ impl PortVariant {
 	pub fn take<T: AnyPortValue>(&mut self) -> Result<Option<T>, Error> {
 		match self {
 			Self::InOutBound(port) => port.take(),
-			Self::InBound(_) | Self::OutBound(_) => Err(Error::WrongPortType),
+			Self::InBound(_) | Self::OutBound(_) => Err(Error::PortType),
 		}
 	}
 
@@ -121,7 +121,7 @@ impl PortVariant {
 		match self {
 			Self::OutBound(port) => port.set(value),
 			Self::InOutBound(port) => port.set(value),
-			Self::InBound(_) => Err(Error::WrongPortType),
+			Self::InBound(_) => Err(Error::PortType),
 		}
 	}
 
@@ -129,7 +129,7 @@ impl PortVariant {
 		match self {
 			Self::OutBound(port) => port.write(),
 			Self::InOutBound(port) => port.write(),
-			Self::InBound(_) => Err(Error::WrongPortType),
+			Self::InBound(_) => Err(Error::PortType),
 		}
 	}
 
@@ -137,7 +137,7 @@ impl PortVariant {
 		match self {
 			Self::OutBound(port) => port.try_write(),
 			Self::InOutBound(port) => port.try_write(),
-			Self::InBound(_) => Err(Error::WrongPortType),
+			Self::InBound(_) => Err(Error::PortType),
 		}
 	}
 

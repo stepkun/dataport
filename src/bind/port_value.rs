@@ -116,7 +116,7 @@ impl<T: 'static> PortValueReadGuard<T> {
 				unsafe {
 					value.force_read_decrement();
 				};
-				return Err(Error::WrongDataType);
+				return Err(Error::DataType);
 			}
 		};
 
@@ -154,7 +154,7 @@ impl<T: 'static> PortValueReadGuard<T> {
 					unsafe {
 						value.force_read_decrement();
 					};
-					return Err(Error::WrongDataType);
+					return Err(Error::DataType);
 				}
 			} else {
 				return Err(Error::IsLocked);
@@ -248,7 +248,7 @@ impl<T: 'static> PortValueWriteGuard<T> {
 				unsafe {
 					value.force_write_unlock();
 				};
-				return Err(Error::WrongDataType);
+				return Err(Error::DataType);
 			}
 		};
 
@@ -292,7 +292,7 @@ impl<T: 'static> PortValueWriteGuard<T> {
 					unsafe {
 						value.force_write_unlock();
 					};
-					return Err(Error::WrongDataType);
+					return Err(Error::DataType);
 				}
 			} else {
 				return Err(Error::IsLocked);

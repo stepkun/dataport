@@ -453,45 +453,32 @@ macro_rules! test_port_collection_mut {
 		);
 
 		let entry: (Arc<str>, PortVariant) = create_inbound_entry!("delete1", $tp2, $value2);
-		assert_eq!(
-			map.insert(entry.0, entry.1),
-			Err(Error::AlreadyInCollection { name: "delete1".into() })
-		);
+		assert_eq!(map.insert(entry.0, entry.1), Err(Error::AlreadyInCollection));
 		assert_eq!(map.get::<$tp>("delete1"), Ok(None));
 
-		assert_eq!(
-			map.remove::<$tp>("not_there"),
-			Err(Error::NotFound {
-				name: "not_there".into()
-			})
-		);
+		assert_eq!(map.remove::<$tp>("not_there"), Err(Error::NotFound));
 
-		assert_eq!(
-			map.get::<$tp2>("not_there"),
-			Err(Error::NotFound {
-				name: "not_there".into()
-			})
-		);
-		assert_eq!(map.get::<$tp2>("in"), Err(Error::WrongDataType));
+		assert_eq!(map.get::<$tp2>("not_there"), Err(Error::NotFound));
+		assert_eq!(map.get::<$tp2>("in"), Err(Error::DataType));
 		assert!(map.read::<$tp2>("in").is_err());
 		assert!(map.try_read::<$tp2>("in").is_err());
-		assert_eq!(map.get::<$tp2>("inout"), Err(Error::WrongDataType));
+		assert_eq!(map.get::<$tp2>("inout"), Err(Error::DataType));
 		assert!(map.read::<$tp2>("inout").is_err());
 		assert!(map.try_read::<$tp2>("inout").is_err());
-		assert_eq!(map.replace::<$tp2>("inout", $value2), Err(Error::WrongDataType));
-		assert_eq!(map.take::<$tp2>("inout"), Err(Error::WrongDataType));
-		assert_eq!(map.set::<$tp2>("inout", $value2), Err(Error::WrongDataType));
+		assert_eq!(map.replace::<$tp2>("inout", $value2), Err(Error::DataType));
+		assert_eq!(map.take::<$tp2>("inout"), Err(Error::DataType));
+		assert_eq!(map.set::<$tp2>("inout", $value2), Err(Error::DataType));
 		assert!(map.write::<$tp2>("inout").is_err());
 		assert!(map.try_write::<$tp2>("inout").is_err());
-		assert_eq!(map.set::<$tp2>("out", $value2), Err(Error::WrongDataType));
+		assert_eq!(map.set::<$tp2>("out", $value2), Err(Error::DataType));
 		assert!(map.write::<$tp2>("out").is_err());
 		assert!(map.try_write::<$tp2>("out").is_err());
 
-		assert_eq!(map.remove::<$tp2>("delete1"), Err(Error::WrongDataType));
+		assert_eq!(map.remove::<$tp2>("delete1"), Err(Error::DataType));
 		assert_eq!(map.remove::<$tp>("delete1"), Ok(None));
-		assert_eq!(map.remove::<$tp2>("delete2"), Err(Error::WrongDataType));
+		assert_eq!(map.remove::<$tp2>("delete2"), Err(Error::DataType));
 		assert_eq!(map.remove::<$tp>("delete2"), Ok(Some($value)));
-		assert_eq!(map.remove::<$tp2>("delete3"), Err(Error::WrongDataType));
+		assert_eq!(map.remove::<$tp2>("delete3"), Err(Error::DataType));
 		assert_eq!(map.remove::<$tp>("delete3"), Ok(Some($value)));
 
 		let inout_guard = map.write::<$tp>("inout").unwrap();

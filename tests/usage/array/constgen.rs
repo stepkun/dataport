@@ -90,13 +90,10 @@ fn array_const_macro() {
 		],
 	};
 
-	assert_eq!(
-		st.provided_ports().get::<i32>("test"),
-		Err(Error::NotFound { name: "test".into() })
-	);
+	assert_eq!(st.provided_ports().get::<i32>("test"), Err(Error::NotFound));
 	assert_eq!(st.provided_ports().get::<i32>("in"), Ok(None));
 	assert_eq!(st.provided_ports().get::<i32>("inout"), Ok(None));
-	assert_eq!(st.provided_ports().get::<i32>("out"), Err(Error::WrongPortType));
+	assert_eq!(st.provided_ports().get::<i32>("out"), Err(Error::PortType));
 	assert_eq!(st.provided_ports_mut().set::<i32>("out", 41), Ok(()));
 	assert_eq!(st.provided_ports_mut().set("out", 42), Ok(()));
 
@@ -107,6 +104,6 @@ fn array_const_macro() {
 	);
 	assert!(st.provided_ports_mut().set("inout", 42).is_ok());
 
-	assert_eq!(st.provided_ports_mut().set::<i32>("in", 41), Err(Error::WrongPortType));
-	assert_eq!(st.provided_ports_mut().set("in", 42), Err(Error::WrongPortType));
+	assert_eq!(st.provided_ports_mut().set::<i32>("in", 41), Err(Error::PortType));
+	assert_eq!(st.provided_ports_mut().set("in", 42), Err(Error::PortType));
 }

@@ -105,7 +105,7 @@ impl<S: PortCollection> PortCollectionAccessors for S {
 
 	fn contains<T: AnyPortValue>(&self, name: &str) -> Result<bool, Error> {
 		if let Some(p) = self.find(name) {
-			if p.is::<T>() { Ok(true) } else { Err(Error::WrongDataType) }
+			if p.is::<T>() { Ok(true) } else { Err(Error::DataType) }
 		} else {
 			Ok(false)
 		}
@@ -118,7 +118,7 @@ impl<S: PortCollection> PortCollectionAccessors for S {
 		if let Some(port) = self.find(name) {
 			port.get()
 		} else {
-			Err(Error::NotFound { name: name.into() })
+			Err(Error::NotFound)
 		}
 	}
 
@@ -126,7 +126,7 @@ impl<S: PortCollection> PortCollectionAccessors for S {
 		if let Some(port) = self.find(name) {
 			port.read()
 		} else {
-			Err(Error::NotFound { name: name.into() })
+			Err(Error::NotFound)
 		}
 	}
 
@@ -134,7 +134,7 @@ impl<S: PortCollection> PortCollectionAccessors for S {
 		if let Some(port) = self.find(name) {
 			port.try_read()
 		} else {
-			Err(Error::NotFound { name: name.into() })
+			Err(Error::NotFound)
 		}
 	}
 
@@ -142,7 +142,7 @@ impl<S: PortCollection> PortCollectionAccessors for S {
 		if let Some(port) = self.find(name) {
 			Ok(port.sequence_number())
 		} else {
-			Err(Error::NotFound { name: name.into() })
+			Err(Error::NotFound)
 		}
 	}
 }
@@ -199,10 +199,10 @@ impl<S: PortCollection> PortCollectionAccessorsMut for S {
 			if let Some(other) = other_collection.find(other_name) {
 				port.connect_to(other)
 			} else {
-				Err(Error::NotFound { name: other_name.into() })
+				Err(Error::OtherNotFound)
 			}
 		} else {
-			Err(Error::NotFound { name: name.into() })
+			Err(Error::NotFound)
 		}
 	}
 
@@ -210,7 +210,7 @@ impl<S: PortCollection> PortCollectionAccessorsMut for S {
 		if let Some(port) = self.find_mut(name) {
 			port.replace(value)
 		} else {
-			Err(Error::NotFound { name: name.into() })
+			Err(Error::NotFound)
 		}
 	}
 
@@ -218,7 +218,7 @@ impl<S: PortCollection> PortCollectionAccessorsMut for S {
 		if let Some(port) = self.find_mut(name) {
 			port.set(value)
 		} else {
-			Err(Error::NotFound { name: name.into() })
+			Err(Error::NotFound)
 		}
 	}
 
@@ -226,7 +226,7 @@ impl<S: PortCollection> PortCollectionAccessorsMut for S {
 		if let Some(port) = self.find_mut(name) {
 			port.take()
 		} else {
-			Err(Error::NotFound { name: name.into() })
+			Err(Error::NotFound)
 		}
 	}
 
@@ -234,7 +234,7 @@ impl<S: PortCollection> PortCollectionAccessorsMut for S {
 		if let Some(port) = self.find_mut(name) {
 			port.write()
 		} else {
-			Err(Error::NotFound { name: name.into() })
+			Err(Error::NotFound)
 		}
 	}
 
@@ -242,7 +242,7 @@ impl<S: PortCollection> PortCollectionAccessorsMut for S {
 		if let Some(port) = self.find_mut(name) {
 			port.try_write()
 		} else {
-			Err(Error::NotFound { name: name.into() })
+			Err(Error::NotFound)
 		}
 	}
 }

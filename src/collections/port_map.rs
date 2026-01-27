@@ -56,37 +56,23 @@ impl PortCollectionMut for PortMap {
 				vacant_entry.insert(port);
 				Ok(())
 			}
-			Entry::Occupied(_) => Err(Error::AlreadyInCollection { name }),
+			Entry::Occupied(_) => Err(Error::AlreadyInCollection),
 		}
 	}
 
 	fn remove<T: AnyPortValue>(&mut self, name: impl Into<ConstString>) -> Result<Option<T>, Error> {
 		let name = name.into();
 		match self.0.entry(name.clone()) {
-			Entry::Vacant(_) => Err(Error::NotFound { name }),
+			Entry::Vacant(_) => Err(Error::NotFound),
 			Entry::Occupied(occupied_entry) => {
 				let value = occupied_entry.get();
 				if value.is::<T>() {
 					occupied_entry.remove().into_inner::<T>()
 				} else {
-					Err(Error::WrongDataType)
+					Err(Error::DataType)
 				}
 			}
 		}
-
-		//match self.contains::<T>(&name) {
-		//	Ok(found) => {
-		//		if found {
-		//			self.0
-		//				.remove(&name)
-		//				.expect("unreachable")
-		//				.into_inner::<T>()
-		//		} else {
-		//			Err(Error::NotFound { name })
-		//		}
-		//	}
-		//	Err(err) => Err(err),
-		//}
 	}
 }
 

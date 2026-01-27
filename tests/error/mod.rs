@@ -10,66 +10,38 @@ use std::fmt::{Debug, Write};
 use dataport::Error;
 
 #[test]
-fn error_debug() {
-	let err = Error::AlreadyInCollection { name: "test".into() };
-	let mut res = String::new();
-	write!(res, "{:?}", err);
-	assert_eq!(res, String::from("AlreadyInCollection('test')"));
-
-	let err = Error::IsLocked;
-	let mut res = String::new();
-	write!(res, "{:?}", err);
-	assert_eq!(res, String::from("IsLocked"));
-
-	let err = Error::NotFound { name: "test".into() };
-	let mut res = String::new();
-	write!(res, "{:?}", err);
-	assert_eq!(res, String::from("NotFound('test')"));
-
-	let err = Error::NoValueSet;
-	let mut res = String::new();
-	write!(res, "{:?}", err);
-	assert_eq!(res, String::from("NoValueSet"));
-
-	let err = Error::WrongDataType;
-	let mut res = String::new();
-	write!(res, "{:?}", err);
-	assert_eq!(res, String::from("WrongDataType"));
-
-	let err = Error::WrongPortType;
-	let mut res = String::new();
-	write!(res, "{:?}", err);
-	assert_eq!(res, String::from("WrongPortType"));
-}
-
-#[test]
-fn error_display() {
-	let err = Error::AlreadyInCollection { name: "test".into() };
+fn error_debug_display() {
+	let err = Error::AlreadyInCollection;
 	let mut res = String::new();
 	write!(res, "{}", err);
-	assert_eq!(res, String::from("a port with the name 'test' is already in the collection"));
+	assert_eq!(res, String::from("a port with that name is already in the collection"));
 
 	let err = Error::IsLocked;
 	let mut res = String::new();
 	write!(res, "{}", err);
 	assert_eq!(res, String::from("port is currently locked"));
 
-	let err = Error::NotFound { name: "test".into() };
+	let err = Error::NotFound;
 	let mut res = String::new();
 	write!(res, "{}", err);
-	assert_eq!(res, String::from("port 'test' could not be found in the collection"));
+	assert_eq!(res, String::from("port 'self' could not be found in the collection"));
+
+	let err = Error::OtherNotFound;
+	let mut res = String::new();
+	write!(res, "{}", err);
+	assert_eq!(res, String::from("port 'other' could not be found in the collection"));
 
 	let err = Error::NoValueSet;
 	let mut res = String::new();
 	write!(res, "{}", err);
 	assert_eq!(res, String::from("no value set for port"));
 
-	let err = Error::WrongDataType;
+	let err = Error::DataType;
 	let mut res = String::new();
 	write!(res, "{}", err);
 	assert_eq!(res, String::from("port has a different data type then expected"));
 
-	let err = Error::WrongPortType;
+	let err = Error::PortType;
 	let mut res = String::new();
 	write!(res, "{}", err);
 	assert_eq!(res, String::from("port has an incompatible type"));
