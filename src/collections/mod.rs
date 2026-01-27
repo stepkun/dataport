@@ -13,18 +13,6 @@ pub mod port_array;
 pub mod port_list;
 pub mod port_map;
 
-/// Trait for port provider methods.
-pub trait PortProvider: PortCollection + PortCollectionAccessors {}
-
-/// Blanket implementation
-impl<S: PortCollection + PortCollectionAccessors> PortProvider for S {}
-
-/// Trait for mutable port provider methods.
-pub trait PortProviderMut: PortProvider {}
-
-/// Blanket implementation
-impl<S: PortCollection + PortCollectionAccessors> PortProviderMut for S {}
-
 /// Methods for something that provides a collection of ports.
 /// Each port is identified by its name, so the name has to be unique within a certain port collection.
 pub trait PortCollection {
@@ -50,9 +38,33 @@ pub trait PortCollectionMut {
 	fn remove<T: AnyPortValue>(&mut self, name: impl Into<ConstString>) -> Result<Option<T>, Error>;
 }
 
+/// Common access methods for port collections.
+/// Each port is identified by its name, so the name has to be unique within a certain port collection.
+pub trait PortCollectionAccessorsCommon {
+	/// Returns the change sequence number,
+	/// a number which
+	/// - starts at `0`,
+	/// - can only be incremeted by 1 and
+	/// - wraps around to `1` when exceeding its limits.
+	/// # Errors
+	/// - [`Error::NotFound`], if port is not in port list.
+	fn sequence_number(&self, name: &str) -> Result<u32, Error>;
+}
+
+/// Blanket implementation for [`PortCollection`]s.
+impl<S: PortCollection> PortCollectionAccessorsCommon for S {
+	fn sequence_number(&self, name: &str) -> Result<u32, Error> {
+		if let Some(port) = self.find(name) {
+			Ok(port.sequence_number())
+		} else {
+			Err(Error::NotFound)
+		}
+	}
+}
+
 /// Access methods for port collections.
 /// Each port is identified by its name, so the name has to be unique within a certain port collection.
-pub trait PortCollectionAccessors {
+pub trait PortCollectionAccessors: PortCollectionAccessorsCommon {
 	/// Returns true if the name is in the port collection.
 	fn contains_name(&self, name: &str) -> bool;
 
@@ -86,15 +98,6 @@ pub trait PortCollectionAccessors {
 	/// - [`Error::WrongDataType`], if port has not the expected type of T.
 	/// - [`Error::WrongPortType`], if port is not the expected port type.
 	fn try_read<T: AnyPortValue>(&self, name: &str) -> Result<PortValueReadGuard<T>, Error>;
-
-	/// Returns the change sequence number,
-	/// a number which
-	/// - starts at `0`,
-	/// - can only be incremeted by 1 and
-	/// - wraps around to `1` when exceeding its limits.
-	/// # Errors
-	/// - [`Error::NotFound`], if port is not in port list.
-	fn sequence_number(&self, name: &str) -> Result<u32, Error>;
 }
 
 /// Blanket implementation for [`PortCollection`]s.
@@ -137,17 +140,9 @@ impl<S: PortCollection> PortCollectionAccessors for S {
 			Err(Error::NotFound)
 		}
 	}
-
-	fn sequence_number(&self, name: &str) -> Result<u32, Error> {
-		if let Some(port) = self.find(name) {
-			Ok(port.sequence_number())
-		} else {
-			Err(Error::NotFound)
-		}
-	}
 }
 
-pub trait PortCollectionAccessorsMut {
+pub trait PortCollectionAccessorsMut: PortCollectionAccessorsCommon {
 	/// Connects a port from this collection to a port from another collection.
 	/// Type of connection depends on types of both ports.
 	/// # Errors

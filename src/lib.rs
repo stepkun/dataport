@@ -29,7 +29,7 @@ pub use bind::{
 	port_value::{PortValueReadGuard, PortValueWriteGuard},
 };
 pub use collections::{
-	PortCollection, PortCollectionAccessors, PortCollectionAccessorsMut, PortCollectionMut, PortProvider, PortProviderMut,
+	PortCollection, PortCollectionAccessors, PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortCollectionMut,
 	port_array::EMPTY_PORT_ARRAY, port_array::PortArray, port_list::PortList, port_map::PortMap,
 };
 //pub use flow::{in_out_port::FlowingInOutPort, in_port::FlowingInPort, out_port::FlowingOutPort};

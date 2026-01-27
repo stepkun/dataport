@@ -10,8 +10,8 @@ use std::fmt::{Debug, Write};
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, Error, PortArray, PortCollection, PortCollectionAccessors,
-	PortCollectionAccessorsMut, PortVariant, create_inbound_entry, create_inoutbound_entry, create_outbound_entry,
-	create_port_array,
+	PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortVariant, create_inbound_entry, create_inoutbound_entry,
+	create_outbound_entry, create_port_array,
 };
 
 macro_rules! test_creation {

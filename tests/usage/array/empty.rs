@@ -6,8 +6,8 @@
 #![allow(unused)]
 
 use dataport::{
-	BoundInOutPort, BoundInPort, BoundOutPort, PortArray, PortCollection, PortCollectionAccessors, PortCollectionMut,
-	PortProvider, PortProviderMut, PortVariant, create_port_array,
+	BoundInOutPort, BoundInPort, BoundOutPort, PortArray, PortCollection, PortCollectionAccessors,
+	PortCollectionAccessorsMut, PortCollectionMut, PortVariant, create_port_array,
 };
 
 struct WithPortArray {
@@ -16,11 +16,11 @@ struct WithPortArray {
 }
 
 impl WithPortArray {
-	pub fn provided_ports(&self) -> &impl PortProvider {
+	pub fn provided_ports(&self) -> &impl PortCollectionAccessors {
 		&self.portlist
 	}
 
-	pub fn provided_ports_mut(&mut self) -> &mut impl PortProviderMut {
+	pub fn provided_ports_mut(&mut self) -> &mut impl PortCollectionAccessorsMut {
 		&mut self.portlist
 	}
 
@@ -38,12 +38,12 @@ struct WithoutPortArray {
 }
 
 impl WithoutPortArray {
-	pub fn provided_ports(&self) -> &impl PortProvider {
+	pub fn provided_ports(&self) -> &impl PortCollectionAccessors {
 		&dataport::EMPTY_PORT_ARRAY
 	}
 
 	// @TODO: return should be &mut !!
-	pub fn provided_ports_mut(&mut self) -> &impl PortProviderMut {
+	pub fn provided_ports_mut(&mut self) -> &impl PortCollectionAccessorsMut {
 		&dataport::EMPTY_PORT_ARRAY
 	}
 
