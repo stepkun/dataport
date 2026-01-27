@@ -11,8 +11,8 @@ args = [
     "llvm-cov",
     "test",
     "--html",
-    "--output-dir",
-    "mcdc",
+    #"--output-dir",
+    #"mcdc",
     "--all-features",
     "--color=always",
     "--doctests",     # currently unstable
