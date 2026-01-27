@@ -71,15 +71,15 @@ pub trait PortCollectionAccessors: PortCollectionAccessorsCommon {
 	/// Returns a result of `true` if a certain `key` of type `T` is available, otherwise a result of `false`.
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongDataType`] if the port exists, but has not the expected type `T`.
+	/// - [`Error::DataType`] if the port exists, but has not the expected type `T`.
 	fn contains<T: AnyPortValue>(&self, name: &str) -> Result<bool, Error>;
 
 	/// Returns a clone/copy of the T.
 	/// Therefore T must implement [`Clone`].
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongDataType`], if port has not the expected type of T.
-	/// - [`Error::WrongPortType`], if port is not the expected port type.
+	/// - [`Error::DataType`], if port has not the expected type of T.
+	/// - [`Error::PortType`], if port is not the expected port type.
 	fn get<T>(&self, name: &str) -> Result<Option<T>, Error>
 	where
 		T: AnyPortValue + Clone;
@@ -87,16 +87,16 @@ pub trait PortCollectionAccessors: PortCollectionAccessorsCommon {
 	/// Returns an immutable guard to the ports value T.
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongDataType`], if port has not the expected type of T.
-	/// - [`Error::WrongPortType`], if port is not the expected port type.
+	/// - [`Error::DataType`], if port has not the expected type of T.
+	/// - [`Error::PortType`], if port is not the expected port type.
 	fn read<T: AnyPortValue>(&self, name: &str) -> Result<PortValueReadGuard<T>, Error>;
 
 	/// Returns an immutable guard to the ports value T.
 	/// # Errors
 	/// - [`Error::IsLocked`], if port is locked.
 	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongDataType`], if port has not the expected type of T.
-	/// - [`Error::WrongPortType`], if port is not the expected port type.
+	/// - [`Error::DataType`], if port has not the expected type of T.
+	/// - [`Error::PortType`], if port is not the expected port type.
 	fn try_read<T: AnyPortValue>(&self, name: &str) -> Result<PortValueReadGuard<T>, Error>;
 }
 
@@ -142,48 +142,49 @@ impl<S: PortCollection> PortCollectionAccessors for S {
 	}
 }
 
-pub trait PortCollectionAccessorsMut: PortCollectionAccessorsCommon {
+pub trait PortCollectionAccessorsMut: PortCollectionAccessors {
 	/// Connects a port from this collection to a port from another collection.
 	/// Type of connection depends on types of both ports.
 	/// # Errors
-	/// - [`Error::NotFound`], if one of the ports is not in the given port list.
-	/// - [`Error::WrongDataType`], if a port has not the expected type of T.
-	/// - [`Error::WrongPortType`], if a port is not the expected port type.
+	/// - [`Error::NotFound`], if the port of 'self' is not in the given port list.
+	/// - [`Error::OtherNotFound`], if the port of 'other' is not in the given port list.
+	/// - [`Error::DataType`], if a port has not the expected type of T.
+	/// - [`Error::PortType`], if a port is not the expected port type.
 	fn connect_to(&mut self, name: &str, other_collection: &impl PortCollection, other_name: &str) -> Result<(), Error>;
 
 	/// Sets a new value to the T and returns the old T.
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongDataType`], if port has not the expected type of T.
-	/// - [`Error::WrongPortType`], if port is not the expected port type.
+	/// - [`Error::DataType`], if port has not the expected type of T.
+	/// - [`Error::PortType`], if port is not the expected port type.
 	fn replace<T: AnyPortValue>(&mut self, name: &str, value: T) -> Result<Option<T>, Error>;
 
 	/// Sets a new value to the T.
 	/// # Errors
-	/// - [`Error::WrongDataType`], if port has not the expected type of T.
-	/// - [`Error::WrongPortType`], if port is not the expected port type.
+	/// - [`Error::DataType`], if port has not the expected type of T.
+	/// - [`Error::PortType`], if port is not the expected port type.
 	fn set<T: AnyPortValue>(&mut self, name: &str, value: T) -> Result<(), Error>;
 
 	/// Returns the T, removing it from the port.
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongDataType`], if port has not the expected type of T.
-	/// - [`Error::WrongPortType`], if port is not the expected port type.
+	/// - [`Error::DataType`], if port has not the expected type of T.
+	/// - [`Error::PortType`], if port is not the expected port type.
 	fn take<T: AnyPortValue>(&mut self, name: &str) -> Result<Option<T>, Error>;
 
 	/// Returns a mutable guard to the ports value T.
 	/// # Errors
 	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongDataType`], if port has not the expected type of T.
-	/// - [`Error::WrongPortType`], if port is not the expected port type.
+	/// - [`Error::DataType`], if port has not the expected type of T.
+	/// - [`Error::PortType`], if port is not the expected port type.
 	fn write<T: AnyPortValue>(&mut self, name: &str) -> Result<PortValueWriteGuard<T>, Error>;
 
 	/// Returns a mutable guard to the ports value T.
 	/// # Errors
 	/// - [`Error::IsLocked`], if port is locked.
 	/// - [`Error::NotFound`], if port is not in port list.
-	/// - [`Error::WrongDataType`], if port has not the expected type of T.
-	/// - [`Error::WrongPortType`], if port is not the expected port type.
+	/// - [`Error::DataType`], if port has not the expected type of T.
+	/// - [`Error::PortType`], if port is not the expected port type.
 	fn try_write<T: AnyPortValue>(&mut self, name: &str) -> Result<PortValueWriteGuard<T>, Error>;
 }
 

@@ -11,14 +11,34 @@ args = [
     "llvm-cov",
     "test",
     "--html",
-    #"--output-dir",
-    #"mcdc",
-    "--all-features",
     "--color=always",
-    "--doctests",     # currently unstable
-    "--branch",       # currently unstable, superceeded by --mcdc, not usable together
-    #"--mcdc", # currently erronous
-    "--show-missing-lines",  # to show which lines are not tested
-    "--show-instantiations", # to show how functions are instantiated
-    #"--open",                # open result in default Browser
+    "--all-features",
+    "--all-targets",
+    "--show-missing-lines",
+    "--show-instantiations",
+    "--branch",              # currently unstable, superceeded by --mcdc, not usable together
+    #"--mcdc",      # currently unstable, does not work
+    "--workspace",
+    "--offline",
+]
+
+[tasks.cov-summary]
+toolchain = "nightly"
+#install_crate = "cargo-llvm-cov"
+command = "cargo"
+args = [
+    "llvm-cov",
+    "test",
+    "--no-clean",
+    "--json",                # for summary-only!
+    "--summary-only",
+    "--output-path",
+    "mcdc.json",
+    "--color=always",
+    "--all-features",
+    "--all-targets",
+    "--show-instantiations",
+    "--branch",              # currently unstable, superceeded by --mcdc, not usable together
+    #"--mcdc",                # currently unstable, does not work
+    "--locked",
 ]
