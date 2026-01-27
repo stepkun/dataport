@@ -3,12 +3,12 @@
 
 use core::ops::{Deref, DerefMut};
 
-use alloc::collections::btree_map::BTreeMap;
+use alloc::collections::btree_map::{BTreeMap, Entry};
 
 use crate::{
 	ConstString,
 	any_port_value::AnyPortValue,
-	collections::{PortCollection, PortCollectionAccessors, PortCollectionMut},
+	collections::{PortCollection, PortCollectionMut},
 	error::Error,
 	port_variant::PortVariant,
 };
@@ -51,29 +51,42 @@ impl PortCollection for PortMap {
 impl PortCollectionMut for PortMap {
 	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<(), Error> {
 		let name = name.into();
-		if self.find(&name).is_some() {
-			Err(Error::AlreadyInCollection { name })
-		} else {
-			self.0.insert(name, port);
-			Ok(())
+		match self.0.entry(name.clone()) {
+			Entry::Vacant(vacant_entry) => {
+				vacant_entry.insert(port);
+				Ok(())
+			}
+			Entry::Occupied(_) => Err(Error::AlreadyInCollection { name }),
 		}
 	}
 
 	fn remove<T: AnyPortValue>(&mut self, name: impl Into<ConstString>) -> Result<Option<T>, Error> {
 		let name = name.into();
-		match self.contains::<T>(&name) {
-			Ok(found) => {
-				if found {
-					self.0
-						.remove(&name)
-						.expect("unreachable")
-						.into_inner::<T>()
+		match self.0.entry(name.clone()) {
+			Entry::Vacant(_) => Err(Error::NotFound { name }),
+			Entry::Occupied(occupied_entry) => {
+				let value = occupied_entry.get();
+				if value.is::<T>() {
+					occupied_entry.remove().into_inner::<T>()
 				} else {
-					Err(Error::NotFound { name })
+					Err(Error::WrongDataType)
 				}
 			}
-			Err(err) => Err(err),
 		}
+
+		//match self.contains::<T>(&name) {
+		//	Ok(found) => {
+		//		if found {
+		//			self.0
+		//				.remove(&name)
+		//				.expect("unreachable")
+		//				.into_inner::<T>()
+		//		} else {
+		//			Err(Error::NotFound { name })
+		//		}
+		//	}
+		//	Err(err) => Err(err),
+		//}
 	}
 }
 

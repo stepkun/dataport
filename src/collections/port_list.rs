@@ -55,12 +55,23 @@ impl PortCollection for PortList {
 }
 
 impl PortCollectionMut for PortList {
+	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<(), Error> {
+		let name = name.into();
+		// @TODO: improve performance by doing a better search for name
+		if self.find(&name).is_some() {
+			Err(Error::AlreadyInCollection { name })
+		} else {
+			self.0.push((name, port));
+			Ok(())
+		}
+	}
+
 	fn remove<T: AnyPortValue>(&mut self, name: impl Into<ConstString>) -> Result<Option<T>, Error> {
 		let name = name.into();
 		match self.contains::<T>(&name) {
 			Ok(found) => {
 				if found {
-					// remove should not fail duetto `contains` test above
+					// remove should not fail due to `contains` test above
 					let index = self
 						.0
 						.iter()
@@ -72,17 +83,6 @@ impl PortCollectionMut for PortList {
 				}
 			}
 			Err(err) => Err(err),
-		}
-	}
-
-	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<(), Error> {
-		let name = name.into();
-		// @TODO: improve performance by doing a better search for name
-		if self.find(&name).is_some() {
-			Err(Error::AlreadyInCollection { name })
-		} else {
-			self.0.push((name, port));
-			Ok(())
 		}
 	}
 }

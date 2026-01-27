@@ -457,6 +457,7 @@ macro_rules! test_port_collection_mut {
 			map.insert(entry.0, entry.1),
 			Err(Error::AlreadyInCollection { name: "delete1".into() })
 		);
+		assert_eq!(map.get::<$tp>("delete1"), Ok(None));
 
 		assert_eq!(
 			map.remove::<$tp>("not_there"),

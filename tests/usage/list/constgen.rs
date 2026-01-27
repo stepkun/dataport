@@ -92,16 +92,15 @@ fn list_const_macro() {
 		],
 	};
 
-	assert!(st.provided_ports().get::<i32>("test").is_err());
-	assert!(st.provided_ports().get::<i32>("in").is_ok());
-	assert!(st.provided_ports().get::<i32>("inout").is_ok());
-	assert!(st.provided_ports().get::<i32>("out").is_err());
-	assert!(
-		st.provided_ports_mut()
-			.set::<i32>("out", 41)
-			.is_ok()
+	assert_eq!(
+		st.provided_ports().get::<i32>("test"),
+		Err(Error::NotFound { name: "test".into() })
 	);
-	assert!(st.provided_ports_mut().set("out", 42).is_ok());
+	assert_eq!(st.provided_ports().get::<i32>("in"), Ok(None));
+	assert_eq!(st.provided_ports().get::<i32>("inout"), Ok(None));
+	assert_eq!(st.provided_ports().get::<i32>("out"), Err(Error::WrongPortType));
+	assert_eq!(st.provided_ports_mut().set::<i32>("out", 41), Ok(()));
+	assert_eq!(st.provided_ports_mut().set("out", 42), Ok(()));
 
 	assert!(
 		st.provided_ports_mut()

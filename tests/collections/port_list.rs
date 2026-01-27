@@ -460,6 +460,7 @@ macro_rules! test_port_collection_mut {
 			list.insert(entry.0, entry.1),
 			Err(Error::AlreadyInCollection { name: "delete1".into() })
 		);
+		assert_eq!(list.get::<$tp>("delete1"), Ok(None));
 
 		assert_eq!(
 			list.remove::<$tp>("not_there"),

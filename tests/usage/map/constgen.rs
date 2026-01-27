@@ -98,9 +98,8 @@ fn map_const_macro() {
 	assert_eq!(st.provided_ports().get::<i32>("in"), Ok(None));
 	assert_eq!(st.provided_ports().get::<i32>("inout"), Ok(None));
 	assert_eq!(st.provided_ports().get::<i32>("out"), Err(Error::WrongPortType));
-	assert_eq!(st.provided_ports_mut().set::<i32>("out", 42), Ok(()));
-
-	//TODO:!assert_eq!(st.provided_ports_mut().remove::<i32>("out"), Ok(Some(42)));
+	assert_eq!(st.provided_ports_mut().set::<i32>("out", 41), Ok(()));
+	assert_eq!(st.provided_ports_mut().set("out", 42), Ok(()));
 
 	assert!(
 		st.provided_ports_mut()
@@ -112,7 +111,9 @@ fn map_const_macro() {
 
 	assert_eq!(st.provided_ports_mut().set::<i32>("in", 41), Err(Error::WrongPortType));
 	assert_eq!(st.provided_ports_mut().set("in", 42), Err(Error::WrongPortType));
+	let x = st.provided_ports().find("in").is_some();
 	assert_eq!(st.port_provider_mut().remove::<f64>("in"), Err(Error::WrongDataType));
+	let x = st.provided_ports().find("in").is_some();
 	assert_eq!(st.port_provider_mut().remove::<i32>("in"), Ok(None));
 	assert_eq!(
 		st.port_provider_mut().remove::<i32>("test"),
