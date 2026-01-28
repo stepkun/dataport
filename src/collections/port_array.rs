@@ -61,7 +61,7 @@ impl<const S: usize> PortCollection for PortArray<S> {
 
 	fn connect_with(&mut self, name: &str, other_collection: &impl PortCollection, other_name: &str) -> Result<(), Error> {
 		if let Some(other) = other_collection.find(other_name) {
-			self.connect_to(name, other)
+			self.use_value_from(name, other)
 		} else {
 			Err(Error::OtherNotFound)
 		}
@@ -120,9 +120,9 @@ impl<const S: usize> PortCollectionAccessors for PortArray<S> {
 }
 
 impl<const S: usize> PortCollectionAccessorsMut for PortArray<S> {
-	fn connect_to(&mut self, name: &str, other: &PortVariant) -> Result<(), Error> {
-		if let Some(port) = self.find_mut(name) {
-			port.connect_to(other)
+	fn use_value_from(&mut self, name: &str, port: &PortVariant) -> Result<(), Error> {
+		if let Some(self_port) = self.find_mut(name) {
+			self_port.connect_to(port)
 		} else {
 			Err(Error::NotFound)
 		}

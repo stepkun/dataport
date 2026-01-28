@@ -100,13 +100,13 @@ pub trait PortCollectionAccessors: PortCollectionAccessorsCommon {
 }
 
 pub trait PortCollectionAccessorsMut: PortCollectionAccessors {
-	/// Connects a port from this collection to another port variant.
+	/// Connects a port from this collection to the value of another port variant.
 	/// Type of connection depends on types of both ports.
 	/// # Errors
 	/// - [`Error::NotFound`], if the port is not in port collection.
 	/// - [`Error::DataType`], if a port has not the expected type of T.
 	/// - [`Error::PortType`], if a port is not the expected port type.
-	fn connect_to(&mut self, name: &str, other: &PortVariant) -> Result<(), Error>;
+	fn use_value_from(&mut self, name: &str, port: &PortVariant) -> Result<(), Error>;
 
 	/// Sets a new value to the T and returns the old T.
 	/// # Errors
