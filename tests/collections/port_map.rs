@@ -8,14 +8,20 @@ use core::f64::consts::PI;
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, Error, PortCollection, PortCollectionAccessors,
-	PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortCollectionMut, PortMap, PortVariant,
-	create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_map,
+	PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortMap, PortProvider, PortVariant, create_inbound_entry,
+	create_inoutbound_entry, create_outbound_entry, create_port_map,
 };
 use std::sync::Arc;
 
 macro_rules! test_creation {
 	($tp:ty, $value: expr) => {{
 		let mut map = PortMap::default();
+		assert!(map.find("inbound").is_none());
+		assert_eq!(map.sequence_number("inbound"), Err(Error::NotFound));
+		assert!(map.find("outbound").is_none());
+		assert_eq!(map.sequence_number("outbound"), Err(Error::NotFound));
+		assert!(map.find_mut("inoutbound").is_none());
+		assert_eq!(map.sequence_number("inoutbound"), Err(Error::NotFound));
 		assert!(
 			map.insert("inbound0", PortVariant::InBound(BoundInPort::new::<$tp>()))
 				.is_ok()
@@ -311,57 +317,57 @@ macro_rules! test_connections {
 		);
 
 		assert!(
-			map.connect_to("notthere", &invalid, "invalid")
+			map.connect_with("notthere", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
-			map.connect_to("inbound", &invalid, "notthere")
+			map.connect_with("inbound", &invalid, "notthere")
 				.is_err()
 		);
 		assert!(
-			map.connect_to("inbound", &invalid, "invalid")
+			map.connect_with("inbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
-			map2.connect_to("inoutbound", &invalid, "invalid")
+			map2.connect_with("inoutbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
-			map.connect_to("outbound", &invalid, "invalid")
-				.is_err()
-		);
-		assert!(
-			invalid
-				.connect_to("notthere", &map, "inbound")
+			map.connect_with("outbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_to("invalid", &map2, "notthere")
+				.connect_with("notthere", &map, "inbound")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_to("invalid", &map, "inbound")
+				.connect_with("invalid", &map2, "notthere")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_to("invalid", &map2, "inoutbound")
+				.connect_with("invalid", &map, "inbound")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_to("invalid", &map, "outbound")
+				.connect_with("invalid", &map2, "inoutbound")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_with("invalid", &map, "outbound")
 				.is_err()
 		);
 
 		assert!(
-			map2.connect_to("inoutbound", &map, "outbound")
+			map2.connect_with("inoutbound", &map, "outbound")
 				.is_ok()
 		);
 		assert!(
-			map.connect_to("inbound", &map2, "inoutbound")
+			map.connect_with("inbound", &map2, "inoutbound")
 				.is_ok()
 		);
 
@@ -372,12 +378,12 @@ macro_rules! test_connections {
 
 		// @TODO: is that really ok?
 		assert!(
-			map.connect_to("inbound", &map2, "inbound")
+			map.connect_with("inbound", &map2, "inbound")
 				.is_ok()
 		);
 		// @TODO: is that really ok?
 		assert!(
-			map.connect_to("outbound", &map2, "outbound")
+			map.connect_with("outbound", &map2, "outbound")
 				.is_ok()
 		);
 	};

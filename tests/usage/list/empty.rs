@@ -7,7 +7,7 @@
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, PortCollection, PortCollectionAccessors, PortCollectionAccessorsMut,
-	PortCollectionMut, PortList, PortMap, PortVariant, create_port_list,
+	PortList, PortMap, PortProvider, PortVariant, create_port_list,
 };
 
 struct WithPortList {
@@ -24,11 +24,11 @@ impl WithPortList {
 		&mut self.portlist
 	}
 
-	pub fn port_provider(&self) -> &impl PortCollection {
+	pub fn port_collection(&self) -> &impl PortCollection {
 		&self.portlist
 	}
 
-	pub fn port_provider_mut(&mut self) -> &mut impl PortCollectionMut {
+	pub fn port_provider(&mut self) -> &mut impl PortProvider {
 		&mut self.portlist
 	}
 }

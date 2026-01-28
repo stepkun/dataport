@@ -8,8 +8,8 @@ use core::f64::consts::PI;
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, Error, PortCollection, PortCollectionAccessors,
-	PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortCollectionMut, PortList, PortVariant,
-	create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_list,
+	PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortList, PortProvider, PortVariant, create_inbound_entry,
+	create_inoutbound_entry, create_outbound_entry, create_port_list,
 };
 
 use std::sync::Arc;
@@ -17,6 +17,12 @@ use std::sync::Arc;
 macro_rules! test_creation {
 	($tp:ty, $value: expr) => {{
 		let mut list = PortList::default();
+		assert!(list.find("inbound").is_none());
+		assert_eq!(list.sequence_number("inbound"), Err(Error::NotFound));
+		assert!(list.find("outbound").is_none());
+		assert_eq!(list.sequence_number("outbound"), Err(Error::NotFound));
+		assert!(list.find_mut("inoutbound").is_none());
+		assert_eq!(list.sequence_number("inoutbound"), Err(Error::NotFound));
 		assert!(
 			list.insert("inbound0", PortVariant::InBound(BoundInPort::new::<$tp>()))
 				.is_ok()
@@ -310,59 +316,59 @@ macro_rules! test_connections {
 		);
 
 		assert!(
-			list.connect_to("notthere", &invalid, "invalid")
+			list.connect_with("notthere", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
-			list.connect_to("inbound", &invalid, "notthere")
+			list.connect_with("inbound", &invalid, "notthere")
 				.is_err()
 		);
 		assert!(
-			list.connect_to("inbound", &invalid, "invalid")
+			list.connect_with("inbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
 			list2
-				.connect_to("inoutbound", &invalid, "invalid")
+				.connect_with("inoutbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
-			list.connect_to("outbound", &invalid, "invalid")
-				.is_err()
-		);
-		assert!(
-			invalid
-				.connect_to("notthere", &list, "inbound")
+			list.connect_with("outbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_to("invalid", &list2, "notthere")
+				.connect_with("notthere", &list, "inbound")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_to("invalid", &list, "inbound")
+				.connect_with("invalid", &list2, "notthere")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_to("invalid", &list2, "inoutbound")
+				.connect_with("invalid", &list, "inbound")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_to("invalid", &list, "outbound")
+				.connect_with("invalid", &list2, "inoutbound")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.connect_with("invalid", &list, "outbound")
 				.is_err()
 		);
 
 		assert!(
 			list2
-				.connect_to("inoutbound", &list, "outbound")
+				.connect_with("inoutbound", &list, "outbound")
 				.is_ok()
 		);
 		assert!(
-			list.connect_to("inbound", &list2, "inoutbound")
+			list.connect_with("inbound", &list2, "inoutbound")
 				.is_ok()
 		);
 
@@ -375,12 +381,12 @@ macro_rules! test_connections {
 
 		// @TODO: is that really ok?
 		assert!(
-			list.connect_to("inbound", &list2, "inbound")
+			list.connect_with("inbound", &list2, "inbound")
 				.is_ok()
 		);
 		// @TODO: is that really ok?
 		assert!(
-			list.connect_to("outbound", &list2, "outbound")
+			list.connect_with("outbound", &list2, "outbound")
 				.is_ok()
 		);
 	};

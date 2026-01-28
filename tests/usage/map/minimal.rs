@@ -6,9 +6,8 @@
 #![allow(unused)]
 
 use dataport::{
-	BoundInOutPort, BoundInPort, BoundOutPort, PortCollection, PortCollectionAccessors, PortCollectionAccessorsMut,
-	PortCollectionMut, PortMap, PortVariant, create_inbound_entry, create_inoutbound_entry, create_outbound_entry,
-	create_port_map,
+	BoundInOutPort, BoundInPort, BoundOutPort, PortCollection, PortCollectionAccessors, PortCollectionAccessorsMut, PortMap,
+	PortProvider, PortVariant, create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_map,
 };
 
 struct WithPortMap {
@@ -25,11 +24,11 @@ impl WithPortMap {
 		&mut self.portlist
 	}
 
-	pub fn port_provider(&self) -> &impl PortCollection {
+	pub fn port_collection(&self) -> &impl PortCollection {
 		&self.portlist
 	}
 
-	pub fn port_provider_mut(&mut self) -> &mut impl PortCollectionMut {
+	pub fn port_provider(&mut self) -> &mut impl PortProvider {
 		&mut self.portlist
 	}
 }

@@ -7,7 +7,7 @@
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, PortArray, PortCollection, PortCollectionAccessors,
-	PortCollectionAccessorsMut, PortCollectionMut, PortVariant, create_port_array,
+	PortCollectionAccessorsMut, PortProvider, PortVariant, create_port_array,
 };
 
 struct WithPortArray {
@@ -24,11 +24,11 @@ impl WithPortArray {
 		&mut self.portlist
 	}
 
-	pub fn port_provider(&self) -> &impl PortCollection {
+	pub fn port_collection(&self) -> &impl PortCollection {
 		&self.portlist
 	}
 
-	//pub fn port_provider_mut(&mut self) -> &mut impl PortCollectionMut {
+	//pub fn port_provider(&mut self) -> &mut impl PortProvider {
 	//	&mut self.portlist
 	//}
 }
@@ -47,11 +47,11 @@ impl WithoutPortArray {
 		&dataport::EMPTY_PORT_ARRAY
 	}
 
-	pub fn port_provider(&self) -> &impl PortCollection {
+	pub fn port_collection(&self) -> &impl PortCollection {
 		&dataport::EMPTY_PORT_ARRAY
 	}
 
-	//pub fn port_provider_mut(&mut self) -> &mut impl PortCollectionMut {
+	//pub fn port_provider(&mut self) -> &mut impl PortProvider {
 	//	&mut dataport::EMPTY_PORT_ARRAY
 	//}
 }

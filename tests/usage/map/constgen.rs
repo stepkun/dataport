@@ -7,7 +7,7 @@
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, Error, PortCollection, PortCollectionAccessors, PortCollectionAccessorsMut,
-	PortCollectionMut, PortMap, PortVariant, create_inbound_entry, create_inoutbound_entry, create_outbound_entry,
+	PortMap, PortProvider, PortVariant, create_inbound_entry, create_inoutbound_entry, create_outbound_entry,
 	create_port_map,
 };
 
@@ -36,11 +36,11 @@ impl<const C: usize> WithPortMap<C> {
 		&mut self.portlist
 	}
 
-	pub fn port_provider(&self) -> &impl PortCollection {
+	pub fn port_collection(&self) -> &impl PortCollection {
 		&self.portlist
 	}
 
-	pub fn port_provider_mut(&mut self) -> &mut impl PortCollectionMut {
+	pub fn port_provider(&mut self) -> &mut impl PortProvider {
 		&mut self.portlist
 	}
 }
@@ -101,13 +101,13 @@ fn map_const_macro() {
 			.is_ok()
 	);
 	assert!(st.provided_ports_mut().set("inout", 42).is_ok());
-	st.port_provider_mut().remove::<i32>("inout");
+	st.port_provider().remove::<i32>("inout");
 
 	assert_eq!(st.provided_ports_mut().set::<i32>("in", 41), Err(Error::PortType));
 	assert_eq!(st.provided_ports_mut().set("in", 42), Err(Error::PortType));
-	let x = st.port_provider().find("in").is_some();
-	assert_eq!(st.port_provider_mut().remove::<f64>("in"), Err(Error::DataType));
-	let x = st.port_provider().find("in").is_some();
-	assert_eq!(st.port_provider_mut().remove::<i32>("in"), Ok(None));
-	assert_eq!(st.port_provider_mut().remove::<i32>("test"), Err(Error::NotFound));
+	let x = st.port_collection().find("in").is_some();
+	assert_eq!(st.port_provider().remove::<f64>("in"), Err(Error::DataType));
+	let x = st.port_collection().find("in").is_some();
+	assert_eq!(st.port_provider().remove::<i32>("in"), Ok(None));
+	assert_eq!(st.port_provider().remove::<i32>("test"), Err(Error::NotFound));
 }

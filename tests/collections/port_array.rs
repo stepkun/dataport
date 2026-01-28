@@ -287,63 +287,63 @@ macro_rules! test_connections {
 
 		assert!(
 			array
-				.connect_to("notthere", &invalid, "invalid")
+				.connect_with("notthere", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
 			array
-				.connect_to("inbound", &invalid, "notthere")
+				.connect_with("inbound", &invalid, "notthere")
 				.is_err()
 		);
 		assert!(
 			array
-				.connect_to("inbound", &invalid, "invalid")
+				.connect_with("inbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
 			array2
-				.connect_to("inoutbound", &invalid, "invalid")
+				.connect_with("inoutbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
 			array
-				.connect_to("outbound", &invalid, "invalid")
+				.connect_with("outbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_to("notthere", &array, "inbound")
+				.connect_with("notthere", &array, "inbound")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_to("invalid", &array2, "notthere")
+				.connect_with("invalid", &array2, "notthere")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_to("invalid", &array, "inbound")
+				.connect_with("invalid", &array, "inbound")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_to("invalid", &array2, "inoutbound")
+				.connect_with("invalid", &array2, "inoutbound")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_to("invalid", &array, "outbound")
+				.connect_with("invalid", &array, "outbound")
 				.is_err()
 		);
 
 		assert!(
 			array2
-				.connect_to("inoutbound", &array, "outbound")
+				.connect_with("inoutbound", &array, "outbound")
 				.is_ok()
 		);
 		assert!(
 			array
-				.connect_to("inbound", &array2, "inoutbound")
+				.connect_with("inbound", &array2, "inoutbound")
 				.is_ok()
 		);
 
@@ -355,13 +355,13 @@ macro_rules! test_connections {
 		// @TODO: is that really ok?
 		assert!(
 			array
-				.connect_to("inbound", &array2, "inbound")
+				.connect_with("inbound", &array2, "inbound")
 				.is_ok()
 		);
 		// @TODO: is that really ok?
 		assert!(
 			array
-				.connect_to("outbound", &array2, "outbound")
+				.connect_with("outbound", &array2, "outbound")
 				.is_ok()
 		);
 	};

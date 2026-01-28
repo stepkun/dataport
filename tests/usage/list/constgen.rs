@@ -7,7 +7,7 @@
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, Error, PortCollection, PortCollectionAccessors, PortCollectionAccessorsMut,
-	PortCollectionMut, PortList, PortMap, PortVariant, create_inbound_entry, create_inoutbound_entry, create_outbound_entry,
+	PortList, PortMap, PortProvider, PortVariant, create_inbound_entry, create_inoutbound_entry, create_outbound_entry,
 	create_port_list,
 };
 
@@ -36,11 +36,11 @@ impl<const C: usize> WithPortList<C> {
 		&mut self.portlist
 	}
 
-	pub fn port_provider(&self) -> &impl PortCollection {
+	pub fn port_collection(&self) -> &impl PortCollection {
 		&self.portlist
 	}
 
-	pub fn port_provider_mut(&mut self) -> &mut impl PortCollectionMut {
+	pub fn port_provider(&mut self) -> &mut impl PortProvider {
 		&mut self.portlist
 	}
 }
@@ -108,7 +108,7 @@ fn list_const_macro() {
 
 	assert_eq!(st.provided_ports_mut().set::<i32>("in", 41), Err(Error::PortType));
 	assert_eq!(st.provided_ports_mut().set("in", 42), Err(Error::PortType));
-	assert_eq!(st.port_provider_mut().remove::<f64>("in"), Err(Error::DataType));
-	assert_eq!(st.port_provider_mut().remove::<i32>("in"), Ok(None));
-	assert_eq!(st.port_provider_mut().remove::<i32>("test"), Err(Error::NotFound));
+	assert_eq!(st.port_provider().remove::<f64>("in"), Err(Error::DataType));
+	assert_eq!(st.port_provider().remove::<i32>("in"), Ok(None));
+	assert_eq!(st.port_provider().remove::<i32>("test"), Err(Error::NotFound));
 }
