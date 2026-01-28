@@ -2,12 +2,10 @@
 //! Test binding of bind type ports
 
 #![allow(missing_docs)]
-#![allow(clippy::unwrap_used)]
-#![allow(unused)]
 
 use std::f64::consts::PI;
 
-use dataport::{BindCommons, BindIn, BindInOut, BindOut, BoundInOutPort, BoundInPort, BoundOutPort, PortVariant};
+use dataport::{BoundInOutPort, BoundInPort, BoundOutPort, PortVariant};
 
 macro_rules! test_binding {
 	($tp:ty, $value:expr) => {
@@ -15,12 +13,12 @@ macro_rules! test_binding {
 		let mut iop = PortVariant::InOutBound(BoundInOutPort::new::<$tp>());
 		let mut ip = PortVariant::InBound(BoundInPort::new::<$tp>());
 
-		assert!(iop.connect_to(&op).is_ok());
-		assert!(op.connect_to(&iop).is_ok());
-		assert!(op.connect_to(&ip).is_ok());
-		assert!(iop.connect_to(&ip).is_ok());
-		assert!(ip.connect_to(&iop).is_ok());
-		assert!(ip.connect_to(&op).is_ok());
+		assert!(iop.use_value_from(&op).is_ok());
+		assert!(op.use_value_from(&iop).is_ok());
+		assert!(op.use_value_from(&ip).is_ok());
+		assert!(iop.use_value_from(&ip).is_ok());
+		assert!(ip.use_value_from(&iop).is_ok());
+		assert!(ip.use_value_from(&op).is_ok());
 
 		assert!(op.set($value).is_ok());
 		assert_eq!(iop.get().unwrap(), Some($value));

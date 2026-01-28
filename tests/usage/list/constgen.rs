@@ -2,7 +2,6 @@
 //! Test port list for const struct
 
 #![allow(missing_docs)]
-#![allow(clippy::unwrap_used)]
 #![allow(unused)]
 
 use dataport::{

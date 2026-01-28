@@ -2,8 +2,6 @@
 //! Test [`BoundInOutPort`]s
 
 #![allow(missing_docs)]
-#![allow(clippy::unwrap_used)]
-#![allow(unused)]
 
 use std::f64::consts::PI;
 

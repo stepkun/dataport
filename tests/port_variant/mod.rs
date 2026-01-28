@@ -2,14 +2,12 @@
 //! Test [`PortVariant`]
 
 #![allow(missing_docs)]
-#![allow(clippy::unwrap_used)]
-#![allow(unused)]
 
 use dataport::PortVariant;
 
 #[test]
 fn sequence_number() {
-	let mut inbound = PortVariant::create_inbound(42);
+	let inbound = PortVariant::create_inbound(42);
 	assert_eq!(inbound.sequence_number(), 1);
 	let mut inoutbound = PortVariant::create_inoutbound(41);
 	assert_eq!(inoutbound.sequence_number(), 1);

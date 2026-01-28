@@ -2,12 +2,9 @@
 //! Test a concept
 
 #![allow(missing_docs)]
-#![allow(clippy::unwrap_used)]
 #![allow(unused)]
 
-use dataport::{
-	AnyPortValue, PortCollection, create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_array,
-};
+use dataport::{PortCollection, create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_array};
 
 const NAME1: &str = "TEST1";
 static NAME2: &str = "TEST2";

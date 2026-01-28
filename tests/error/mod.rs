@@ -2,10 +2,8 @@
 //! Test Errors public part.
 
 #![allow(missing_docs)]
-#![allow(clippy::unwrap_used)]
-#![allow(unused)]
 
-use std::fmt::{Debug, Write};
+use std::fmt::Write;
 
 use dataport::Error;
 
@@ -13,36 +11,36 @@ use dataport::Error;
 fn error_debug_display() {
 	let err = Error::AlreadyInCollection;
 	let mut res = String::new();
-	write!(res, "{}", err);
+	assert!(write!(res, "{}", err).is_ok());
 	assert_eq!(res, String::from("a port with that name is already in the collection"));
 
 	let err = Error::IsLocked;
 	let mut res = String::new();
-	write!(res, "{}", err);
+	assert!(write!(res, "{}", err).is_ok());
 	assert_eq!(res, String::from("port is currently locked"));
 
 	let err = Error::NotFound;
 	let mut res = String::new();
-	write!(res, "{}", err);
+	assert!(write!(res, "{}", err).is_ok());
 	assert_eq!(res, String::from("port 'self' could not be found in the collection"));
 
 	let err = Error::OtherNotFound;
 	let mut res = String::new();
-	write!(res, "{}", err);
+	assert!(write!(res, "{}", err).is_ok());
 	assert_eq!(res, String::from("port 'other' could not be found in the collection"));
 
 	let err = Error::NoValueSet;
 	let mut res = String::new();
-	write!(res, "{}", err);
+	assert!(write!(res, "{}", err).is_ok());
 	assert_eq!(res, String::from("no value set for port"));
 
 	let err = Error::DataType;
 	let mut res = String::new();
-	write!(res, "{}", err);
+	assert!(write!(res, "{}", err).is_ok());
 	assert_eq!(res, String::from("port has a different data type then expected"));
 
 	let err = Error::PortType;
 	let mut res = String::new();
-	write!(res, "{}", err);
+	assert!(write!(res, "{}", err).is_ok());
 	assert_eq!(res, String::from("port has an incompatible type"));
 }

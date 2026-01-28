@@ -2,7 +2,6 @@
 //! Test [`PortList`]s public API.
 
 #![allow(missing_docs)]
-#![allow(clippy::unwrap_used)]
 
 use core::f64::consts::PI;
 

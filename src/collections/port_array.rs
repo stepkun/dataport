@@ -122,7 +122,7 @@ impl<const S: usize> PortCollectionAccessors for PortArray<S> {
 impl<const S: usize> PortCollectionAccessorsMut for PortArray<S> {
 	fn use_value_from(&mut self, name: &str, port: &PortVariant) -> Result<(), Error> {
 		if let Some(self_port) = self.find_mut(name) {
-			self_port.connect_to(port)
+			self_port.use_value_from(port)
 		} else {
 			Err(Error::NotFound)
 		}

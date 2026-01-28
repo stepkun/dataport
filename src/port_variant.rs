@@ -38,7 +38,7 @@ impl PortVariant {
 		Self::OutBound(BoundOutPort::with_value(value))
 	}
 
-	pub fn connect_to(&mut self, other: &PortVariant) -> Result<(), Error> {
+	pub fn use_value_from(&mut self, other: &PortVariant) -> Result<(), Error> {
 		match self {
 			Self::InBound(port) => port.bind_to(other),
 			Self::InOutBound(port) => port.bind_to(other),
