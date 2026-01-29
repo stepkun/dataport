@@ -13,12 +13,12 @@ macro_rules! test_binding {
 		let mut iop = PortVariant::InOutBound(BoundInOutPort::new::<$tp>());
 		let mut ip = PortVariant::InBound(BoundInPort::new::<$tp>());
 
-		assert!(iop.use_value_from(&op).is_ok());
-		assert!(op.use_value_from(&iop).is_ok());
-		assert!(op.use_value_from(&ip).is_ok());
-		assert!(iop.use_value_from(&ip).is_ok());
-		assert!(ip.use_value_from(&iop).is_ok());
-		assert!(ip.use_value_from(&op).is_ok());
+		assert!(iop.use_from_variant(&op).is_ok());
+		assert!(op.use_from_variant(&iop).is_ok());
+		assert!(op.use_from_variant(&ip).is_ok());
+		assert!(iop.use_from_variant(&ip).is_ok());
+		assert!(ip.use_from_variant(&iop).is_ok());
+		assert!(ip.use_from_variant(&op).is_ok());
 
 		assert!(op.set($value).is_ok());
 		assert_eq!(iop.get().unwrap(), Some($value));

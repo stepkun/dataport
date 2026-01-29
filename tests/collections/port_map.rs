@@ -316,57 +316,57 @@ macro_rules! test_connections {
 		);
 
 		assert!(
-			map.connect_with("notthere", &invalid, "invalid")
+			map.use_from_collection("notthere", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
-			map.connect_with("inbound", &invalid, "notthere")
+			map.use_from_collection("inbound", &invalid, "notthere")
 				.is_err()
 		);
 		assert!(
-			map.connect_with("inbound", &invalid, "invalid")
+			map.use_from_collection("inbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
-			map2.connect_with("inoutbound", &invalid, "invalid")
+			map2.use_from_collection("inoutbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
-			map.connect_with("outbound", &invalid, "invalid")
-				.is_err()
-		);
-		assert!(
-			invalid
-				.connect_with("notthere", &map, "inbound")
+			map.use_from_collection("outbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_with("invalid", &map2, "notthere")
+				.use_from_collection("notthere", &map, "inbound")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_with("invalid", &map, "inbound")
+				.use_from_collection("invalid", &map2, "notthere")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_with("invalid", &map2, "inoutbound")
+				.use_from_collection("invalid", &map, "inbound")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_with("invalid", &map, "outbound")
+				.use_from_collection("invalid", &map2, "inoutbound")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.use_from_collection("invalid", &map, "outbound")
 				.is_err()
 		);
 
 		assert!(
-			map2.connect_with("inoutbound", &map, "outbound")
+			map2.use_from_collection("inoutbound", &map, "outbound")
 				.is_ok()
 		);
 		assert!(
-			map.connect_with("inbound", &map2, "inoutbound")
+			map.use_from_collection("inbound", &map2, "inoutbound")
 				.is_ok()
 		);
 
@@ -377,12 +377,12 @@ macro_rules! test_connections {
 
 		// @TODO: is that really ok?
 		assert!(
-			map.connect_with("inbound", &map2, "inbound")
+			map.use_from_collection("inbound", &map2, "inbound")
 				.is_ok()
 		);
 		// @TODO: is that really ok?
 		assert!(
-			map.connect_with("outbound", &map2, "outbound")
+			map.use_from_collection("outbound", &map2, "outbound")
 				.is_ok()
 		);
 	};

@@ -5,6 +5,7 @@ use alloc::{boxed::Box, sync::Arc};
 use spin::RwLock;
 
 use crate::{
+	PortCollection,
 	any_port_value::AnyPortValue,
 	bind::{
 		BindCommons, BindIn,
@@ -54,10 +55,6 @@ impl BoundInPort {
 		}
 	}
 
-	pub(crate) fn value(&self) -> PortValuePtr {
-		self.0.clone()
-	}
-
 	pub(crate) fn into_inner<T: AnyPortValue>(self) -> Result<Option<T>, Error> {
 		let any_value = &mut *self.0.write();
 		let p = &mut any_value.0;
@@ -72,16 +69,32 @@ impl BoundInPort {
 }
 
 impl BindCommons for BoundInPort {
-	fn bind_to(&mut self, other: &PortVariant) -> Result<(), Error> {
+	fn sequence_number(&self) -> u32 {
+		self.0.read().1.value()
+	}
+
+	fn use_from_bound(&mut self, other: &impl BindCommons) -> Result<(), Error> {
+		self.set_value(other.value())
+	}
+
+	fn use_from_variant(&mut self, other: &PortVariant) -> Result<(), Error> {
 		match other {
-			PortVariant::InBound(port) => self.set_value(port.value()),
-			PortVariant::InOutBound(port) => self.set_value(port.value()),
-			PortVariant::OutBound(port) => self.set_value(port.value()),
+			PortVariant::InBound(port) => self.use_from_bound(port),
+			PortVariant::InOutBound(port) => self.use_from_bound(port),
+			PortVariant::OutBound(port) => self.use_from_bound(port),
 		}
 	}
 
-	fn sequence_number(&self) -> u32 {
-		self.0.read().1.value()
+	fn use_from_collection(&mut self, name: &str, collection: &impl PortCollection) -> Result<(), Error> {
+		if let Some(variant) = collection.find(name) {
+			self.use_from_variant(variant)
+		} else {
+			Err(Error::OtherNotFound)
+		}
+	}
+
+	fn value(&self) -> PortValuePtr {
+		self.0.clone()
 	}
 }
 

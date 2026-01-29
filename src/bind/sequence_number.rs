@@ -7,7 +7,7 @@
 /// - wraps around to `1` when exceeding its limits.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[repr(transparent)]
-pub(crate) struct SequenceNumber(u32);
+pub struct SequenceNumber(u32);
 
 impl SequenceNumber {
 	pub(crate) fn increment(&mut self) {
@@ -18,14 +18,8 @@ impl SequenceNumber {
 		}
 	}
 
-	pub(crate) const fn value(&self) -> u32 {
+	pub const fn value(&self) -> u32 {
 		self.0
-	}
-}
-
-impl From<SequenceNumber> for u32 {
-	fn from(value: SequenceNumber) -> Self {
-		value.0
 	}
 }
 
@@ -53,6 +47,5 @@ mod tests {
 		assert_eq!(sq.value(), u32::MAX);
 		sq.increment();
 		assert_eq!(sq.value(), 1);
-		assert_eq!(u32::from(sq), 1);
 	}
 }

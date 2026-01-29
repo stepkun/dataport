@@ -8,25 +8,48 @@ pub mod port_value;
 mod sequence_number;
 
 use crate::{
+	PortCollection,
 	any_port_value::AnyPortValue,
-	bind::port_value::{PortValueReadGuard, PortValueWriteGuard},
+	bind::port_value::{PortValuePtr, PortValueReadGuard, PortValueWriteGuard},
 	error::Error,
 	port_variant::PortVariant,
 };
 
 /// Trait for bind port types.
 pub trait BindCommons {
-	/// Binds a port to another port variant.
-	fn bind_to(&mut self, other: &PortVariant) -> Result<(), Error>;
+	/// Binds this port to the port 'bound'.
+	/// # Errors
+	/// - [`Error::DataType`], if 'self' is not the same type 'T' as 'bound'.
+	/// - [`Error::PortType`], if 'bound' is not a valid port type.
+	fn use_from_bound(&mut self, bound: &impl BindCommons) -> Result<(), Error>;
 
-	/// Returns change sequence number.
+	/// Binds this port to the port 'variant'.
+	/// # Errors
+	/// - [`Error::DataType`], if 'self' is not the same type 'T' as 'variant'.
+	/// - [`Error::PortType`], if 'variant' is not a valid port type.
+	fn use_from_variant(&mut self, variant: &PortVariant) -> Result<(), Error>;
+
+	/// Binds this port to the port 'name' of 'collection'.
+	/// # Errors
+	/// - [`Error::DataType`], if 'self' is not the same type 'T' as 'name' in 'collection'.
+	/// - [`Error::OtherNotFound`], if 'collection' does not contains port 'name'.
+	/// - [`Error::PortType`], if 'variant' is not a valid port type.
+	fn use_from_collection(&mut self, name: &str, collection: &impl PortCollection) -> Result<(), Error>;
+
+	/// Returns the change sequence number of this port.
+	/// A value of '0' indicates, that the port has never contained any data.
 	fn sequence_number(&self) -> u32;
+
+	/// Returns a pointer to the ports value.
+	fn value(&self) -> PortValuePtr;
 }
 
 /// Trait for incoming bind port types.
 pub trait BindIn<T: AnyPortValue>: BindCommons {
 	/// Returns a clone/copy of the T.
 	/// Therefore T must implement [`Clone`].
+	/// # Errors
+	/// - [`Error::DataType`], if 'self' is not the expected type 'T'.
 	fn get(&self) -> Result<Option<T>, Error>
 	where
 		T: Clone;
@@ -48,15 +71,21 @@ pub trait BindIn<T: AnyPortValue>: BindCommons {
 /// Trait for incoming and outgoing bind port types.
 pub trait BindInOut<T: AnyPortValue>: BindIn<T> + BindOut<T> {
 	/// Sets a new value to the T and returns the old T.
+	/// # Errors
+	/// - [`Error::DataType`], if 'self' is not the expected type 'T'.
 	fn replace(&mut self, value: T) -> Result<Option<T>, Error>;
 
 	/// Returns the T, removing it from the port.
+	/// # Errors
+	/// - [`Error::DataType`], if 'self' is not the expected type 'T'.
 	fn take(&mut self) -> Result<Option<T>, Error>;
 }
 
 /// Trait for outgoing bind port types.
 pub trait BindOut<T: AnyPortValue>: BindCommons {
 	/// Sets a new value to the T.
+	/// # Errors
+	/// - [`Error::DataType`], if 'self' is not the expected type 'T'.
 	fn set(&mut self, value: T) -> Result<(), Error>;
 
 	/// Returns a mutable guard to the ports value T.

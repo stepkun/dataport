@@ -315,59 +315,59 @@ macro_rules! test_connections {
 		);
 
 		assert!(
-			list.connect_with("notthere", &invalid, "invalid")
+			list.use_from_collection("notthere", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
-			list.connect_with("inbound", &invalid, "notthere")
+			list.use_from_collection("inbound", &invalid, "notthere")
 				.is_err()
 		);
 		assert!(
-			list.connect_with("inbound", &invalid, "invalid")
+			list.use_from_collection("inbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
 			list2
-				.connect_with("inoutbound", &invalid, "invalid")
+				.use_from_collection("inoutbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
-			list.connect_with("outbound", &invalid, "invalid")
-				.is_err()
-		);
-		assert!(
-			invalid
-				.connect_with("notthere", &list, "inbound")
+			list.use_from_collection("outbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_with("invalid", &list2, "notthere")
+				.use_from_collection("notthere", &list, "inbound")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_with("invalid", &list, "inbound")
+				.use_from_collection("invalid", &list2, "notthere")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_with("invalid", &list2, "inoutbound")
+				.use_from_collection("invalid", &list, "inbound")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_with("invalid", &list, "outbound")
+				.use_from_collection("invalid", &list2, "inoutbound")
+				.is_err()
+		);
+		assert!(
+			invalid
+				.use_from_collection("invalid", &list, "outbound")
 				.is_err()
 		);
 
 		assert!(
 			list2
-				.connect_with("inoutbound", &list, "outbound")
+				.use_from_collection("inoutbound", &list, "outbound")
 				.is_ok()
 		);
 		assert!(
-			list.connect_with("inbound", &list2, "inoutbound")
+			list.use_from_collection("inbound", &list2, "inoutbound")
 				.is_ok()
 		);
 
@@ -380,12 +380,12 @@ macro_rules! test_connections {
 
 		// @TODO: is that really ok?
 		assert!(
-			list.connect_with("inbound", &list2, "inbound")
+			list.use_from_collection("inbound", &list2, "inbound")
 				.is_ok()
 		);
 		// @TODO: is that really ok?
 		assert!(
-			list.connect_with("outbound", &list2, "outbound")
+			list.use_from_collection("outbound", &list2, "outbound")
 				.is_ok()
 		);
 	};

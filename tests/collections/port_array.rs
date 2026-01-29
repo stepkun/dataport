@@ -286,63 +286,63 @@ macro_rules! test_connections {
 
 		assert!(
 			array
-				.connect_with("notthere", &invalid, "invalid")
+				.use_from_collection("notthere", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
 			array
-				.connect_with("inbound", &invalid, "notthere")
+				.use_from_collection("inbound", &invalid, "notthere")
 				.is_err()
 		);
 		assert!(
 			array
-				.connect_with("inbound", &invalid, "invalid")
+				.use_from_collection("inbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
 			array2
-				.connect_with("inoutbound", &invalid, "invalid")
+				.use_from_collection("inoutbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
 			array
-				.connect_with("outbound", &invalid, "invalid")
+				.use_from_collection("outbound", &invalid, "invalid")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_with("notthere", &array, "inbound")
+				.use_from_collection("notthere", &array, "inbound")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_with("invalid", &array2, "notthere")
+				.use_from_collection("invalid", &array2, "notthere")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_with("invalid", &array, "inbound")
+				.use_from_collection("invalid", &array, "inbound")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_with("invalid", &array2, "inoutbound")
+				.use_from_collection("invalid", &array2, "inoutbound")
 				.is_err()
 		);
 		assert!(
 			invalid
-				.connect_with("invalid", &array, "outbound")
+				.use_from_collection("invalid", &array, "outbound")
 				.is_err()
 		);
 
 		assert!(
 			array2
-				.connect_with("inoutbound", &array, "outbound")
+				.use_from_collection("inoutbound", &array, "outbound")
 				.is_ok()
 		);
 		assert!(
 			array
-				.connect_with("inbound", &array2, "inoutbound")
+				.use_from_collection("inbound", &array2, "inoutbound")
 				.is_ok()
 		);
 
@@ -354,13 +354,13 @@ macro_rules! test_connections {
 		// @TODO: is that really ok?
 		assert!(
 			array
-				.connect_with("inbound", &array2, "inbound")
+				.use_from_collection("inbound", &array2, "inbound")
 				.is_ok()
 		);
 		// @TODO: is that really ok?
 		assert!(
 			array
-				.connect_with("outbound", &array2, "outbound")
+				.use_from_collection("outbound", &array2, "outbound")
 				.is_ok()
 		);
 	};

@@ -4,6 +4,7 @@
 /// Port errors.
 #[derive(PartialEq)]
 #[non_exhaustive]
+#[repr(C)]
 pub enum Error {
 	/// A port with the given name is already in the collection.
 	AlreadyInCollection,

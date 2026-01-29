@@ -8,7 +8,10 @@ use alloc::collections::btree_map::{BTreeMap, Entry};
 use crate::{
 	ConstString,
 	any_port_value::AnyPortValue,
-	bind::port_value::{PortValueReadGuard, PortValueWriteGuard},
+	bind::{
+		BindCommons,
+		port_value::{PortValueReadGuard, PortValueWriteGuard},
+	},
 	collections::{
 		PortCollection, PortCollectionAccessors, PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortProvider,
 	},
@@ -48,14 +51,6 @@ impl PortCollection for PortMap {
 
 	fn find_mut(&mut self, name: &str) -> Option<&mut PortVariant> {
 		self.0.get_mut(name)
-	}
-
-	fn connect_with(&mut self, name: &str, other_collection: &impl PortCollection, other_name: &str) -> Result<(), Error> {
-		if let Some(other) = other_collection.find(other_name) {
-			self.use_value_from(name, other)
-		} else {
-			Err(Error::OtherNotFound)
-		}
 	}
 }
 
@@ -98,6 +93,30 @@ impl PortCollectionAccessorsCommon for PortMap {
 }
 
 impl PortCollectionAccessors for PortMap {
+	fn give_to_bound(&self, name: &str, bound: &mut impl BindCommons) -> Result<(), Error> {
+		self.find(name)
+			.map_or(Err(Error::NotFound), |port| bound.use_from_variant(port))
+	}
+
+	fn give_to_variant(&self, name: &str, variant: &mut PortVariant) -> Result<(), Error> {
+		self.find(name)
+			.map_or(Err(Error::NotFound), |port| variant.use_from_variant(port))
+	}
+
+	fn give_to_collection(
+		&self,
+		name: &str,
+		other_collection: &mut impl PortCollection,
+		other_name: &str,
+	) -> Result<(), Error> {
+		self.find(name)
+			.map_or(Err(Error::NotFound), |port| {
+				other_collection
+					.find_mut(other_name)
+					.map_or(Err(Error::OtherNotFound), |variant| variant.use_from_variant(port))
+			})
+	}
+
 	fn contains_name(&self, name: &str) -> bool {
 		self.find(name).is_some()
 	}
@@ -139,12 +158,26 @@ impl PortCollectionAccessors for PortMap {
 }
 
 impl PortCollectionAccessorsMut for PortMap {
-	fn use_value_from(&mut self, name: &str, port: &PortVariant) -> Result<(), Error> {
-		if let Some(self_port) = self.find_mut(name) {
-			self_port.use_value_from(port)
-		} else {
-			Err(Error::NotFound)
-		}
+	fn use_from_bound(&mut self, name: &str, bound: &impl BindCommons) -> Result<(), Error> {
+		self.find_mut(name)
+			.map_or(Err(Error::NotFound), |port| port.use_from_bound(bound))
+	}
+
+	fn use_from_variant(&mut self, name: &str, variant: &PortVariant) -> Result<(), Error> {
+		self.find_mut(name)
+			.map_or(Err(Error::NotFound), |port| port.use_from_variant(variant))
+	}
+
+	fn use_from_collection(
+		&mut self,
+		name: &str,
+		other_collection: &impl PortCollection,
+		other_name: &str,
+	) -> Result<(), Error> {
+		self.find_mut(name)
+			.map_or(Err(Error::NotFound), |port| {
+				port.use_from_collection(other_collection, other_name)
+			})
 	}
 
 	fn replace<T: AnyPortValue>(&mut self, name: &str, value: T) -> Result<Option<T>, Error> {
