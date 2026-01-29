@@ -14,10 +14,10 @@ use crate::{
 };
 
 pub mod port_array;
-pub mod port_list;
 pub mod port_map;
+pub mod port_vec;
 
-/// Methods for something that provides a collection of ports.
+/// Methods for something that is a collection of ports.
 /// Each port is identified by its name, so the name has to be unique within a certain port collection.
 pub trait PortCollection {
 	/// Returns the port with 'name' from the collection.
@@ -27,9 +27,9 @@ pub trait PortCollection {
 	fn find_mut(&mut self, name: &str) -> Option<&mut PortVariant>;
 }
 
-/// Methods for something that is able to provide ports as a dynamic collection.
+/// Methods for something that is a mutable collection of ports.
 /// Each port is identified by its name, so the name has to be unique within a certain port collection.
-pub trait PortProvider {
+pub trait PortCollectionMut {
 	/// Adds the port under the given name to the collection;
 	/// # Errors
 	/// - [`Error::AlreadyInCollection`] if `name` is already in the collection.
@@ -188,4 +188,22 @@ pub trait PortCollectionAccessorsMut: PortCollectionAccessors {
 	/// - [`Error::DataType`], if 'name' has not the expected type of T.
 	/// - [`Error::PortType`], if 'name' is not the expected port type.
 	fn try_write<T: AnyPortValue>(&mut self, name: &str) -> Result<PortValueWriteGuard<T>, Error>;
+}
+
+/// Trait for something that provides a collection of Ports.
+pub trait PortCollectionProvider {
+	/// Returns immutable access to the collections entries.
+	fn provided_ports(&self) -> &impl PortCollectionAccessors;
+
+	/// Returns mutable access to the collections entries.
+	fn provided_ports_mut(&mut self) -> &mut impl PortCollectionAccessorsMut;
+
+	/// Returns an immutable [`PortCollection`].
+	fn port_collection(&self) -> &impl PortCollection;
+}
+
+/// Trait for something that provides a mutable collection of Ports.
+pub trait PortCollectionProviderMut {
+	/// Returns a mutable [`PortCollection`].
+	fn port_collection_mut(&mut self) -> &mut impl PortCollectionMut;
 }

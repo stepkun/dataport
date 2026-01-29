@@ -7,8 +7,8 @@ use core::f64::consts::PI;
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, Error, PortCollection, PortCollectionAccessors,
-	PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortMap, PortProvider, PortVariant, create_inbound_entry,
-	create_inoutbound_entry, create_outbound_entry, create_port_map,
+	PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortCollectionMut, PortMap, PortVariant,
+	create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_map,
 };
 use std::sync::Arc;
 

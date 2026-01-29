@@ -13,7 +13,8 @@ use crate::{
 		port_value::{PortValueReadGuard, PortValueWriteGuard},
 	},
 	collections::{
-		PortCollection, PortCollectionAccessors, PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortProvider,
+		PortCollection, PortCollectionAccessors, PortCollectionAccessorsCommon, PortCollectionAccessorsMut,
+		PortCollectionMut,
 	},
 	error::Error,
 	port_variant::PortVariant,
@@ -22,15 +23,15 @@ use crate::{
 /// An extendable unsorted list of [`PortVariant`]s.
 #[derive(Debug, Default)]
 #[repr(transparent)]
-pub struct PortList(Vec<(ConstString, PortVariant)>);
+pub struct PortVec(Vec<(ConstString, PortVariant)>);
 
-impl PortList {
+impl PortVec {
 	pub fn from<const N: usize>(array: [(ConstString, PortVariant); N]) -> Self {
 		Self(Vec::from(array))
 	}
 }
 
-impl Deref for PortList {
+impl Deref for PortVec {
 	type Target = Vec<(ConstString, PortVariant)>;
 
 	fn deref(&self) -> &Self::Target {
@@ -38,13 +39,13 @@ impl Deref for PortList {
 	}
 }
 
-impl DerefMut for PortList {
+impl DerefMut for PortVec {
 	fn deref_mut(&mut self) -> &mut Self::Target {
 		&mut self.0
 	}
 }
 
-impl PortCollection for PortList {
+impl PortCollection for PortVec {
 	fn find(&self, name: &str) -> Option<&PortVariant> {
 		self.0
 			.iter()
@@ -60,7 +61,7 @@ impl PortCollection for PortList {
 	}
 }
 
-impl PortProvider for PortList {
+impl PortCollectionMut for PortVec {
 	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<(), Error> {
 		let name = name.into();
 		if self.find(&name).is_some() {
@@ -92,7 +93,7 @@ impl PortProvider for PortList {
 	}
 }
 
-impl PortCollectionAccessorsCommon for PortList {
+impl PortCollectionAccessorsCommon for PortVec {
 	fn sequence_number(&self, name: &str) -> Result<u32, Error> {
 		if let Some(port) = self.find(name) {
 			Ok(port.sequence_number())
@@ -102,7 +103,7 @@ impl PortCollectionAccessorsCommon for PortList {
 	}
 }
 
-impl PortCollectionAccessors for PortList {
+impl PortCollectionAccessors for PortVec {
 	fn give_to_bound(&self, name: &str, bound: &mut impl BindCommons) -> Result<(), Error> {
 		self.find(name)
 			.map_or(Err(Error::NotFound), |port| bound.use_from_variant(port))
@@ -167,7 +168,7 @@ impl PortCollectionAccessors for PortList {
 	}
 }
 
-impl PortCollectionAccessorsMut for PortList {
+impl PortCollectionAccessorsMut for PortVec {
 	fn use_from_bound(&mut self, name: &str, bound: &impl BindCommons) -> Result<(), Error> {
 		let _ = name;
 		let _ = bound;
@@ -243,7 +244,7 @@ mod tests {
 	// check, that the auto traits are available.
 	#[test]
 	const fn normal_types() {
-		is_normal::<&PortList>();
-		is_normal::<PortList>();
+		is_normal::<&PortVec>();
+		is_normal::<PortVec>();
 	}
 }

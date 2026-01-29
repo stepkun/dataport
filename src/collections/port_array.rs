@@ -1,7 +1,7 @@
 // Copyright © 2026 Stephan Kunz
 //! A fixed unsorted collection of ports.
 
-use core::ops::Deref;
+use core::{cell::LazyCell, ops::Deref};
 
 use crate::{
 	ConstString,
@@ -15,7 +15,8 @@ use crate::{
 	port_variant::PortVariant,
 };
 
-pub static EMPTY_PORT_ARRAY: PortArray<0> = PortArray([]);
+//static mut GLOBAL_BLACKBOARD: LazyCell<Databoard> = LazyCell::new(|| Databoard::default());
+pub static mut EMPTY_PORT_ARRAY: LazyCell<PortArray<0>> = LazyCell::new(|| PortArray([]));
 
 /// A fixed unsorted array of [`PortVariant`]s.
 #[repr(transparent)]

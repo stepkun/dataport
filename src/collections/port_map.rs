@@ -13,7 +13,7 @@ use crate::{
 		port_value::{PortValueReadGuard, PortValueWriteGuard},
 	},
 	collections::{
-		PortCollection, PortCollectionAccessors, PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortProvider,
+		PortCollection, PortCollectionAccessors, PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortCollectionMut,
 	},
 	error::Error,
 	port_variant::PortVariant,
@@ -54,7 +54,7 @@ impl PortCollection for PortMap {
 	}
 }
 
-impl PortProvider for PortMap {
+impl PortCollectionMut for PortMap {
 	fn insert(&mut self, name: impl Into<ConstString>, port: PortVariant) -> Result<(), Error> {
 		let name = name.into();
 		match self.0.entry(name.clone()) {

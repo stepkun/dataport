@@ -1,5 +1,5 @@
 // Copyright © 2026 Stephan Kunz
-//! Test [`PortList`]s public API.
+//! Test [`PortVec`]s public API.
 
 #![allow(missing_docs)]
 
@@ -7,15 +7,15 @@ use core::f64::consts::PI;
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, Error, PortCollection, PortCollectionAccessors,
-	PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortList, PortProvider, PortVariant, create_inbound_entry,
-	create_inoutbound_entry, create_outbound_entry, create_port_list,
+	PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortCollectionMut, PortVariant, PortVec,
+	create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_vec,
 };
 
 use std::sync::Arc;
 
 macro_rules! test_creation {
 	($tp:ty, $value: expr) => {{
-		let mut list = PortList::default();
+		let mut list = PortVec::default();
 		assert!(list.find("inbound").is_none());
 		assert_eq!(list.sequence_number("inbound"), Err(Error::NotFound));
 		assert!(list.find("outbound").is_none());
@@ -103,7 +103,7 @@ struct NoType;
 
 macro_rules! test_accessors {
 	($tp:ty, $value1: expr, $value2: expr) => {
-		let mut list = PortList::default();
+		let mut list = PortVec::default();
 		assert!(
 			list.insert("inbound0", PortVariant::InBound(BoundInPort::new::<$tp>()))
 				.is_ok()
@@ -280,7 +280,7 @@ fn list_accessors() {
 
 macro_rules! test_connections {
 	($tp:ty, $value1: expr, $value2: expr) => {
-		let mut list = PortList::default();
+		let mut list = PortVec::default();
 		assert!(
 			list.insert("outbound", PortVariant::create_outbound($value1))
 				.is_ok()
@@ -290,7 +290,7 @@ macro_rules! test_connections {
 				.is_ok()
 		);
 
-		let mut list2 = PortList::default();
+		let mut list2 = PortVec::default();
 		assert!(
 			list2
 				.insert("inoutbound", PortVariant::InOutBound(BoundInOutPort::new::<$tp>()))
@@ -307,7 +307,7 @@ macro_rules! test_connections {
 				.is_ok()
 		);
 
-		let mut invalid = PortList::default();
+		let mut invalid = PortVec::default();
 		assert!(
 			invalid
 				.insert("invalid", PortVariant::create_inoutbound(NoType))
@@ -422,8 +422,8 @@ fn list_connection() {
 
 macro_rules! test_deref {
 	($tp:ty, $value: expr) => {
-		let mut list = PortList::default();
-		let mut list2 = create_port_list!(create_inbound_entry!("test", $tp, $value));
+		let mut list = PortVec::default();
+		let mut list2 = create_port_vec!(create_inbound_entry!("test", $tp, $value));
 		list.append(&mut list2);
 	};
 }
@@ -450,7 +450,7 @@ fn list_deref() {
 
 macro_rules! test_port_collection_mut {
 	($tp:ty, $value: expr, $tp2:ty, $value2: expr) => {
-		let mut list = create_port_list!(
+		let mut list = create_port_vec!(
 			create_inbound_entry!("in", $tp, $value),
 			create_inoutbound_entry!("inout", $tp, $value),
 			create_outbound_entry!("out", $tp, $value),

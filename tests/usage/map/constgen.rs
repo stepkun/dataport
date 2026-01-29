@@ -6,14 +6,14 @@
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, Error, PortCollection, PortCollectionAccessors, PortCollectionAccessorsMut,
-	PortMap, PortProvider, PortVariant, create_inbound_entry, create_inoutbound_entry, create_outbound_entry,
-	create_port_map,
+	PortCollectionMut, PortCollectionProvider, PortCollectionProviderMut, PortMap, PortVariant, create_inbound_entry,
+	create_inoutbound_entry, create_outbound_entry, create_port_map,
 };
 
 struct WithPortMap<const C: usize> {
 	size: usize,
 	field: i32,
-	portlist: PortMap,
+	port_collection: PortMap,
 }
 
 impl<const C: usize> WithPortMap<C> {
@@ -21,26 +21,28 @@ impl<const C: usize> WithPortMap<C> {
 		Self {
 			size: portlist.len(),
 			field,
-			portlist,
+			port_collection: portlist,
 		}
 	}
 }
 
-impl<const C: usize> WithPortMap<C> {
-	pub fn provided_ports(&self) -> &impl PortCollectionAccessors {
-		&self.portlist
+impl<const C: usize> PortCollectionProvider for WithPortMap<C> {
+	fn provided_ports(&self) -> &impl PortCollectionAccessors {
+		&self.port_collection
 	}
 
-	pub fn provided_ports_mut(&mut self) -> &mut impl PortCollectionAccessorsMut {
-		&mut self.portlist
+	fn provided_ports_mut(&mut self) -> &mut impl PortCollectionAccessorsMut {
+		&mut self.port_collection
 	}
 
-	pub fn port_collection(&self) -> &impl PortCollection {
-		&self.portlist
+	fn port_collection(&self) -> &impl PortCollection {
+		&self.port_collection
 	}
+}
 
-	pub fn port_provider(&mut self) -> &mut impl PortProvider {
-		&mut self.portlist
+impl<const C: usize> PortCollectionProviderMut for WithPortMap<C> {
+	fn port_collection_mut(&mut self) -> &mut impl PortCollectionMut {
+		&mut self.port_collection
 	}
 }
 
@@ -49,7 +51,7 @@ fn map_const_manual() {
 	let mut st = WithPortMap::<3> {
 		size: 3,
 		field: 42,
-		portlist: PortMap::from([
+		port_collection: PortMap::from([
 			("in".into(), PortVariant::InBound(BoundInPort::new::<i32>())),
 			("inout".into(), PortVariant::InOutBound(BoundInOutPort::new::<i32>())),
 			("out".into(), PortVariant::OutBound(BoundOutPort::new::<i32>())),
@@ -80,7 +82,7 @@ fn map_const_macro() {
 	let mut st = WithPortMap::<3> {
 		size: 3,
 		field: 42,
-		portlist: create_port_map![
+		port_collection: create_port_map![
 			create_inbound_entry!("in", i32),
 			create_inoutbound_entry!("inout", i32),
 			create_outbound_entry!("out", i32),
@@ -100,13 +102,13 @@ fn map_const_macro() {
 			.is_ok()
 	);
 	assert!(st.provided_ports_mut().set("inout", 42).is_ok());
-	st.port_provider().remove::<i32>("inout");
+	st.port_collection_mut().remove::<i32>("inout");
 
 	assert_eq!(st.provided_ports_mut().set::<i32>("in", 41), Err(Error::PortType));
 	assert_eq!(st.provided_ports_mut().set("in", 42), Err(Error::PortType));
 	let x = st.port_collection().find("in").is_some();
-	assert_eq!(st.port_provider().remove::<f64>("in"), Err(Error::DataType));
+	assert_eq!(st.port_collection_mut().remove::<f64>("in"), Err(Error::DataType));
 	let x = st.port_collection().find("in").is_some();
-	assert_eq!(st.port_provider().remove::<i32>("in"), Ok(None));
-	assert_eq!(st.port_provider().remove::<i32>("test"), Err(Error::NotFound));
+	assert_eq!(st.port_collection_mut().remove::<i32>("in"), Ok(None));
+	assert_eq!(st.port_collection_mut().remove::<i32>("test"), Err(Error::NotFound));
 }

@@ -6,50 +6,46 @@
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, Error, PortCollection, PortCollectionAccessors, PortCollectionAccessorsMut,
-	PortList, PortMap, PortProvider, PortVariant, create_inbound_entry, create_inoutbound_entry, create_outbound_entry,
-	create_port_list,
+	PortCollectionMut, PortCollectionProvider, PortCollectionProviderMut, PortMap, PortVariant, PortVec,
+	create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_vec,
 };
 
-struct WithPortList<const C: usize> {
-	size: usize,
+struct WithPortVec {
 	field: i32,
-	portlist: PortList,
+	port_collection: PortVec,
 }
 
-impl<const C: usize> WithPortList<C> {
-	pub fn new(field: i32, portlist: PortList) -> Self {
-		Self {
-			size: portlist.len(),
-			field,
-			portlist,
-		}
+impl WithPortVec {
+	pub fn new(field: i32, port_collection: PortVec) -> Self {
+		Self { field, port_collection }
 	}
 }
 
-impl<const C: usize> WithPortList<C> {
-	pub fn provided_ports(&self) -> &impl PortCollectionAccessors {
-		&self.portlist
+impl PortCollectionProvider for WithPortVec {
+	fn provided_ports(&self) -> &impl PortCollectionAccessors {
+		&self.port_collection
 	}
 
-	pub fn provided_ports_mut(&mut self) -> &mut impl PortCollectionAccessorsMut {
-		&mut self.portlist
+	fn provided_ports_mut(&mut self) -> &mut impl PortCollectionAccessorsMut {
+		&mut self.port_collection
 	}
 
-	pub fn port_collection(&self) -> &impl PortCollection {
-		&self.portlist
+	fn port_collection(&self) -> &impl PortCollection {
+		&self.port_collection
 	}
+}
 
-	pub fn port_provider(&mut self) -> &mut impl PortProvider {
-		&mut self.portlist
+impl PortCollectionProviderMut for WithPortVec {
+	fn port_collection_mut(&mut self) -> &mut impl PortCollectionMut {
+		&mut self.port_collection
 	}
 }
 
 #[test]
 fn list_const_manual() {
-	let mut st = WithPortList::<3> {
-		size: 3,
+	let mut st = WithPortVec {
 		field: 42,
-		portlist: PortList::from([
+		port_collection: PortVec::from([
 			("in".into(), PortVariant::InBound(BoundInPort::new::<i32>())),
 			("inout".into(), PortVariant::InOutBound(BoundInOutPort::new::<i32>())),
 			("out".into(), PortVariant::OutBound(BoundOutPort::new::<i32>())),
@@ -69,9 +65,9 @@ fn list_const_manual() {
 
 #[test]
 fn list_const_function() {
-	let mut st = WithPortList::<3>::new(
+	let mut st = WithPortVec::new(
 		42,
-		PortList::from([
+		PortVec::from([
 			("in".into(), PortVariant::InBound(BoundInPort::new::<i32>())),
 			("inout".into(), PortVariant::InOutBound(BoundInOutPort::new::<i32>())),
 			("out".into(), PortVariant::OutBound(BoundOutPort::new::<i32>())),
@@ -81,10 +77,9 @@ fn list_const_function() {
 
 #[test]
 fn list_const_macro() {
-	let mut st = WithPortList::<3> {
-		size: 3,
+	let mut st = WithPortVec {
 		field: 42,
-		portlist: create_port_list![
+		port_collection: create_port_vec![
 			create_inbound_entry!("in", i32),
 			create_inoutbound_entry!("inout", i32),
 			create_outbound_entry!("out", i32),
@@ -107,7 +102,7 @@ fn list_const_macro() {
 
 	assert_eq!(st.provided_ports_mut().set::<i32>("in", 41), Err(Error::PortType));
 	assert_eq!(st.provided_ports_mut().set("in", 42), Err(Error::PortType));
-	assert_eq!(st.port_provider().remove::<f64>("in"), Err(Error::DataType));
-	assert_eq!(st.port_provider().remove::<i32>("in"), Ok(None));
-	assert_eq!(st.port_provider().remove::<i32>("test"), Err(Error::NotFound));
+	assert_eq!(st.port_collection_mut().remove::<f64>("in"), Err(Error::DataType));
+	assert_eq!(st.port_collection_mut().remove::<i32>("in"), Ok(None));
+	assert_eq!(st.port_collection_mut().remove::<i32>("test"), Err(Error::NotFound));
 }

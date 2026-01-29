@@ -5,30 +5,32 @@
 #![allow(unused)]
 
 use dataport::{
-	BoundInOutPort, BoundInPort, BoundOutPort, PortCollection, PortCollectionAccessors, PortCollectionAccessorsMut, PortMap,
-	PortProvider, PortVariant, create_port_map,
+	BoundInOutPort, BoundInPort, BoundOutPort, PortCollection, PortCollectionAccessors, PortCollectionAccessorsMut,
+	PortCollectionMut, PortCollectionProvider, PortCollectionProviderMut, PortMap, PortVariant, create_port_map,
 };
 
 struct WithPortMap {
 	field: i32,
-	portlist: PortMap,
+	port_collection: PortMap,
 }
 
-impl WithPortMap {
-	pub fn provided_ports(&self) -> &impl PortCollectionAccessors {
-		&self.portlist
+impl PortCollectionProvider for WithPortMap {
+	fn provided_ports(&self) -> &impl PortCollectionAccessors {
+		&self.port_collection
 	}
 
-	pub fn provided_ports_mut(&mut self) -> &mut impl PortCollectionAccessorsMut {
-		&mut self.portlist
+	fn provided_ports_mut(&mut self) -> &mut impl PortCollectionAccessorsMut {
+		&mut self.port_collection
 	}
 
-	pub fn port_collection(&self) -> &impl PortCollection {
-		&self.portlist
+	fn port_collection(&self) -> &impl PortCollection {
+		&self.port_collection
 	}
+}
 
-	pub fn port_provider(&mut self) -> &mut impl PortProvider {
-		&mut self.portlist
+impl PortCollectionProviderMut for WithPortMap {
+	fn port_collection_mut(&mut self) -> &mut impl PortCollectionMut {
+		&mut self.port_collection
 	}
 }
 
@@ -36,7 +38,7 @@ impl WithPortMap {
 fn map_empty_manual() {
 	let st = WithPortMap {
 		field: 42,
-		portlist: PortMap::from([]),
+		port_collection: PortMap::from([]),
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());
@@ -46,7 +48,7 @@ fn map_empty_manual() {
 fn map_empty_function() {
 	let st = WithPortMap {
 		field: 42,
-		portlist: PortMap::default(),
+		port_collection: PortMap::default(),
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());
@@ -56,7 +58,7 @@ fn map_empty_function() {
 fn map_empty_macro() {
 	let st = WithPortMap {
 		field: 42,
-		portlist: create_port_map!(),
+		port_collection: create_port_map!(),
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());

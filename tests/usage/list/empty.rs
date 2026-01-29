@@ -6,37 +6,39 @@
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, PortCollection, PortCollectionAccessors, PortCollectionAccessorsMut,
-	PortList, PortMap, PortProvider, PortVariant, create_port_list,
+	PortCollectionMut, PortCollectionProvider, PortCollectionProviderMut, PortMap, PortVariant, PortVec, create_port_vec,
 };
 
-struct WithPortList {
+struct WithPortVec {
 	field: i32,
-	portlist: PortList,
+	port_collection: PortVec,
 }
 
-impl WithPortList {
-	pub fn provided_ports(&self) -> &impl PortCollectionAccessors {
-		&self.portlist
+impl PortCollectionProvider for WithPortVec {
+	fn provided_ports(&self) -> &impl PortCollectionAccessors {
+		&self.port_collection
 	}
 
-	pub fn provided_ports_mut(&mut self) -> &mut impl PortCollectionAccessorsMut {
-		&mut self.portlist
+	fn provided_ports_mut(&mut self) -> &mut impl PortCollectionAccessorsMut {
+		&mut self.port_collection
 	}
 
-	pub fn port_collection(&self) -> &impl PortCollection {
-		&self.portlist
+	fn port_collection(&self) -> &impl PortCollection {
+		&self.port_collection
 	}
+}
 
-	pub fn port_provider(&mut self) -> &mut impl PortProvider {
-		&mut self.portlist
+impl PortCollectionProviderMut for WithPortVec {
+	fn port_collection_mut(&mut self) -> &mut impl PortCollectionMut {
+		&mut self.port_collection
 	}
 }
 
 #[test]
 fn list_empty_manual() {
-	let st = WithPortList {
+	let st = WithPortVec {
 		field: 42,
-		portlist: PortList::from([]),
+		port_collection: PortVec::from([]),
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());
@@ -44,9 +46,9 @@ fn list_empty_manual() {
 
 #[test]
 fn list_empty_function() {
-	let st = WithPortList {
+	let st = WithPortVec {
 		field: 42,
-		portlist: PortList::default(),
+		port_collection: PortVec::default(),
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());
@@ -54,9 +56,9 @@ fn list_empty_function() {
 
 #[test]
 fn list_empty_macro() {
-	let st = WithPortList {
+	let st = WithPortVec {
 		field: 42,
-		portlist: create_port_list!(),
+		port_collection: create_port_vec!(),
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());

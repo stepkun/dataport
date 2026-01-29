@@ -15,8 +15,8 @@ use spin::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 // re-export macros
 pub use dataport_macros::{
-	create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_array, create_port_list,
-	create_port_map,
+	create_inbound_entry, create_inoutbound_entry, create_outbound_entry, create_port_array, create_port_map,
+	create_port_vec,
 };
 
 // flatten
@@ -29,8 +29,11 @@ pub use bind::{
 	port_value::{PortValueReadGuard, PortValueWriteGuard},
 };
 pub use collections::{
-	PortCollection, PortCollectionAccessors, PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortProvider,
-	port_array::EMPTY_PORT_ARRAY, port_array::PortArray, port_list::PortList, port_map::PortMap,
+	PortCollection, PortCollectionAccessors, PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortCollectionMut,
+	PortCollectionProvider, PortCollectionProviderMut,
+	port_array::{EMPTY_PORT_ARRAY, PortArray},
+	port_map::PortMap,
+	port_vec::PortVec,
 };
 //pub use flow::{in_out_port::FlowingInOutPort, in_port::FlowingInPort, out_port::FlowingOutPort};
 pub use error::Error;

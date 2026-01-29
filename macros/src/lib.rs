@@ -45,10 +45,10 @@ pub fn create_port_array(input: TokenStream) -> TokenStream {
 ///     outbound!(<name>. <value>)
 /// )
 #[proc_macro]
-pub fn create_port_list(input: TokenStream) -> TokenStream {
+pub fn create_port_vec(input: TokenStream) -> TokenStream {
 	let output: proc_macro2::TokenStream = input.into();
 	quote! {
-		dataport::PortList::from([#output])
+		dataport::PortVec::from([#output])
 	}
 	.into()
 }

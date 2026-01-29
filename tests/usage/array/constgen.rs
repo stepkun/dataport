@@ -6,7 +6,7 @@
 
 use dataport::{
 	BoundInOutPort, BoundInPort, BoundOutPort, Error, PortArray, PortCollection, PortCollectionAccessors,
-	PortCollectionAccessorsMut, PortProvider, PortVariant, create_inbound_entry, create_inoutbound_entry,
+	PortCollectionAccessorsMut, PortCollectionProvider, PortVariant, create_inbound_entry, create_inoutbound_entry,
 	create_outbound_entry, create_port_array,
 };
 
@@ -24,22 +24,19 @@ impl<const C: usize> WithPortArray<C> {
 			portlist,
 		}
 	}
-
-	pub fn provided_ports(&self) -> &impl PortCollectionAccessors {
+}
+impl<const C: usize> PortCollectionProvider for WithPortArray<C> {
+	fn provided_ports(&self) -> &impl PortCollectionAccessors {
 		&self.portlist
 	}
 
-	pub fn provided_ports_mut(&mut self) -> &mut impl PortCollectionAccessorsMut {
+	fn provided_ports_mut(&mut self) -> &mut impl PortCollectionAccessorsMut {
 		&mut self.portlist
 	}
 
-	pub fn port_collection(&self) -> &impl PortCollection {
+	fn port_collection(&self) -> &impl PortCollection {
 		&self.portlist
 	}
-
-	//pub fn port_provider(&mut self) -> &mut impl PortProvider {
-	//	&mut self.portlist
-	//}
 }
 
 #[test]
