@@ -39,7 +39,7 @@ impl PortCollectionProviderMut for WithPortMap {
 fn map_minimal_manual() {
 	let mut st = WithPortMap {
 		field: 42,
-		port_collection: PortMap::from([
+		port_collection: PortMap::from_array([
 			("in".into(), PortVariant::InBound(BoundInPort::new::<i32>())),
 			("inout".into(), PortVariant::InOutBound(BoundInOutPort::new::<i32>())),
 			("out".into(), PortVariant::OutBound(BoundOutPort::new::<i32>())),

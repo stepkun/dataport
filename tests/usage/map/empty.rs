@@ -38,7 +38,7 @@ impl PortCollectionProviderMut for WithPortMap {
 fn map_empty_manual() {
 	let st = WithPortMap {
 		field: 42,
-		port_collection: PortMap::from([]),
+		port_collection: PortMap::from_array([]),
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());

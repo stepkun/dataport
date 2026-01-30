@@ -38,7 +38,7 @@ impl PortCollectionProviderMut for WithPortVec {
 fn list_empty_manual() {
 	let st = WithPortVec {
 		field: 42,
-		port_collection: PortVec::from([]),
+		port_collection: PortVec::from_array([]),
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());

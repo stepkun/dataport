@@ -1,10 +1,10 @@
 // Copyright © 2026 Stephan Kunz
 //! A fixed unsorted collection of ports.
 
-use core::{cell::LazyCell, ops::Deref};
+use core::ops::Deref;
 
 use crate::{
-	ConstString,
+	ConstString, PortVec,
 	any_port_value::AnyPortValue,
 	bind::{
 		BindCommons,
@@ -15,22 +15,25 @@ use crate::{
 	port_variant::PortVariant,
 };
 
-//static mut GLOBAL_BLACKBOARD: LazyCell<Databoard> = LazyCell::new(|| Databoard::default());
-pub static mut EMPTY_PORT_ARRAY: LazyCell<PortArray<0>> = LazyCell::new(|| PortArray([]));
-
 /// A fixed unsorted array of [`PortVariant`]s.
 #[repr(transparent)]
 pub struct PortArray<const S: usize>([(ConstString, PortVariant); S]);
 
 impl<const S: usize> PortArray<S> {
-	pub fn from(ports: [(ConstString, PortVariant); S]) -> Self {
+	pub fn from_array(ports: [(ConstString, PortVariant); S]) -> Self {
 		Self(ports)
+	}
+
+	#[allow(clippy::unwrap_used)]
+	pub fn from_vec(mut ports: PortVec) -> Self {
+		let array: [(ConstString, PortVariant); S] = core::array::from_fn(|_| ports.pop().unwrap());
+		Self(array)
 	}
 }
 
 impl PortArray<0> {
 	pub fn empty() -> Self {
-		Self::from([])
+		Self::from_array([])
 	}
 }
 

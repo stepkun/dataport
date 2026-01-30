@@ -51,7 +51,7 @@ fn map_const_manual() {
 	let mut st = WithPortMap::<3> {
 		size: 3,
 		field: 42,
-		port_collection: PortMap::from([
+		port_collection: PortMap::from_array([
 			("in".into(), PortVariant::InBound(BoundInPort::new::<i32>())),
 			("inout".into(), PortVariant::InOutBound(BoundInOutPort::new::<i32>())),
 			("out".into(), PortVariant::OutBound(BoundOutPort::new::<i32>())),
@@ -69,7 +69,7 @@ fn map_const_manual() {
 fn map_const_function() {
 	let mut st = WithPortMap::<3>::new(
 		42,
-		PortMap::from([
+		PortMap::from_array([
 			("in".into(), PortVariant::InBound(BoundInPort::new::<i32>())),
 			("inout".into(), PortVariant::InOutBound(BoundInOutPort::new::<i32>())),
 			("out".into(), PortVariant::OutBound(BoundOutPort::new::<i32>())),

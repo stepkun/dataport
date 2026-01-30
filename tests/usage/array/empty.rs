@@ -30,42 +30,14 @@ impl PortCollectionProvider for WithPortArray {
 	}
 }
 
-struct WithoutPortArray {
-	field: i32,
-}
-
-impl WithoutPortArray {
-	pub fn provided_ports(&self) -> &impl PortCollectionAccessors {
-		unsafe { &*dataport::EMPTY_PORT_ARRAY }
-	}
-}
-
-impl PortCollectionProvider for WithoutPortArray {
-	fn provided_ports(&self) -> &impl PortCollectionAccessors {
-		unsafe { &*dataport::EMPTY_PORT_ARRAY }
-	}
-
-	fn provided_ports_mut(&mut self) -> &mut impl PortCollectionAccessorsMut {
-		unsafe { &mut *dataport::EMPTY_PORT_ARRAY }
-	}
-
-	fn port_collection(&self) -> &impl PortCollection {
-		unsafe { &*dataport::EMPTY_PORT_ARRAY }
-	}
-}
-
 #[test]
 fn array_empty_manual() {
 	let st = WithPortArray {
 		field: 42,
-		port_collection: PortArray::from([]),
+		port_collection: PortArray::from_array([]),
 	};
 
 	assert!(st.provided_ports().get::<i32>("test").is_err());
-
-	let wo = WithoutPortArray { field: 42 };
-
-	assert!(wo.provided_ports().get::<i32>("test").is_err());
 }
 
 #[test]

@@ -26,7 +26,11 @@ use crate::{
 pub struct PortVec(Vec<(ConstString, PortVariant)>);
 
 impl PortVec {
-	pub fn from<const N: usize>(array: [(ConstString, PortVariant); N]) -> Self {
+	pub fn with_capacity(size: usize) -> Self {
+		Self(Vec::with_capacity(size))
+	}
+
+	pub fn from_array<const N: usize>(array: [(ConstString, PortVariant); N]) -> Self {
 		Self(Vec::from(array))
 	}
 }

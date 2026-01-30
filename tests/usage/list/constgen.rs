@@ -45,7 +45,7 @@ impl PortCollectionProviderMut for WithPortVec {
 fn list_const_manual() {
 	let mut st = WithPortVec {
 		field: 42,
-		port_collection: PortVec::from([
+		port_collection: PortVec::from_array([
 			("in".into(), PortVariant::InBound(BoundInPort::new::<i32>())),
 			("inout".into(), PortVariant::InOutBound(BoundInOutPort::new::<i32>())),
 			("out".into(), PortVariant::OutBound(BoundOutPort::new::<i32>())),
@@ -67,7 +67,7 @@ fn list_const_manual() {
 fn list_const_function() {
 	let mut st = WithPortVec::new(
 		42,
-		PortVec::from([
+		PortVec::from_array([
 			("in".into(), PortVariant::InBound(BoundInPort::new::<i32>())),
 			("inout".into(), PortVariant::InOutBound(BoundInOutPort::new::<i32>())),
 			("out".into(), PortVariant::OutBound(BoundOutPort::new::<i32>())),

@@ -44,7 +44,7 @@ fn array_const_manual() {
 	let mut st = WithPortArray::<3> {
 		size: 3,
 		field: 42,
-		portlist: PortArray::from([
+		portlist: PortArray::from_array([
 			("in".into(), PortVariant::InBound(BoundInPort::new::<i32>())),
 			("inout".into(), PortVariant::InOutBound(BoundInOutPort::new::<i32>())),
 			("out".into(), PortVariant::OutBound(BoundOutPort::new::<i32>())),
@@ -66,7 +66,7 @@ fn array_const_manual() {
 fn array_const_function() {
 	let mut st = WithPortArray::new(
 		42,
-		PortArray::from([
+		PortArray::from_array([
 			("in".into(), PortVariant::InBound(BoundInPort::new::<i32>())),
 			("inout".into(), PortVariant::InOutBound(BoundInOutPort::new::<i32>())),
 			("out".into(), PortVariant::OutBound(BoundOutPort::new::<i32>())),

@@ -13,7 +13,8 @@ use crate::{
 		port_value::{PortValueReadGuard, PortValueWriteGuard},
 	},
 	collections::{
-		PortCollection, PortCollectionAccessors, PortCollectionAccessorsCommon, PortCollectionAccessorsMut, PortCollectionMut,
+		PortCollection, PortCollectionAccessors, PortCollectionAccessorsCommon, PortCollectionAccessorsMut,
+		PortCollectionMut,
 	},
 	error::Error,
 	port_variant::PortVariant,
@@ -25,7 +26,7 @@ use crate::{
 pub struct PortMap(BTreeMap<ConstString, PortVariant>);
 
 impl PortMap {
-	pub fn from<const N: usize>(array: [(ConstString, PortVariant); N]) -> Self {
+	pub fn from_array<const N: usize>(array: [(ConstString, PortVariant); N]) -> Self {
 		Self(BTreeMap::from(array))
 	}
 }

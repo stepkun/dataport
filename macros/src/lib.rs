@@ -29,7 +29,7 @@ extern crate proc_macro;
 pub fn create_port_array(input: TokenStream) -> TokenStream {
 	let output: proc_macro2::TokenStream = input.into();
 	quote! {
-		dataport::PortArray::from([#output])
+		dataport::PortArray::from_array([#output])
 	}
 	.into()
 }
@@ -48,7 +48,7 @@ pub fn create_port_array(input: TokenStream) -> TokenStream {
 pub fn create_port_vec(input: TokenStream) -> TokenStream {
 	let output: proc_macro2::TokenStream = input.into();
 	quote! {
-		dataport::PortVec::from([#output])
+		dataport::PortVec::from_array([#output])
 	}
 	.into()
 }
@@ -67,7 +67,7 @@ pub fn create_port_vec(input: TokenStream) -> TokenStream {
 pub fn create_port_map(input: TokenStream) -> TokenStream {
 	let output: proc_macro2::TokenStream = input.into();
 	quote! {
-		dataport::PortMap::from([#output])
+		dataport::PortMap::from_array([#output])
 	}
 	.into()
 }
@@ -81,7 +81,7 @@ struct Params {
 impl Parse for Params {
 	fn parse(input: ParseStream) -> Result<Self> {
 		if input.is_empty() {
-			panic!("macro needs at least two comma separated parameters");
+			panic!("macro needs at least one tuple of two comma separated elements");
 		}
 
 		let old = input;
